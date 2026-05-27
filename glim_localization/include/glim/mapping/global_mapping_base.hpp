@@ -1,0 +1,90 @@
+#pragma once
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <opencv2/core.hpp>
+
+#include <glim/mapping/sub_map.hpp>
+#include <glim/odometry/estimation_frame.hpp>
+
+namespace spdlog {
+class logger;
+}
+
+namespace glim {
+
+/**
+ * @brief Global mapping base class
+ *
+ */
+class GlobalMappingBase {
+public:
+  GlobalMappingBase();
+  virtual ~GlobalMappingBase() {}
+
+  /**
+   * @brief Insert an GPS data
+   * @param stamp         Timestamp
+   * @param lat_lon_alt    Latitude, Longitude, Altitude, Hdop
+   */
+  // virtual void insert_gps(double stamp, const Eigen::Vector3d& lat_lon_alt, const Eigen::Vector3d& position_covariance) {}
+  virtual void insert_gps(double stamp, const Eigen::Vector4d& lat_lon_alt) {}
+
+
+  /**
+   * @brief Insert an image
+   * @param stamp   Timestamp
+   * @param image   Image
+   */
+  virtual void insert_image(const double stamp, const cv::Mat& image);
+
+  /**
+   * @brief Insert an IMU frame
+   * @param stamp         Timestamp
+   * @param linear_acc    Linear acceleration
+   * @param angular_vel   Angular velocity
+   */
+  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
+
+  /**
+   * @brief Insert a SubMap
+   * @param submap  SubMap
+   */
+  virtual void insert_submap(const SubMap::Ptr& submap);
+
+  /**
+   * @brief Request to find new overlapping submaps
+   */
+  virtual void find_overlapping_submaps(double min_overlap);
+
+  /**
+   * @brief Request to perform optimization
+   */
+  virtual void optimize();
+
+  /**
+   * @brief Save the mapping result
+   * @param path  Save path
+   */
+  virtual void save(const std::string& path) {}
+
+  /**
+   * @brief Export all the submap points
+   */
+  virtual std::vector<Eigen::Vector4d> export_points() { return std::vector<Eigen::Vector4d>(); }
+
+  /**
+   * @brief Load a global mapping module from a shared library
+   * @param so_name  Shared library name
+   * @return         Loaded global mapping module
+   */
+  static std::shared_ptr<GlobalMappingBase> load_module(const std::string& so_name);
+
+  virtual void relocalize(EstimationFrame::ConstPtr latest_frame, const Eigen::Isometry3d & initial_pose) {}
+
+  virtual bool load(const std::string& path) {return false;};
+
+protected:
+  std::shared_ptr<spdlog::logger> logger;
+};
+}  // namespace glim
