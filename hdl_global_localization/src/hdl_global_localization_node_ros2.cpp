@@ -37,14 +37,15 @@ class GlobalLocalizationNode : public rclcpp::Node {
     using std::placeholders::_1;
     using std::placeholders::_2;
     set_engine_service = this->create_service<srv::SetGlobalLocalizationEngine>(
-            "set_engine",
+            "/hdl_global_localization/set_engine",
             std::bind(&GlobalLocalizationNode::set_global_localization_engine,
                       this, _1, _2));
     set_global_map_service = this->create_service<srv::SetGlobalMap>(
-            "set_global_map",
+            "/hdl_global_localization/set_global_map",
             std::bind(&GlobalLocalizationNode::set_global_map, this, _1, _2));
     query_service = this->create_service<srv::QueryGlobalLocalization>(
-            "query", std::bind(&GlobalLocalizationNode::query, this, _1, _2));
+            "/hdl_global_localization/query",
+            std::bind(&GlobalLocalizationNode::query, this, _1, _2));
   }
 
   void set_global_localization_engine(
