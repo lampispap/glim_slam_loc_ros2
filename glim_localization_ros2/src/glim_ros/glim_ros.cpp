@@ -43,13 +43,15 @@ GlimROS::GlimROS(const rclcpp::NodeOptions& options)
   logger->sinks().push_back(ringbuffer_sink);
 
   bool debug = false;
-  bool localization_mode = false;
   this->declare_parameter<std::string>("dump_path", "/tmp/dump");
   this->declare_parameter<bool>("debug", false);
   this->get_parameter<bool>("debug", debug);
 
   this->declare_parameter<bool>("localization", false);
   this->get_parameter<bool>("localization", localization_mode);
+
+  this->declare_parameter<std::string>("map_save_path", "/tmp/dump");
+  this->get_parameter<std::string>("map_save_path", save_map_path_);
 
   if (debug) {
     spdlog::info("enable debug printing");
@@ -320,11 +322,8 @@ GlimROS::extension_subscriptions() {
 void GlimROS::handle_save_map_sevice(
         const std_srvs::srv::Trigger::Request::SharedPtr request,
         std_srvs::srv::Trigger::Response::SharedPtr response) {
-  std::string dump_path = "/tmp/dump";
-  this->get_parameter<std::string>("dump_path", dump_path);
-
-  this->wait();
-  this->save(dump_path);
+  this->wait(true);
+  this->save(save_map_path_);
 }
 
 void GlimROS::raw_odom_callback(

@@ -112,7 +112,7 @@ if(BUILD_WITH_VIEWER)
   )
 endif()
 
-install(DIRECTORY launch urdf
+install(DIRECTORY launch 
   DESTINATION share/${PROJECT_NAME}/
 )
 ament_auto_package()

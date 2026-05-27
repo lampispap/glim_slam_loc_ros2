@@ -94,6 +94,9 @@ class GlimROS : public rclcpp::Node {
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr load_srv;
   Eigen::Isometry3d initial_pose_;
 
+  // ROS Launch parameters
+  bool localization_mode = false;
+  std::string save_map_path_;
   std::string map_path;
 };
 
