@@ -1,17 +1,16 @@
 #ifndef HDL_GLOBAL_LOCALIZATION_OCCUPANCY_GRID_HPP
 #define HDL_GLOBAL_LOCALIZATION_OCCUPANCY_GRID_HPP
 
-#include <vector>
 #include <Eigen/Core>
-#include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-
 #include <opencv2/opencv.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <vector>
 
 namespace hdl_global_localization {
 
 class OccupancyGridMap {
-public:
+  public:
   using Ptr = std::shared_ptr<OccupancyGridMap>;
 
   OccupancyGridMap(double resolution, const cv::Mat& values) {
@@ -27,9 +26,14 @@ public:
   double grid_resolution() const { return resolution; }
   int width() const { return values.cols; }
   int height() const { return values.rows; }
-  const float* data() const { return reinterpret_cast<const float*>(values.data); }
+  const float* data() const {
+    return reinterpret_cast<const float*>(values.data);
+  }
 
-  void insert_points(const std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>& points, int min_points_per_grid) {
+  void insert_points(
+          const std::vector<Eigen::Vector2f,
+                            Eigen::aligned_allocator<Eigen::Vector2f>>& points,
+          int min_points_per_grid) {
     for (const auto& pt : points) {
       auto loc = grid_loc(pt);
       if (in_map(loc)) {
@@ -43,7 +47,10 @@ public:
     }
   }
 
-  double calc_score(const std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>& points) const {
+  double calc_score(
+          const std::vector<Eigen::Vector2f,
+                            Eigen::aligned_allocator<Eigen::Vector2f>>& points)
+          const {
     double sum_dists = 0.0;
     for (const auto& pt : points) {
       auto loc = grid_loc(pt);
@@ -71,18 +78,20 @@ public:
   }
 
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr to_rosmsg() const {
-    nav_msgs::msg::OccupancyGrid::SharedPtr msg(new nav_msgs::msg::OccupancyGrid);
+    nav_msgs::msg::OccupancyGrid::SharedPtr msg(
+            new nav_msgs::msg::OccupancyGrid);
     msg->header.frame_id = "map";
     msg->header.stamp.sec = 0;
     msg->header.stamp.nanosec = 0;
 
     msg->data.resize(values.rows * values.cols);
-    std::transform(values.begin(), values.end(), msg->data.begin(), [=](auto x) {
-      double x_ = x * 100.0;
-      return std::max(0.0, std::min(100.0, x_));
-    });
+    std::transform(values.begin(), values.end(), msg->data.begin(),
+                   [=](auto x) {
+                     double x_ = x * 100.0;
+                     return std::max(0.0, std::min(100.0, x_));
+                   });
 
-    // msg->info.map_load_time = 
+    // msg->info.map_load_time =
     msg->info.width = values.cols;
     msg->info.height = values.rows;
     msg->info.resolution = resolution;
@@ -94,15 +103,20 @@ public:
     return msg;
   }
 
-private:
+  private:
   bool in_map(const Eigen::Vector2i& pix) const {
     bool left_bound = (pix.array() >= Eigen::Array2i::Zero()).all();
-    bool right_bound = (pix.array() < Eigen::Array2i(values.cols, values.rows)).all();
+    bool right_bound =
+            (pix.array() < Eigen::Array2i(values.cols, values.rows)).all();
     return left_bound && right_bound;
   }
 
-  float value(const Eigen::Vector2i& loc) const { return values.at<float>(loc.y(), loc.x()); }
-  float& value(const Eigen::Vector2i& loc) { return values.at<float>(loc.y(), loc.x()); }
+  float value(const Eigen::Vector2i& loc) const {
+    return values.at<float>(loc.y(), loc.x());
+  }
+  float& value(const Eigen::Vector2i& loc) {
+    return values.at<float>(loc.y(), loc.x());
+  }
 
   Eigen::Vector2i grid_loc(const Eigen::Vector2f& pt) const {
     Eigen::Vector2i loc = (pt / resolution).array().floor().cast<int>();
@@ -110,7 +124,7 @@ private:
     return loc + offset;
   }
 
-private:
+  private:
   double resolution;
   cv::Mat1f values;
 };

@@ -113,9 +113,11 @@ void Geocentric::IntReverse(real X,
         // avoids cancellation.  Note that disc < 0 implies that r < 0.
         u += 2 * r * cos(ang / 3);
       }
-      real v = sqrt(Math::sq(u) + _e4a * q),  // guaranteed positive
-              // Avoid loss of accuracy when u < 0.  Underflow doesn't occur in
-              // e4 * q / (v - u) because u ~ e^4 when q is small and u < 0.
+      real v = sqrt(Math::sq(u) +
+                    _e4a * q),  // guaranteed positive
+                                // Avoid loss of accuracy when u < 0.  Underflow
+                                // doesn't occur in e4 * q / (v - u) because u ~
+                                // e^4 when q is small and u < 0.
               uv = u < 0 ? _e4a * q / (v - u)
                          : u + v,  // u+v, guaranteed positive
               // Need to guard against w going negative due to roundoff in uv -

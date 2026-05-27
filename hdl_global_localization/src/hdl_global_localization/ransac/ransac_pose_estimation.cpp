@@ -1,5 +1,6 @@
 /*
- * This RansacPoseEstimation implementation was written based on pcl::SampleConsensusPrerejective
+ * This RansacPoseEstimation implementation was written based on
+ * pcl::SampleConsensusPrerejective
  *
  * Software License Agreement (BSD License)
  *
@@ -40,28 +41,31 @@
  *
  */
 
-#include <atomic>
-#include <vector>
-#include <random>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/registration/correspondence_rejection_poly.h>
+#include <pcl/registration/transformation_estimation_svd.h>
+#include <pcl/search/kdtree.h>
 #include <spdlog/spdlog.h>
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/registration/transformation_estimation_svd.h>
-#include <pcl/registration/correspondence_rejection_poly.h>
-
-#include <hdl_global_localization/ransac/ransac_pose_estimation.hpp>
+#include <atomic>
 #include <hdl_global_localization/ransac/matching_cost_evaluater_flann.hpp>
 #include <hdl_global_localization/ransac/matching_cost_evaluater_voxels.hpp>
+#include <hdl_global_localization/ransac/ransac_pose_estimation.hpp>
+#include <random>
+#include <vector>
 
 namespace hdl_global_localization {
 
 template <typename FeatureT>
-RansacPoseEstimation<FeatureT>::RansacPoseEstimation(const RansacPoseEstimationParams& params) : params(params) {}
+RansacPoseEstimation<FeatureT>::RansacPoseEstimation(
+        const RansacPoseEstimationParams& params)
+    : params(params) {}
 
 template <typename FeatureT>
-void RansacPoseEstimation<FeatureT>::set_target(pcl::PointCloud<pcl::PointXYZ>::ConstPtr target, typename pcl::PointCloud<FeatureT>::ConstPtr target_features) {
+void RansacPoseEstimation<FeatureT>::set_target(
+        pcl::PointCloud<pcl::PointXYZ>::ConstPtr target,
+        typename pcl::PointCloud<FeatureT>::ConstPtr target_features) {
   this->target = target;
   this->target_features = target_features;
   feature_tree.reset(new pcl::KdTreeFLANN<FeatureT>);
@@ -76,16 +80,20 @@ void RansacPoseEstimation<FeatureT>::set_target(pcl::PointCloud<pcl::PointXYZ>::
 }
 
 template <typename FeatureT>
-void RansacPoseEstimation<FeatureT>::set_source(pcl::PointCloud<pcl::PointXYZ>::ConstPtr source, typename pcl::PointCloud<FeatureT>::ConstPtr source_features) {
+void RansacPoseEstimation<FeatureT>::set_source(
+        pcl::PointCloud<pcl::PointXYZ>::ConstPtr source,
+        typename pcl::PointCloud<FeatureT>::ConstPtr source_features) {
   this->source = source;
   this->source_features = source_features;
 }
 
 template <typename FeatureT>
 GlobalLocalizationResults RansacPoseEstimation<FeatureT>::estimate() {
-  pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> transformation_estimation;
+  pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>
+          transformation_estimation;
 
-  pcl::registration::CorrespondenceRejectorPoly<pcl::PointXYZ, pcl::PointXYZ> correspondence_rejection;
+  pcl::registration::CorrespondenceRejectorPoly<pcl::PointXYZ, pcl::PointXYZ>
+          correspondence_rejection;
   correspondence_rejection.setInputTarget(target);
   correspondence_rejection.setInputSource(source);
   correspondence_rejection.setCardinality(3);
@@ -96,7 +104,9 @@ GlobalLocalizationResults RansacPoseEstimation<FeatureT>::estimate() {
 #pragma omp parallel for
   for (int i = 0; i < source->size(); i++) {
     std::vector<float> sq_dists;
-    feature_tree->nearestKSearch(source_features->at(i), params.correspondence_randomness, similar_features[i], sq_dists);
+    feature_tree->nearestKSearch(source_features->at(i),
+                                 params.correspondence_randomness,
+                                 similar_features[i], sq_dists);
   }
 
   std::vector<std::mt19937> mts(omp_get_max_threads());
@@ -128,7 +138,8 @@ GlobalLocalizationResults RansacPoseEstimation<FeatureT>::estimate() {
     }
 
     Eigen::Matrix4f transformation;
-    transformation_estimation.estimateRigidTransformation(*source, samples, *target, correspondences, transformation);
+    transformation_estimation.estimateRigidTransformation(
+            *source, samples, *target, correspondences, transformation);
 
     // if (!params.is_valid(Eigen::Isometry3f(transformation))) {
     //   continue;
@@ -136,11 +147,15 @@ GlobalLocalizationResults RansacPoseEstimation<FeatureT>::estimate() {
 
     matching_count++;
     double inlier_fraction = 0.0;
-    double matching_error = evaluater->calc_matching_error(*source, transformation, &inlier_fraction);
-    spdlog::info("RANSAC : iteration={} matching_count={} error={} inlier={}", iterations, matching_count, matching_error, inlier_fraction);
+    double matching_error = evaluater->calc_matching_error(
+            *source, transformation, &inlier_fraction);
+    spdlog::info("RANSAC : iteration={} matching_count={} error={} inlier={}",
+                 iterations, matching_count, matching_error, inlier_fraction);
 
     if (inlier_fraction > min_inlier_fraction) {
-      results[i].reset(new GlobalLocalizationResult(matching_error, inlier_fraction, Eigen::Isometry3f(transformation)));
+      results[i].reset(
+              new GlobalLocalizationResult(matching_error, inlier_fraction,
+                                           Eigen::Isometry3f(transformation)));
     }
   }
 
@@ -149,13 +164,14 @@ GlobalLocalizationResults RansacPoseEstimation<FeatureT>::estimate() {
 
 template <typename FeatureT>
 void RansacPoseEstimation<FeatureT>::select_samples(
-  std::mt19937& mt,
-  const std::vector<std::vector<int>>& similar_features,
-  std::vector<int>& samples,
-  std::vector<int>& correspondences) const {
+        std::mt19937& mt,
+        const std::vector<std::vector<int>>& similar_features,
+        std::vector<int>& samples,
+        std::vector<int>& correspondences) const {
   samples.resize(3);
   for (int i = 0; i < samples.size(); i++) {
-    samples[i] = std::uniform_int_distribution<>(0, similar_features.size() - 1)(mt);
+    samples[i] =
+            std::uniform_int_distribution<>(0, similar_features.size() - 1)(mt);
 
     for (int j = 0; j < i; j++) {
       if (samples[j] == samples[i]) {
@@ -169,7 +185,8 @@ void RansacPoseEstimation<FeatureT>::select_samples(
     if (similar_features[samples[i]].size() == 1) {
       correspondences[i] = similar_features[samples[i]][0];
     } else {
-      int idx = std::uniform_int_distribution<>(0, similar_features[samples[i]].size() - 1)(mt);
+      int idx = std::uniform_int_distribution<>(
+              0, similar_features[samples[i]].size() - 1)(mt);
       correspondences[i] = similar_features[samples[i]][idx];
     }
   }

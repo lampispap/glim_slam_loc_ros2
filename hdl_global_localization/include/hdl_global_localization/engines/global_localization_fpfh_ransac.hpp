@@ -13,18 +13,24 @@ struct GlobalLocalizationEngineFPFH_RANSACParams {
   double search_radius = 8.0;
 };
 
-  class GlobalLocalizationEngineFPFH_RANSAC : public GlobalLocalizationEngine {
-public:
-  GlobalLocalizationEngineFPFH_RANSAC(const GlobalLocalizationEngineFPFH_RANSACParams& params = GlobalLocalizationEngineFPFH_RANSACParams());
+class GlobalLocalizationEngineFPFH_RANSAC : public GlobalLocalizationEngine {
+  public:
+  GlobalLocalizationEngineFPFH_RANSAC(
+          const GlobalLocalizationEngineFPFH_RANSACParams& params =
+                  GlobalLocalizationEngineFPFH_RANSACParams());
   virtual ~GlobalLocalizationEngineFPFH_RANSAC() override;
 
-  virtual void set_global_map(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) override;
-  virtual GlobalLocalizationResults query(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, int max_num_candidates) override;
+  virtual void set_global_map(
+          pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) override;
+  virtual GlobalLocalizationResults query(
+          pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud,
+          int max_num_candidates) override;
 
-protected:
-  pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr extract_fpfh(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud);
+  protected:
+  pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr extract_fpfh(
+          pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud);
 
-protected:
+  protected:
   const GlobalLocalizationEngineFPFH_RANSACParams params;
 
   std::unique_ptr<RansacPoseEstimation<pcl::FPFHSignature33>> ransac;

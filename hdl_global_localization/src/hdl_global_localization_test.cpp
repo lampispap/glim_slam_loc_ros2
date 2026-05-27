@@ -1,26 +1,33 @@
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/common/transforms.h>
-
-#include <ros/ros.h>
-#include <pcl_ros/point_cloud.h>
-#include <sensor_msgs/PointCloud2.h>
-
+#include <hdl_global_localization/QueryGlobalLocalization.h>
 #include <hdl_global_localization/SetGlobalLocalizationEngine.h>
 #include <hdl_global_localization/SetGlobalMap.h>
-#include <hdl_global_localization/QueryGlobalLocalization.h>
+#include <pcl/common/transforms.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
 
 class GlobalLocalizationTestNode {
-public:
+  public:
   GlobalLocalizationTestNode() : nh() {
-    set_engine_service = nh.serviceClient<hdl_global_localization::SetGlobalLocalizationEngine>("/hdl_global_localization/set_engine");
-    set_global_map_service = nh.serviceClient<hdl_global_localization::SetGlobalMap>("/hdl_global_localization/set_global_map");
-    query_service = nh.serviceClient<hdl_global_localization::QueryGlobalLocalization>("/hdl_global_localization/query");
+    set_engine_service = nh.serviceClient<
+            hdl_global_localization::SetGlobalLocalizationEngine>(
+            "/hdl_global_localization/set_engine");
+    set_global_map_service =
+            nh.serviceClient<hdl_global_localization::SetGlobalMap>(
+                    "/hdl_global_localization/set_global_map");
+    query_service =
+            nh.serviceClient<hdl_global_localization::QueryGlobalLocalization>(
+                    "/hdl_global_localization/query");
 
-    globalmap_pub = nh.advertise<sensor_msgs::PointCloud2>("/globalmap", 1, true);
+    globalmap_pub =
+            nh.advertise<sensor_msgs::PointCloud2>("/globalmap", 1, true);
     points_pub = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 1);
-    points_sub = nh.subscribe("/velodyne_points", 1, &GlobalLocalizationTestNode::points_callback, this);
+    points_sub =
+            nh.subscribe("/velodyne_points", 1,
+                         &GlobalLocalizationTestNode::points_callback, this);
   }
 
   void set_engine(const std::string& engine_name) {
@@ -57,24 +64,28 @@ public:
     }
 
     const auto& estimated = srv.response.poses[0];
-    Eigen::Quaternionf quat(estimated.orientation.w, estimated.orientation.x, estimated.orientation.y, estimated.orientation.z);
-    Eigen::Vector3f trans(estimated.position.x, estimated.position.y, estimated.position.z);
+    Eigen::Quaternionf quat(estimated.orientation.w, estimated.orientation.x,
+                            estimated.orientation.y, estimated.orientation.z);
+    Eigen::Vector3f trans(estimated.position.x, estimated.position.y,
+                          estimated.position.z);
 
     Eigen::Isometry3f transformation = Eigen::Isometry3f::Identity();
     transformation.linear() = quat.toRotationMatrix();
     transformation.translation() = trans;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+            new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*cloud_msg, *cloud);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed(
+            new pcl::PointCloud<pcl::PointXYZ>);
     pcl::transformPointCloud(*cloud, *transformed, transformation);
     transformed->header.frame_id = "map";
 
     points_pub.publish(transformed);
   }
 
-private:
+  private:
   ros::NodeHandle nh;
   ros::ServiceClient set_engine_service;
   ros::ServiceClient set_global_map_service;
@@ -89,7 +100,8 @@ private:
 int main(int argc, char** argv) {
   ros::init(argc, argv, "hdl_global_localization_test");
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr global_map(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr global_map(
+          new pcl::PointCloud<pcl::PointXYZ>);
   pcl::io::loadPCDFile(argv[1], *global_map);
 
   GlobalLocalizationTestNode node;

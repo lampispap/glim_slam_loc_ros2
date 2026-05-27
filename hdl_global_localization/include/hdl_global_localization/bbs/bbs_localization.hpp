@@ -1,26 +1,27 @@
 /**
  * @brief Branch-and-Bound Search-based 2D Global Localization
  * @ref Hess et al., "Real-Time Loop Closure in 2D LIDAR SLAM", ICRA2016
- * @ref https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45466.pdf
+ * @ref
+ * https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45466.pdf
  */
 #ifndef HDL_GLOBAL_LOCALIZATION_BBS_LOCALIZATION_HPP
 #define HDL_GLOBAL_LOCALIZATION_BBS_LOCALIZATION_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <boost/optional.hpp>
 #include <memory>
 #include <queue>
 #include <vector>
-#include <boost/optional.hpp>
-
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 
 namespace hdl_global_localization {
 
 class OccupancyGridMap;
 
 struct DiscreteTransformation {
-public:
-  using Points = std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>;
+  public:
+  using Points = std::vector<Eigen::Vector2f,
+                             Eigen::aligned_allocator<Eigen::Vector2f>>;
 
   DiscreteTransformation();
   DiscreteTransformation(int level, int x, int y, int theta);
@@ -30,15 +31,23 @@ public:
 
   bool is_leaf() const;
 
-  Eigen::Isometry2f transformation(double theta_resolution, const std::vector<std::shared_ptr<OccupancyGridMap>>& gridmap_pyramid);
+  Eigen::Isometry2f transformation(
+          double theta_resolution,
+          const std::vector<std::shared_ptr<OccupancyGridMap>>&
+                  gridmap_pyramid);
 
-  Points transform(const Points& points, double trans_resolution, double theta_resolution);
+  Points transform(const Points& points,
+                   double trans_resolution,
+                   double theta_resolution);
 
-  double calc_score(const Points& points, double theta_resolution, const std::vector<std::shared_ptr<OccupancyGridMap>>& gridmap_pyramid);
+  double calc_score(const Points& points,
+                    double theta_resolution,
+                    const std::vector<std::shared_ptr<OccupancyGridMap>>&
+                            gridmap_pyramid);
 
   std::vector<DiscreteTransformation> branch();
 
-public:
+  public:
   double score;
   int level;
   int x;
@@ -65,22 +74,31 @@ struct BBSParams {
 };
 
 class BBSLocalization {
-public:
-  using Points = std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>;
+  public:
+  using Points = std::vector<Eigen::Vector2f,
+                             Eigen::aligned_allocator<Eigen::Vector2f>>;
 
   BBSLocalization(const BBSParams& params = BBSParams());
   ~BBSLocalization();
 
-  void set_map(const Points& map_points, double resolution, int width, int height, int pyramid_levels, int max_points_per_cell);
+  void set_map(const Points& map_points,
+               double resolution,
+               int width,
+               int height,
+               int pyramid_levels,
+               int max_points_per_cell);
 
-  boost::optional<Eigen::Isometry2f> localize(const Points& scan_points, double min_score, double* best_score = nullptr);
+  boost::optional<Eigen::Isometry2f> localize(const Points& scan_points,
+                                              double min_score,
+                                              double* best_score = nullptr);
 
   std::shared_ptr<const OccupancyGridMap> gridmap() const;
 
-private:
-  std::priority_queue<DiscreteTransformation> create_init_transset(const Points& scan_points) const;
+  private:
+  std::priority_queue<DiscreteTransformation> create_init_transset(
+          const Points& scan_points) const;
 
-private:
+  private:
   BBSParams params;
 
   double theta_resolution;

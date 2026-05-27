@@ -1,36 +1,35 @@
-#include <iostream>
-#include <boost/filesystem.hpp>
-
-#include <ros/ros.h>
-
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-
-#include <pcl_ros/point_cloud.h>
-#include <hdl_global_localization/SetGlobalMap.h>
 #include <hdl_global_localization/QueryGlobalLocalization.h>
 #include <hdl_global_localization/SetGlobalLocalizationEngine.h>
+#include <hdl_global_localization/SetGlobalMap.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+#include <ros/ros.h>
 
+#include <boost/filesystem.hpp>
 #include <hdl_global_localization/engines/global_localization_bbs.hpp>
 #include <hdl_global_localization/engines/global_localization_fpfh_ransac.hpp>
 #include <hdl_global_localization/engines/global_localization_fpfh_teaser.hpp>
+#include <iostream>
 
 namespace hdl_global_localization {
 
 class GlobalLocalizationNode {
-public:
+  public:
   GlobalLocalizationNode() : nh(), private_nh("~") {
-    set_engine(private_nh.param<std::string>("global_localization_engine", "FPFH_RANSAC"));
+    set_engine(private_nh.param<std::string>("global_localization_engine",
+                                             "FPFH_RANSAC"));
 
-    set_engine_server = private_nh.advertiseService("set_engine", &GlobalLocalizationNode::set_engine, this);
-    set_global_map_server = private_nh.advertiseService("set_global_map", &GlobalLocalizationNode::set_global_map, this);
-    query_server = private_nh.advertiseService("query", &GlobalLocalizationNode::query, this);
+    set_engine_server = private_nh.advertiseService(
+            "set_engine", &GlobalLocalizationNode::set_engine, this);
+    set_global_map_server = private_nh.advertiseService(
+            "set_global_map", &GlobalLocalizationNode::set_global_map, this);
+    query_server = private_nh.advertiseService(
+            "query", &GlobalLocalizationNode::query, this);
   }
 
-private:
-
-
+  private:
   bool set_engine(const std::string& engine_name) {
     if (engine_name == "BBS") {
       engine.reset(new GlobalLocalizationBBS(private_nh));
@@ -54,7 +53,8 @@ private:
     return true;
   }
 
-  bool set_engine(SetGlobalLocalizationEngine::Request& req, SetGlobalLocalizationEngine::Response& res) {
+  bool set_engine(SetGlobalLocalizationEngine::Request& req,
+                  SetGlobalLocalizationEngine::Response& res) {
     ROS_INFO_STREAM("Set Global Localization Engine");
     return set_engine(req.engine_name.data);
   }
@@ -62,9 +62,11 @@ private:
   bool set_global_map(SetGlobalMapRequest& req, SetGlobalMapResponse& res) {
     ROS_INFO_STREAM("Global Map Received");
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+            new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(req.global_map, *cloud);
-    cloud = downsample(cloud, private_nh.param<double>("globalmap_downsample_resolution", 0.5));
+    cloud = downsample(cloud, private_nh.param<double>(
+                                      "globalmap_downsample_resolution", 0.5));
 
     globalmap_header = req.global_map.header;
     global_map = cloud;
@@ -75,16 +77,19 @@ private:
     return true;
   }
 
-  bool query(QueryGlobalLocalizationRequest& req, QueryGlobalLocalizationResponse& res) {
+  bool query(QueryGlobalLocalizationRequest& req,
+             QueryGlobalLocalizationResponse& res) {
     ROS_INFO_STREAM("Query Global Localization");
     if (global_map == nullptr) {
       ROS_WARN_STREAM("No Globalmap");
       return false;
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+            new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(req.cloud, *cloud);
-    cloud = downsample(cloud, private_nh.param<double>("query_downsample_resolution", 0.5));
+    cloud = downsample(cloud, private_nh.param<double>(
+                                      "query_downsample_resolution", 0.5));
 
     auto results = engine->query(cloud, req.max_num_candidates);
 
@@ -115,7 +120,7 @@ private:
     return !results.results.empty();
   }
 
-private:
+  private:
   ros::NodeHandle nh;
   ros::NodeHandle private_nh;
 

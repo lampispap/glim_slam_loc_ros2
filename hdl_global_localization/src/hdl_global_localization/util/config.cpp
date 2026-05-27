@@ -1,16 +1,14 @@
-#include <hdl_global_localization/util/config.hpp>
-
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <spdlog/spdlog.h>
-#include <nlohmann/json.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
+#include <fstream>
+#include <hdl_global_localization/util/config.hpp>
 #include <hdl_global_localization/util/convert_to_string.hpp>
+#include <iomanip>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <sstream>
 
 namespace hdl_global_localization {
 
@@ -42,7 +40,9 @@ struct traits<Eigen::Matrix<T, N, M>> {
     return Eigen::Map<const OutType>(in.data());
   }
 
-  static std::vector<double> invert(const OutType& value) { return std::vector<double>(value.data(), value.data() + N * M); }
+  static std::vector<double> invert(const OutType& value) {
+    return std::vector<double>(value.data(), value.data() + N * M);
+  }
 };
 
 // Eigen Quaternion IO
@@ -59,7 +59,9 @@ struct traits<Eigen::Quaternion<T>> {
     return OutType(in.data()).normalized();
   }
 
-  static std::vector<double> invert(const OutType& value) { return std::vector<double>{value.x(), value.y(), value.z(), value.w()}; }
+  static std::vector<double> invert(const OutType& value) {
+    return std::vector<double>{value.x(), value.y(), value.z(), value.w()};
+  }
 };
 
 // Eigen Isometry
@@ -75,7 +77,8 @@ struct traits<Eigen::Transform<T, 3, Eigen::Isometry>> {
 
     OutType se3 = OutType::Identity();
     se3.translation() = Eigen::Map<const Eigen::Matrix<T, 3, 1>>(in.data());
-    se3.linear() = Eigen::Quaternion<T>(in.data() + 3).normalized().toRotationMatrix();
+    se3.linear() =
+            Eigen::Quaternion<T>(in.data() + 3).normalized().toRotationMatrix();
     return se3;
   }
 
@@ -100,7 +103,10 @@ struct traits<std::vector<Eigen::Isometry3d>> {
     for (int i = 0; i < poses.size(); i++) {
       poses[i].setIdentity();
       poses[i].translation() << in[i * 7], in[i * 7 + 1], in[i * 7 + 2];
-      poses[i].linear() = Eigen::Quaterniond(in[i * 7 + 6], in[i * 7 + 3], in[i * 7 + 4], in[i * 7 + 5]).normalized().toRotationMatrix();
+      poses[i].linear() = Eigen::Quaterniond(in[i * 7 + 6], in[i * 7 + 3],
+                                             in[i * 7 + 4], in[i * 7 + 5])
+                                  .normalized()
+                                  .toRotationMatrix();
     }
 
     return poses;
@@ -147,7 +153,8 @@ Config::Config(const std::string& config_filename) {
 Config::~Config() {}
 
 template <typename T>
-std::optional<T> Config::param(const std::string& module_name, const std::string& param_name) const {
+std::optional<T> Config::param(const std::string& module_name,
+                               const std::string& param_name) const {
   const auto& json = std::any_cast<const nlohmann::json&>(config);
 
   auto module = json.find(module_name);
@@ -164,7 +171,9 @@ std::optional<T> Config::param(const std::string& module_name, const std::string
 }
 
 template <typename T>
-T Config::param(const std::string& module_name, const std::string& param_name, const T& default_value) const {
+T Config::param(const std::string& module_name,
+                const std::string& param_name,
+                const T& default_value) const {
   auto found = param<T>(module_name, param_name);
   if (!found) {
     spdlog::warn("param {}/{} not found", module_name, param_name);
@@ -172,24 +181,29 @@ T Config::param(const std::string& module_name, const std::string& param_name, c
     return default_value;
   }
 
-  spdlog::debug("param {}/{}={}", module_name, param_name, convert_to_string(found.value()));
+  spdlog::debug("param {}/{}={}", module_name, param_name,
+                convert_to_string(found.value()));
   return found.value();
 }
 
 template <typename T>
-T Config::param_cast(const std::string& module_name, const std::string& param_name) const {
+T Config::param_cast(const std::string& module_name,
+                     const std::string& param_name) const {
   auto found = param<T>(module_name, param_name);
   if (!found) {
     spdlog::critical("param {}/{} not found", module_name, param_name);
     abort();
   }
 
-  spdlog::debug("param {}/{}={}", module_name, param_name, convert_to_string(found.value()));
+  spdlog::debug("param {}/{}={}", module_name, param_name,
+                convert_to_string(found.value()));
   return *found;
 }
 
 template <typename T>
-bool Config::override_param(const std::string& module_name, const std::string& param_name, const T& value) {
+bool Config::override_param(const std::string& module_name,
+                            const std::string& param_name,
+                            const T& value) {
   auto& json = std::any_cast<nlohmann::json&>(config);
 
   json[module_name][param_name] = traits<T>::invert(value);
@@ -198,7 +212,9 @@ bool Config::override_param(const std::string& module_name, const std::string& p
 }
 
 template <typename T>
-std::optional<T> Config::param_nested(const std::vector<std::string>& nested_module_names, const std::string& param_name) const {
+std::optional<T> Config::param_nested(
+        const std::vector<std::string>& nested_module_names,
+        const std::string& param_name) const {
   const auto& json = std::any_cast<const nlohmann::json&>(config);
 
   nlohmann::json::const_iterator itr = json.find(nested_module_names[0]);
@@ -224,7 +240,9 @@ std::optional<T> Config::param_nested(const std::vector<std::string>& nested_mod
 }
 
 template <typename T>
-T Config::param_nested(const std::vector<std::string>& nested_module_names, const std::string& param_name, const T& default_value) const {
+T Config::param_nested(const std::vector<std::string>& nested_module_names,
+                       const std::string& param_name,
+                       const T& default_value) const {
   auto found = param_nested<T>(nested_module_names, param_name);
   if (!found) {
     std::stringstream param_name;
@@ -240,7 +258,8 @@ T Config::param_nested(const std::vector<std::string>& nested_module_names, cons
 }
 
 template <typename T>
-T Config::param_cast_nested(const std::vector<std::string>& nested_module_names, const std::string& param_name) const {
+T Config::param_cast_nested(const std::vector<std::string>& nested_module_names,
+                            const std::string& param_name) const {
   auto found = param_nested<T>(nested_module_names, param_name);
   if (!found) {
     std::stringstream param_name;
@@ -260,12 +279,17 @@ void Config::save(const std::string& path) const {
   ofs << std::setw(2) << json << std::endl;
 }
 
-#define DEFINE_SPECIALIZATION(TYPE)                                                                           \
-  template TYPE Config::param(const std::string&, const std::string&, const TYPE&) const;                     \
-  template TYPE Config::param_cast(const std::string&, const std::string&) const;                             \
-  template TYPE Config::param_nested(const std::vector<std::string>&, const std::string&, const TYPE&) const; \
-  template TYPE Config::param_cast_nested(const std::vector<std::string>&, const std::string&) const;         \
-  template bool Config::override_param(const std::string&, const std::string&, const TYPE&);
+#define DEFINE_SPECIALIZATION(TYPE)                                            \
+  template TYPE Config::param(const std::string&, const std::string&,          \
+                              const TYPE&) const;                              \
+  template TYPE Config::param_cast(const std::string&, const std::string&)     \
+          const;                                                               \
+  template TYPE Config::param_nested(const std::vector<std::string>&,          \
+                                     const std::string&, const TYPE&) const;   \
+  template TYPE Config::param_cast_nested(const std::vector<std::string>&,     \
+                                          const std::string&) const;           \
+  template bool Config::override_param(const std::string&, const std::string&, \
+                                       const TYPE&);
 
 DEFINE_SPECIALIZATION(bool)
 DEFINE_SPECIALIZATION(int)
@@ -284,4 +308,4 @@ DEFINE_SPECIALIZATION(Eigen::Isometry3d)
 
 DEFINE_SPECIALIZATION(std::vector<Eigen::Isometry3d>)
 
-}  // namespace glim
+}  // namespace hdl_global_localization

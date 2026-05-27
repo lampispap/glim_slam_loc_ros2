@@ -1,13 +1,12 @@
-#include <hdl_global_localization/engines/global_localization_bbs.hpp>
-
-#include <spdlog/spdlog.h>
-#include <rclcpp/rclcpp.hpp>
 #include <pcl_conversions/pcl_conversions.h>
-#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <spdlog/spdlog.h>
 
-#include <hdl_global_localization/util/config.hpp>
 #include <hdl_global_localization/bbs/bbs_localization.hpp>
 #include <hdl_global_localization/bbs/occupancy_gridmap.hpp>
+#include <hdl_global_localization/engines/global_localization_bbs.hpp>
+#include <hdl_global_localization/util/config.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace hdl_global_localization {
 
@@ -38,20 +37,28 @@ GlobalLocalizationBBSParams::GlobalLocalizationBBSParams() {
 
 GlobalLocalizationBBSParams::~GlobalLocalizationBBSParams() {}
 
-GlobalLocalizationBBS::GlobalLocalizationBBS(rclcpp::Node& node, const GlobalLocalizationBBSParams& params) : params(params) {
+GlobalLocalizationBBS::GlobalLocalizationBBS(
+        rclcpp::Node& node, const GlobalLocalizationBBSParams& params)
+    : params(params) {
   auto gridmap_qos = rclcpp::SystemDefaultsQoS();
   gridmap_qos.get_rmw_qos_profile().depth = 1;
-  gridmap_qos.get_rmw_qos_profile().reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-  gridmap_qos.get_rmw_qos_profile().durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  gridmap_pub = node.create_publisher<nav_msgs::msg::OccupancyGrid>("bbs/gridmap", gridmap_qos);
+  gridmap_qos.get_rmw_qos_profile().reliability =
+          RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  gridmap_qos.get_rmw_qos_profile().durability =
+          RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+  gridmap_pub = node.create_publisher<nav_msgs::msg::OccupancyGrid>(
+          "bbs/gridmap", gridmap_qos);
 
-  map_slice_pub = node.create_publisher<sensor_msgs::msg::PointCloud2>("bbs/map_slice", rclcpp::SensorDataQoS());
-  scan_slice_pub = node.create_publisher<sensor_msgs::msg::PointCloud2>("bbs/scan_slice", rclcpp::SensorDataQoS());
+  map_slice_pub = node.create_publisher<sensor_msgs::msg::PointCloud2>(
+          "bbs/map_slice", rclcpp::SensorDataQoS());
+  scan_slice_pub = node.create_publisher<sensor_msgs::msg::PointCloud2>(
+          "bbs/scan_slice", rclcpp::SensorDataQoS());
 }
 
 GlobalLocalizationBBS ::~GlobalLocalizationBBS() {}
 
-void GlobalLocalizationBBS::set_global_map(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
+void GlobalLocalizationBBS::set_global_map(
+        pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
   // params.max_range = private_nh.param<double>("bbs/max_range", 15.0);
   // params.min_tx = private_nh.param<double>("bbs/min_tx", -10.0);
   // params.max_tx = private_nh.param<double>("bbs/max_tx", 10.0);
@@ -76,7 +83,8 @@ void GlobalLocalizationBBS::set_global_map(pcl::PointCloud<pcl::PointXYZ>::Const
   double map_resolution = params.map_resolution;
   int map_pyramid_level = params.map_pyramid_level;
   int max_points_per_cell = params.max_points_per_cell;
-  bbs->set_map(map_2d, map_resolution, map_width, map_height, map_pyramid_level, max_points_per_cell);
+  bbs->set_map(map_2d, map_resolution, map_width, map_height, map_pyramid_level,
+               max_points_per_cell);
 
   auto map_3d = unslice(map_2d);
   map_3d->header.frame_id = "map";
@@ -88,7 +96,9 @@ void GlobalLocalizationBBS::set_global_map(pcl::PointCloud<pcl::PointXYZ>::Const
   gridmap_pub->publish(*bbs->gridmap()->to_rosmsg());
 }
 
-GlobalLocalizationResults GlobalLocalizationBBS::query(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, int max_num_candidates) {
+GlobalLocalizationResults GlobalLocalizationBBS::query(
+        pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud,
+        int max_num_candidates) {
   double scan_min_z = params.scan_min_z;
   double scan_max_z = params.scan_max_z;
   auto scan_2d = slice(*cloud, scan_min_z, scan_max_z);
@@ -122,12 +132,16 @@ GlobalLocalizationResults GlobalLocalizationBBS::query(pcl::PointCloud<pcl::Poin
   trans_3d.translation().head<2>() = trans_2d->translation();
 
   results.resize(1);
-  results[0].reset(new GlobalLocalizationResult(best_score, best_score, trans_3d));
+  results[0].reset(
+          new GlobalLocalizationResult(best_score, best_score, trans_3d));
 
   return GlobalLocalizationResults(results);
 }
 
-GlobalLocalizationBBS::Points2D GlobalLocalizationBBS::slice(const pcl::PointCloud<pcl::PointXYZ>& cloud, double min_z, double max_z) const {
+GlobalLocalizationBBS::Points2D GlobalLocalizationBBS::slice(
+        const pcl::PointCloud<pcl::PointXYZ>& cloud,
+        double min_z,
+        double max_z) const {
   Points2D points_2d;
   points_2d.reserve(cloud.size());
   for (int i = 0; i < cloud.size(); i++) {
@@ -138,7 +152,8 @@ GlobalLocalizationBBS::Points2D GlobalLocalizationBBS::slice(const pcl::PointClo
   return points_2d;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr GlobalLocalizationBBS::unslice(const Points2D& points) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr GlobalLocalizationBBS::unslice(
+        const Points2D& points) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   cloud->resize(points.size());
   for (int i = 0; i < points.size(); i++) {

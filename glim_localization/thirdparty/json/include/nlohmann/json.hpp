@@ -863,9 +863,10 @@ class basic_json  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spe
       case value_t::discarded:
         m_data.m_type = value_t::discarded;
         break;
-      default:               // LCOV_EXCL_LINE
-        JSON_ASSERT(false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
-                             // LCOV_EXCL_LINE
+      default:  // LCOV_EXCL_LINE
+        JSON_ASSERT(
+                false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
+                         // LCOV_EXCL_LINE
     }
     JSON_ASSERT(m_data.m_type == val.type());
     set_parents();
@@ -4799,8 +4800,9 @@ class basic_json  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spe
         case value_t::binary:           // LCOV_EXCL_LINE
         case value_t::discarded:        // LCOV_EXCL_LINE
         default:                        // LCOV_EXCL_LINE
-          JSON_ASSERT(false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
-                               // LCOV_EXCL_LINE
+          JSON_ASSERT(
+                  false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
+                           // LCOV_EXCL_LINE
       }
     };
 
@@ -5192,10 +5194,11 @@ struct less<::nlohmann::detail::
 /// @brief exchanges the values of two JSON objects
 /// @sa https://json.nlohmann.me/api/basic_json/std_swap/
 NLOHMANN_BASIC_JSON_TPL_DECLARATION
-inline void swap(
-        nlohmann::NLOHMANN_BASIC_JSON_TPL& j1,
-        nlohmann::NLOHMANN_BASIC_JSON_TPL& j2) noexcept(  // NOLINT(readability-inconsistent-declaration-parameter-name,
-                                                          // cert-dcl58-cpp)
+inline void
+swap(nlohmann::NLOHMANN_BASIC_JSON_TPL& j1,
+     nlohmann::NLOHMANN_BASIC_JSON_TPL&
+             j2) noexcept(  // NOLINT(readability-inconsistent-declaration-parameter-name,
+                            // cert-dcl58-cpp)
         is_nothrow_move_constructible<nlohmann::NLOHMANN_BASIC_JSON_TPL>::
                 value &&  // NOLINT(misc-redundant-expression,cppcoreguidelines-noexcept-swap,performance-noexcept-swap)
         is_nothrow_move_assignable<nlohmann::NLOHMANN_BASIC_JSON_TPL>::value) {

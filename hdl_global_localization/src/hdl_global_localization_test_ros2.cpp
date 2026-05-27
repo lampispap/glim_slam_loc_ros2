@@ -1,27 +1,29 @@
-#include <iostream>
-
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
 #include <pcl/io/auto_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-#include <rclcpp/rclcpp.hpp>
-#include <hdl_global_localization/srv/set_global_map.hpp>
-#include <hdl_global_localization/srv/set_global_localization_engine.hpp>
 #include <hdl_global_localization/srv/query_global_localization.hpp>
+#include <hdl_global_localization/srv/set_global_localization_engine.hpp>
+#include <hdl_global_localization/srv/set_global_map.hpp>
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 namespace hdl_global_localization {
 
 class TestNode : public rclcpp::Node {
-public:
-  TestNode(rclcpp::NodeOptions& options) : rclcpp::Node("hdl_global_localization_test", options) {
-    const std::string global_map_path = "/home/koide/datasets/hdl_localization/hdl_400_map.pcd";
+  public:
+  TestNode(rclcpp::NodeOptions& options)
+      : rclcpp::Node("hdl_global_localization_test", options) {
+    const std::string global_map_path =
+            "/home/koide/datasets/hdl_localization/hdl_400_map.pcd";
 
     global_map = pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     pcl::io::load(global_map_path, *global_map);
-    RCLCPP_INFO_STREAM(this->get_logger(), "Global map=" << global_map->size() << " points");
+    RCLCPP_INFO_STREAM(this->get_logger(),
+                       "Global map=" << global_map->size() << " points");
   }
 
-private:
+  private:
   pcl::PointCloud<pcl::PointXYZ>::Ptr global_map;
 };
 

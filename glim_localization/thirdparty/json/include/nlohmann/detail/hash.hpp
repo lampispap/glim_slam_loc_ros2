@@ -106,9 +106,10 @@ std::size_t hash(const BasicJsonType& j) {
       return seed;
     }
 
-    default:               // LCOV_EXCL_LINE
-      JSON_ASSERT(false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
-                           // LCOV_EXCL_LINE
+    default:  // LCOV_EXCL_LINE
+      JSON_ASSERT(
+              false);  // NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert)
+                       // LCOV_EXCL_LINE
       return 0;  // LCOV_EXCL_LINE
   }
 }
