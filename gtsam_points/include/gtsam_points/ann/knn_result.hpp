@@ -2,26 +2,29 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
-#include <limits>
 #include <iostream>
+#include <limits>
 
 namespace gtsam_points {
 
 /// @brief K-nearest neighbor search setting.
 struct KnnSetting {
-public:
+  public:
   /// @brief Check if the result satisfies the early termination condition.
   template <typename Result>
   bool fulfilled(const Result& result) const {
     return result.worst_distance() < epsilon;
   }
 
-public:
-  double max_sq_dist = std::numeric_limits<double>::max();  ///< Maximum squared distance to search
-  double epsilon = 0.0;                                     ///< Early termination threshold
+  public:
+  double max_sq_dist =
+          std::numeric_limits<double>::max();  ///< Maximum squared distance to
+                                               ///< search
+  double epsilon = 0.0;                        ///< Early termination threshold
 };
 
-/// @brief Identity transformation function. (use std::identity instead in C++20)
+/// @brief Identity transformation function. (use std::identity instead in
+/// C++20)
 struct identity_transform {
   template <typename T>
   T operator()(const T& x) const {
@@ -30,37 +33,44 @@ struct identity_transform {
 };
 
 /// @brief K-nearest neighbor search result container.
-/// @tparam N   Number of neighbors to search. If N == -1, the number of neighbors is dynamicaly determined.
+/// @tparam N   Number of neighbors to search. If N == -1, the number of
+/// neighbors is dynamicaly determined.
 template <int N, typename IndexTransform = identity_transform>
 struct KnnResult {
-public:
+  public:
   static constexpr size_t INVALID = std::numeric_limits<size_t>::max();
 
   /// @brief Constructor
-  /// @param indices          Buffer to store indices (must be larger than k=max(N, num_neighbors))
-  /// @param distances        Buffer to store distances (must be larger than k=max(N, num_neighbors))
-  /// @param num_neighbors    Number of neighbors to search (must be -1 for static case N > 0)
-  /// @param index_transform  Index transformation function (e.g., local point index -> global voxel + point index)
-  explicit KnnResult(
-    size_t* indices,
-    double* distances,
-    int num_neighbors = -1,
-    const IndexTransform& index_transform = IndexTransform(),
-    double max_sq_dist = std::numeric_limits<double>::max())
-  : index_transform(index_transform),
-    capacity(num_neighbors),
-    num_found_neighbors(0),
-    indices(indices),
-    distances(distances) {
+  /// @param indices          Buffer to store indices (must be larger than
+  /// k=max(N, num_neighbors))
+  /// @param distances        Buffer to store distances (must be larger than
+  /// k=max(N, num_neighbors))
+  /// @param num_neighbors    Number of neighbors to search (must be -1 for
+  /// static case N > 0)
+  /// @param index_transform  Index transformation function (e.g., local point
+  /// index -> global voxel + point index)
+  explicit KnnResult(size_t* indices,
+                     double* distances,
+                     int num_neighbors = -1,
+                     const IndexTransform& index_transform = IndexTransform(),
+                     double max_sq_dist = std::numeric_limits<double>::max())
+      : index_transform(index_transform),
+        capacity(num_neighbors),
+        num_found_neighbors(0),
+        indices(indices),
+        distances(distances) {
     if constexpr (N > 0) {
       if (num_neighbors >= 0) {
-        std::cerr << "warning: Specifying dynamic num_neighbors=" << num_neighbors << " for a static KNN result container (N=" << N << ")"
+        std::cerr << "warning: Specifying dynamic num_neighbors="
+                  << num_neighbors
+                  << " for a static KNN result container (N=" << N << ")"
                   << std::endl;
         abort();
       }
     } else {
       if (num_neighbors <= 0) {
-        std::cerr << "error: Specifying invalid num_neighbors=" << num_neighbors << " for a dynamic KNN result container" << std::endl;
+        std::cerr << "error: Specifying invalid num_neighbors=" << num_neighbors
+                  << " for a dynamic KNN result container" << std::endl;
         abort();
       }
     }
@@ -95,7 +105,8 @@ public:
       distances[0] = distance;
     } else {
       int insert_loc = std::min<int>(num_found_neighbors, buffer_size() - 1);
-      for (; insert_loc > 0 && distance < distances[insert_loc - 1]; insert_loc--) {
+      for (; insert_loc > 0 && distance < distances[insert_loc - 1];
+           insert_loc--) {
         indices[insert_loc] = indices[insert_loc - 1];
         distances[insert_loc] = distances[insert_loc - 1];
       }
@@ -107,7 +118,7 @@ public:
     num_found_neighbors = std::min<int>(num_found_neighbors + 1, buffer_size());
   }
 
-public:
+  public:
   const IndexTransform& index_transform;
   const int capacity;       ///< Maximum number of neighbors to search
   int num_found_neighbors;  ///< Number of found neighbors

@@ -1,6 +1,6 @@
-#include <glim/odometry/estimation_frame.hpp>
-
 #include <spdlog/spdlog.h>
+
+#include <glim/odometry/estimation_frame.hpp>
 
 namespace glim {
 
@@ -32,7 +32,8 @@ const Eigen::Isometry3d EstimationFrame::T_world_sensor() const {
   return Eigen::Isometry3d::Identity();
 }
 
-void EstimationFrame::set_T_world_sensor(FrameID frame_id, const Eigen::Isometry3d& T) {
+void EstimationFrame::set_T_world_sensor(FrameID frame_id,
+                                         const Eigen::Isometry3d& T) {
   switch (frame_id) {
     default:
       spdlog::critical("frame_id must be either of LIDAR or IMU");

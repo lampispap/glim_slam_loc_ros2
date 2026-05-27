@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include <memory>
-#include <iostream>
 #include <Eigen/Core>
-
+#include <gtsam_points/ann/nearest_neighbor_search.hpp>
 #include <gtsam_points/ann/small_kdtree.hpp>
 #include <gtsam_points/types/frame_traits.hpp>
-#include <gtsam_points/ann/nearest_neighbor_search.hpp>
+#include <iostream>
+#include <memory>
 
 namespace gtsam_points {
 
@@ -18,13 +17,13 @@ namespace gtsam_points {
  */
 template <typename Frame>
 struct KdTree2 : public NearestNeighborSearch {
-public:
+  public:
   using Index = UnsafeKdTree<Frame>;
 
   KdTree2(const std::shared_ptr<const Frame>& frame, int build_num_threads = 1)
-  : frame(frame),
-    search_eps(-1.0),
-    index(new Index(*this->frame, KdTreeBuilderOMP(build_num_threads))) {
+      : frame(frame),
+        search_eps(-1.0),
+        index(new Index(*this->frame, KdTreeBuilderOMP(build_num_threads))) {
     if (frame::size(*frame) == 0) {
       std::cerr << "error: empty frame is given for KdTree2" << std::endl;
       std::cerr << "     : frame::size() may not be implemented" << std::endl;
@@ -39,17 +38,19 @@ public:
   /// @param k_sq_dists   Squared distances of k nearest neighbors
   /// @return             Number of neighbors found
   virtual size_t knn_search(
-    const double* pt,
-    size_t k,
-    size_t* k_indices,
-    double* k_sq_dists,
-    double max_sq_dist = std::numeric_limits<double>::max()) const override {
+          const double* pt,
+          size_t k,
+          size_t* k_indices,
+          double* k_sq_dists,
+          double max_sq_dist =
+                  std::numeric_limits<double>::max()) const override {
     KnnSetting setting;
     setting.max_sq_dist = max_sq_dist;
-    return index->knn_search(Eigen::Map<const Eigen::Vector3d>(pt), k, k_indices, k_sq_dists, setting);
+    return index->knn_search(Eigen::Map<const Eigen::Vector3d>(pt), k,
+                             k_indices, k_sq_dists, setting);
   }
 
-public:
+  public:
   const std::shared_ptr<const Frame> frame;
 
   double search_eps;

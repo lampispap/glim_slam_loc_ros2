@@ -11,7 +11,8 @@
 
 /**
  * @file    LevenbergMarquardtOptimizer.h
- * @brief   A nonlinear optimizer that uses the Levenberg-Marquardt trust-region scheme
+ * @brief   A nonlinear optimizer that uses the Levenberg-Marquardt trust-region
+ * scheme
  * @author  Richard Roberts
  * @author  Frank Dellaert
  * @author  Luca Carlone
@@ -19,14 +20,14 @@
  */
 
 #pragma once
-#include <chrono>
-#include <functional>
+#include <gtsam/linear/VectorValues.h>
+#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
+#include <gtsam/nonlinear/NonlinearOptimizer.h>
+
 #include <boost/utility/in_place_factory.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>
-#include <gtsam/linear/VectorValues.h>
-#include <gtsam/nonlinear/NonlinearOptimizer.h>
-#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
-
+#include <chrono>
+#include <functional>
 #include <gtsam_points/optimizers/levenberg_marquardt_ext_params.hpp>
 #include <gtsam_points/optimizers/levenberg_marquardt_optimization_status.hpp>
 
@@ -35,11 +36,11 @@ namespace gtsam_points {
 class LinearizationHook;
 
 class LevenbergMarquardtOptimizerExt : public gtsam::NonlinearOptimizer {
-public:
-  LevenbergMarquardtOptimizerExt(
-    const gtsam::NonlinearFactorGraph& graph,
-    const gtsam::Values& initialValues,
-    const LevenbergMarquardtExtParams& params = LevenbergMarquardtExtParams());
+  public:
+  LevenbergMarquardtOptimizerExt(const gtsam::NonlinearFactorGraph& graph,
+                                 const gtsam::Values& initialValues,
+                                 const LevenbergMarquardtExtParams& params =
+                                         LevenbergMarquardtExtParams());
 
   ~LevenbergMarquardtOptimizerExt();
 
@@ -47,15 +48,23 @@ public:
 
   virtual const gtsam::Values& optimize() override;
 
-  const gtsam::GaussianFactorGraph::shared_ptr& last_linearized() const { return linearized; }
+  const gtsam::GaussianFactorGraph::shared_ptr& last_linearized() const {
+    return linearized;
+  }
 
-private:
-  gtsam::GaussianFactorGraph buildDampedSystem(const gtsam::GaussianFactorGraph& linear, const gtsam::VectorValues& sqrtHessianDiagonal) const;
-  bool tryLambda(const gtsam::GaussianFactorGraph& linear, const gtsam::VectorValues& sqrtHessianDiagonal, double error);
+  private:
+  gtsam::GaussianFactorGraph buildDampedSystem(
+          const gtsam::GaussianFactorGraph& linear,
+          const gtsam::VectorValues& sqrtHessianDiagonal) const;
+  bool tryLambda(const gtsam::GaussianFactorGraph& linear,
+                 const gtsam::VectorValues& sqrtHessianDiagonal,
+                 double error);
 
-  const gtsam::NonlinearOptimizerParams& _params() const override { return params_; }
+  const gtsam::NonlinearOptimizerParams& _params() const override {
+    return params_;
+  }
 
-private:
+  private:
   std::chrono::high_resolution_clock::time_point optimization_start_time;
   std::chrono::nanoseconds linearization_time;
 

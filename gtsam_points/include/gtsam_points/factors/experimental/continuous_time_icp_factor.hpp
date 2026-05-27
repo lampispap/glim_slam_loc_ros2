@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <gtsam/slam/expressions.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/slam/expressions.h>
+
 #include <gtsam_points/types/point_cloud.hpp>
 
 namespace gtsam_points {
@@ -17,38 +18,43 @@ class KdTree;
  * @param pose1 target pose
  * @param t time in [0, 1]
  */
-gtsam::Pose3 interpolate_pose(const gtsam::Pose3& pose0, const gtsam::Pose3& pose1, double t);
+gtsam::Pose3 interpolate_pose(const gtsam::Pose3& pose0,
+                              const gtsam::Pose3& pose1,
+                              double t);
 
 /**
  * @brief Continuous Time ICP Factor
  * @note  This implementation is really slow and not well tested
- *        Bellenbach et al., "CT-ICP: Real-time Elastic LiDAR Odometry with Loop Closure", 2021
+ *        Bellenbach et al., "CT-ICP: Real-time Elastic LiDAR Odometry with Loop
+ * Closure", 2021
  */
 class CTICPFactorExpr : public gtsam::NoiseModelFactor {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   CTICPFactorExpr(
-    gtsam::Key source_t0_key,  // source pose at the scan beginning
-    gtsam::Key source_t1_key,  // source pose at the scan ending
-    const std::shared_ptr<const PointCloud>& target,
-    const std::shared_ptr<const KdTree>& target_tree,
-    const double source_t0,  // time of the very first point in source
-    const double source_t1,  // time of the very last point in source
-    const double source_ti,  // time of the point in interest (source_pt)
-    const gtsam::Point3& source_pt,
-    const gtsam::SharedNoiseModel& noise_model);
+          gtsam::Key source_t0_key,  // source pose at the scan beginning
+          gtsam::Key source_t1_key,  // source pose at the scan ending
+          const std::shared_ptr<const PointCloud>& target,
+          const std::shared_ptr<const KdTree>& target_tree,
+          const double source_t0,  // time of the very first point in source
+          const double source_t1,  // time of the very last point in source
+          const double source_ti,  // time of the point in interest (source_pt)
+          const gtsam::Point3& source_pt,
+          const gtsam::SharedNoiseModel& noise_model);
 
   ~CTICPFactorExpr();
 
-  virtual gtsam::Vector unwhitenedError(const gtsam::Values& values, std::vector<gtsam::Matrix>* H = nullptr) const override;
+  virtual gtsam::Vector unwhitenedError(
+          const gtsam::Values& values,
+          std::vector<gtsam::Matrix>* H = nullptr) const override;
 
   void update_correspondence(const gtsam::Values& values) const;
 
   gtsam::Point3_ transform_source_point() const;
   gtsam::Double_ calc_error() const;
 
-private:
+  private:
   const std::shared_ptr<const PointCloud> target;
   const std::shared_ptr<const KdTree> target_tree;
 
@@ -61,23 +67,27 @@ private:
 };
 
 /**
- * This class holds a set of CT-ICP factors and acts as if it's a single nonlinear factor
+ * This class holds a set of CT-ICP factors and acts as if it's a single
+ * nonlinear factor
  */
 class IntegratedCTICPFactorExpr : public gtsam::NonlinearFactor {
-public:
+  public:
   using shared_ptr = std::shared_ptr<IntegratedCTICPFactorExpr>;
 
-  IntegratedCTICPFactorExpr(const gtsam::NonlinearFactorGraph::shared_ptr& graph);
+  IntegratedCTICPFactorExpr(
+          const gtsam::NonlinearFactorGraph::shared_ptr& graph);
   ~IntegratedCTICPFactorExpr();
 
   virtual size_t dim() const override { return 6; }
 
   virtual double error(const gtsam::Values& values) const override;
-  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& values) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(
+          const gtsam::Values& values) const override;
 
-  std::vector<Eigen::Vector3d> deskewed_source_points(const gtsam::Values& values) const;
+  std::vector<Eigen::Vector3d> deskewed_source_points(
+          const gtsam::Values& values) const;
 
-private:
+  private:
   gtsam::NonlinearFactorGraph::shared_ptr graph;
 };
 
@@ -85,20 +95,20 @@ private:
  * @brief Create a set of CT-ICP factors
  */
 gtsam::NonlinearFactorGraph::shared_ptr create_cticp_factors(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const PointCloud::ConstPtr& target,
-  const PointCloud::ConstPtr& source,
-  const gtsam::SharedNoiseModel& noise_model);
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const PointCloud::ConstPtr& target,
+        const PointCloud::ConstPtr& source,
+        const gtsam::SharedNoiseModel& noise_model);
 
 /**
  * @brief Create a nonlinear factor that wraps a set of CT-ICP factors
  */
 IntegratedCTICPFactorExpr::shared_ptr create_integrated_cticp_factor(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const PointCloud::ConstPtr& target,
-  const PointCloud::ConstPtr& source,
-  const gtsam::SharedNoiseModel& noise_model);
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const PointCloud::ConstPtr& target,
+        const PointCloud::ConstPtr& source,
+        const gtsam::SharedNoiseModel& noise_model);
 
 }  // namespace gtsam_points

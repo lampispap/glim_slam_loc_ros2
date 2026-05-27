@@ -1,13 +1,12 @@
 #pragma once
 
+#include <GeographicLib/LocalCartesian.hpp>
+#include <boost/shared_ptr.hpp>
+#include <deque>
+#include <glim/odometry/odometry_estimation_base.hpp>
 #include <map>
 #include <memory>
 #include <random>
-#include <deque>
-
-#include <boost/shared_ptr.hpp>
-#include <glim/odometry/odometry_estimation_base.hpp>
-#include <GeographicLib/LocalCartesian.hpp>
 
 namespace gtsam {
 class Pose3;
@@ -33,13 +32,13 @@ class InitialStateEstimation;
  * @brief Parameters for OdometryEstimationIMU
  */
 struct OdometryEstimationIMUParams {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   OdometryEstimationIMUParams();
   virtual ~OdometryEstimationIMUParams();
 
-public:
+  public:
   // Sensor params;
   bool fix_imu_bias;
   double imu_bias_noise;
@@ -63,11 +62,14 @@ public:
   // Logging params
   bool save_imu_rate_trajectory;
 
-  int num_threads;                  // Number of threads for preprocessing and per-factor parallelism
-  int num_smoother_update_threads;  // Number of threads for TBB parallelism in smoother update (should be kept 1)
+  int num_threads;  // Number of threads for preprocessing and per-factor
+                    // parallelism
+  int num_smoother_update_threads;  // Number of threads for TBB parallelism in
+                                    // smoother update (should be kept 1)
 
   bool use_wheel;
-  double wheel_radius;  // [m]  Please use the actual wheel radius of your robot.
+  double wheel_radius;  // [m]  Please use the actual wheel radius of your
+                        // robot.
   double wheel_base;    // [m]  Please use the actual wheelbase of your robot.
 
   double differential_drive_model_noise;
@@ -75,42 +77,57 @@ public:
 
   bool enable_gps;
   double gps_noise;
-
 };
 
 /**
  * @brief Base class for LiDAR-IMU odometry estimation
  */
 class OdometryEstimationIMU : public OdometryEstimationBase {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   OdometryEstimationIMU(std::unique_ptr<OdometryEstimationIMUParams>&& params);
   virtual ~OdometryEstimationIMU() override;
 
-  virtual void insert_gps(double stamp, const Eigen::Vector4d& lat_lon_alt) override;
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
-  virtual void insert_raw_odom(const double stamp, const double left_angular_vel, const double right_angular_vel) override;
-  virtual EstimationFrame::ConstPtr insert_frame(const PreprocessedFrame::Ptr& frame, std::vector<EstimationFrame::ConstPtr>& marginalized_frames) override;
-  virtual std::vector<EstimationFrame::ConstPtr> get_remaining_frames() override;
+  virtual void insert_gps(double stamp,
+                          const Eigen::Vector4d& lat_lon_alt) override;
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_raw_odom(const double stamp,
+                               const double left_angular_vel,
+                               const double right_angular_vel) override;
+  virtual EstimationFrame::ConstPtr insert_frame(
+          const PreprocessedFrame::Ptr& frame,
+          std::vector<EstimationFrame::ConstPtr>& marginalized_frames) override;
+  virtual std::vector<EstimationFrame::ConstPtr> get_remaining_frames()
+          override;
 
   virtual EstimationFrame::ConstPtr get_latest_frame() const override;
 
-protected:
+  protected:
   virtual void create_frame(EstimationFrame::Ptr& frame) {}
-  virtual gtsam::NonlinearFactorGraph create_factors(const int current, const std::shared_ptr<gtsam::ImuFactor>& imu_factor, gtsam::Values& new_values) = 0;
+  virtual gtsam::NonlinearFactorGraph create_factors(
+          const int current,
+          const std::shared_ptr<gtsam::ImuFactor>& imu_factor,
+          gtsam::Values& new_values) = 0;
 
   virtual void fallback_smoother() {}
-  virtual void update_frames(const int current, const gtsam::NonlinearFactorGraph& new_factors);
+  virtual void update_frames(const int current,
+                             const gtsam::NonlinearFactorGraph& new_factors);
 
-  virtual void
-  update_smoother(const gtsam::NonlinearFactorGraph& new_factors, const gtsam::Values& new_values, const std::map<std::uint64_t, double>& new_stamp, int update_count = 0);
+  virtual void update_smoother(const gtsam::NonlinearFactorGraph& new_factors,
+                               const gtsam::Values& new_values,
+                               const std::map<std::uint64_t, double>& new_stamp,
+                               int update_count = 0);
   virtual void update_smoother(int update_count = 1);
 
-  
-  virtual gtsam::NonlinearFactorGraph create_gps_factor(const int current, gtsam::Values& new_values, std::map<std::uint64_t, double>& new_stamps);
+  virtual gtsam::NonlinearFactorGraph create_gps_factor(
+          const int current,
+          gtsam::Values& new_values,
+          std::map<std::uint64_t, double>& new_stamps);
 
-protected:
+  protected:
   std::unique_ptr<OdometryEstimationIMUParams> params;
 
   // Sensor extrinsic params
@@ -129,15 +146,16 @@ protected:
   std::unique_ptr<CloudCovarianceEstimation> covariance_estimation;
 
   // Optimizer
-  using FixedLagSmootherExt = gtsam_points::IncrementalFixedLagSmootherExtWithFallback;
+  using FixedLagSmootherExt =
+          gtsam_points::IncrementalFixedLagSmootherExtWithFallback;
   std::unique_ptr<FixedLagSmootherExt> smoother;
 
   std::shared_ptr<void> tbb_task_arena;
 
   GeographicLib::LocalCartesian geoConverter;
   std::deque<std::pair<double, Eigen::Vector4d>> gps_queue;
-  bool geoconverter_initialized {false};
-  int gps_data_id {0};
+  bool geoconverter_initialized{false};
+  int gps_data_id{0};
 };
 
 }  // namespace glim

@@ -1,20 +1,18 @@
 #pragma once
 
+#include <Eigen/Geometry>
 #include <any>
 #include <deque>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <image_transport/image_transport.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
-
-#include <image_transport/image_transport.hpp>
-#include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <std_srvs/srv/trigger.hpp>
-#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
-
-#include <Eigen/Geometry>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_srvs/srv/trigger.hpp>
 
 namespace glim {
 class TimeKeeper;
@@ -27,7 +25,7 @@ class ExtensionModule;
 class GenericTopicSubscription;
 
 class GlimROS : public rclcpp::Node {
-public:
+  public:
   GlimROS(const rclcpp::NodeOptions& options);
   ~GlimROS();
 
@@ -38,21 +36,29 @@ public:
   void raw_odom_callback(const sensor_msgs::msg::JointState::SharedPtr msg);
   void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
   void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
-  size_t points_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
+  size_t points_callback(
+          const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
   void wait(bool auto_quit = false);
   void save(const std::string& path);
 
-  const std::vector<std::shared_ptr<GenericTopicSubscription>>& extension_subscriptions();
-  void handle_save_map_sevice(const std_srvs::srv::Trigger::Request::SharedPtr request,
-                      std_srvs::srv::Trigger::Response::SharedPtr response);
-private:
+  const std::vector<std::shared_ptr<GenericTopicSubscription>>&
+  extension_subscriptions();
+  void handle_save_map_sevice(
+          const std_srvs::srv::Trigger::Request::SharedPtr request,
+          std_srvs::srv::Trigger::Response::SharedPtr response);
+
+  private:
   void setup_localization();
-  void handle_initial_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr pose);
+  void handle_initial_pose(
+          const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr
+                  pose);
   void handle_reloc(const geometry_msgs::msg::Point::ConstSharedPtr point);
-  void handle_load_map_sevice(const std_srvs::srv::Trigger::Request::SharedPtr request,
-                      std_srvs::srv::Trigger::Response::SharedPtr response);
-protected:
+  void handle_load_map_sevice(
+          const std_srvs::srv::Trigger::Request::SharedPtr request,
+          std_srvs::srv::Trigger::Response::SharedPtr response);
+
+  protected:
   std::unique_ptr<glim::TimeKeeper> time_keeper;
   std::unique_ptr<glim::CloudPreprocessor> preprocessor;
 
@@ -82,13 +88,13 @@ protected:
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_srv;
 
   // localization
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_sub;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+          initial_pose_sub;
   rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr reloc_point_sub;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr load_srv;
   Eigen::Isometry3d initial_pose_;
 
   std::string map_path;
-
 };
 
 }  // namespace glim

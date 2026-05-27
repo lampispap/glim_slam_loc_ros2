@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <glim/odometry/initial_state_estimation.hpp>
+#include <memory>
 
 namespace gtsam_points {
 struct FlatContainer;
@@ -16,15 +16,19 @@ class IMUIntegration;
 class CloudCovarianceEstimation;
 
 class LooseInitialStateEstimation : public InitialStateEstimation {
-public:
-  LooseInitialStateEstimation(const Eigen::Isometry3d& T_lidar_imu, const Eigen::Matrix<double, 6, 1>& imu_bias);
+  public:
+  LooseInitialStateEstimation(const Eigen::Isometry3d& T_lidar_imu,
+                              const Eigen::Matrix<double, 6, 1>& imu_bias);
   virtual ~LooseInitialStateEstimation() override;
 
-  virtual void insert_frame(const PreprocessedFrame::ConstPtr& raw_frame) override;
-  virtual void insert_imu(double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_frame(
+          const PreprocessedFrame::ConstPtr& raw_frame) override;
+  virtual void insert_imu(double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
   virtual EstimationFrame::ConstPtr initial_pose() override;
 
-private:
+  private:
   const Eigen::Isometry3d T_lidar_imu;
 
   int num_threads;

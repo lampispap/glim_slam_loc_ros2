@@ -1,14 +1,14 @@
 #pragma once
 
-#include <any>
-#include <deque>
-#include <random>
-#include <map>
-#include <memory>
-#include <glim/mapping/sub_mapping_base.hpp>
-#include <GeographicLib/LocalCartesian.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <GeographicLib/LocalCartesian.hpp>
+#include <any>
+#include <deque>
+#include <glim/mapping/sub_mapping_base.hpp>
+#include <map>
+#include <memory>
+#include <random>
 
 namespace gtsam {
 class Values;
@@ -26,11 +26,11 @@ class CloudCovarianceEstimation;
  * @brief Sub mapping parameters
  */
 struct SubMappingParams {
-public:
+  public:
   SubMappingParams();
   ~SubMappingParams();
 
-public:
+  public:
   bool enable_gpu;
   bool enable_imu;
   bool enable_optimization;
@@ -67,26 +67,31 @@ public:
  * @brief Sub mapping
  */
 class SubMapping : public SubMappingBase {
-public:
+  public:
   SubMapping(const SubMappingParams& params = SubMappingParams());
   virtual ~SubMapping() override;
 
-
-  virtual void insert_gps(double stamp, const Eigen::Vector4d& lat_lon_alt) override;
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
-  virtual void insert_frame(const EstimationFrame::ConstPtr& odom_frame) override;
+  virtual void insert_gps(double stamp,
+                          const Eigen::Vector4d& lat_lon_alt) override;
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_frame(
+          const EstimationFrame::ConstPtr& odom_frame) override;
 
   virtual std::vector<SubMap::Ptr> get_submaps() override;
 
   virtual std::vector<SubMap::Ptr> submit_end_of_sequence() override;
 
-private:
-  void insert_keyframe(const int current, const EstimationFrame::ConstPtr& odom_frame);
-  gtsam::NonlinearFactorGraph create_gps_factor(const int current, gtsam::Values& new_values);
+  private:
+  void insert_keyframe(const int current,
+                       const EstimationFrame::ConstPtr& odom_frame);
+  gtsam::NonlinearFactorGraph create_gps_factor(const int current,
+                                                gtsam::Values& new_values);
 
   SubMap::Ptr create_submap(bool force_create = false) const;
 
-private:
+  private:
   using Params = SubMappingParams;
   Params params;
 
@@ -116,7 +121,7 @@ private:
 
   GeographicLib::LocalCartesian geoConverter;
   std::deque<std::pair<double, Eigen::Vector4d>> gps_queue;
-  bool geoconverter_initialized {false};
+  bool geoconverter_initialized{false};
 
   Eigen::Isometry3d T_ned_odom;
   Eigen::Isometry3d T_world_odom;

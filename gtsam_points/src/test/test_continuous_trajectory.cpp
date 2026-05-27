@@ -1,18 +1,18 @@
-#include <vector>
-#include <fstream>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-
 #include <gtest/gtest.h>
 #include <gtsam/inference/Symbol.h>
-#include <gtsam_points/util/expressions.hpp>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <fstream>
 #include <gtsam_points/util/bspline.hpp>
 #include <gtsam_points/util/continuous_trajectory.hpp>
+#include <gtsam_points/util/expressions.hpp>
+#include <vector>
 
 using gtsam::symbol_shorthand::X;
 
 struct ContinuousTrajectoryTestBase : public testing::Test {
-public:
+  public:
   virtual void SetUp() {
     std::mt19937 mt(8192 - 3);
 
@@ -28,22 +28,32 @@ public:
     }
   }
 
-  void check_pose_error(const gtsam::Pose3& x0, const gtsam::Pose3& x1, const std::string& label, const double thresh = 1e-1) {
+  void check_pose_error(const gtsam::Pose3& x0,
+                        const gtsam::Pose3& x1,
+                        const std::string& label,
+                        const double thresh = 1e-1) {
     const gtsam::Pose3 error = x0.inverse() * x1;
     const double error_t = error.translation().norm();
     const double error_r = Eigen::AngleAxisd(error.rotation().matrix()).angle();
 
-    EXPECT_LT(error_t, thresh) << "[" << label << "] Too large translation error";
+    EXPECT_LT(error_t, thresh)
+            << "[" << label << "] Too large translation error";
     EXPECT_LT(error_r, thresh) << "[" << label << "] Too large rotation error";
   }
 
-  void check_error(const Eigen::VectorXd& x0, const Eigen::VectorXd& x1, const std::string& label, const double thresh = 1e-1) {  //
-    EXPECT_LT((x0 - x1).array().abs().maxCoeff(), thresh) << "[" << label << "] Too large error " << x0.transpose() << " vs " << x1.transpose();
+  void check_error(const Eigen::VectorXd& x0,
+                   const Eigen::VectorXd& x1,
+                   const std::string& label,
+                   const double thresh = 1e-1) {  //
+    EXPECT_LT((x0 - x1).array().abs().maxCoeff(), thresh)
+            << "[" << label << "] Too large error " << x0.transpose() << " vs "
+            << x1.transpose();
   }
 
   void fit_knots(const double knot_interval) {
     values.reset(new gtsam::Values);
-    ct.reset(new gtsam_points::ContinuousTrajectory('x', stamps.front(), stamps.back(), knot_interval));
+    ct.reset(new gtsam_points::ContinuousTrajectory(
+            'x', stamps.front(), stamps.back(), knot_interval));
     *values = ct->fit_knots(stamps, poses);
   }
 
@@ -63,74 +73,60 @@ public:
       const int knot_i = ct->knot_id(t);
       const double knot_t = ct->knot_stamp(knot_i);
 
-      const gtsam::Double_ p = (1.0 / ct->knot_interval) * (gtsam::Double_(gtsam::Key(0)) - gtsam::Double_(knot_t));
+      const gtsam::Double_ p =
+              (1.0 / ct->knot_interval) *
+              (gtsam::Double_(gtsam::Key(0)) - gtsam::Double_(knot_t));
       const auto pose0_ = gtsam_points::bspline(X(knot_i), p);
       const auto pose0 = pose0_.value(*values);
       check_pose_error(pose, pose0, "Interpolation");
 
       const auto rot0_ = gtsam_points::bspline_so3(  //
-        gtsam::rotation(X(knot_i - 1)),
-        gtsam::rotation(X(knot_i)),
-        gtsam::rotation(X(knot_i + 1)),
-        gtsam::rotation(X(knot_i + 2)),
-        p);
+              gtsam::rotation(X(knot_i - 1)), gtsam::rotation(X(knot_i)),
+              gtsam::rotation(X(knot_i + 1)), gtsam::rotation(X(knot_i + 2)),
+              p);
       std::vector<gtsam::Matrix> Hs_rot0(rot0_.keys().size());
       const auto rot0 = rot0_.value(*values, Hs_rot0);
 
       const auto trans0_ = gtsam_points::bspline_trans(
-        gtsam::translation(X(knot_i - 1)),
-        gtsam::translation(X(knot_i)),
-        gtsam::translation(X(knot_i + 1)),
-        gtsam::translation(X(knot_i + 2)),
-        p);
+              gtsam::translation(X(knot_i - 1)), gtsam::translation(X(knot_i)),
+              gtsam::translation(X(knot_i + 1)),
+              gtsam::translation(X(knot_i + 2)), p);
       std::vector<gtsam::Matrix> Hs_trans0(trans0_.keys().size());
       const auto trans0 = trans0_.value(*values, Hs_trans0);
       check_pose_error(pose, gtsam::Pose3(rot0, trans0), "Independent");
 
       // Derivatives
       const auto dr_dt_ = gtsam_points::bspline_angular_vel(
-        gtsam::rotation(X(knot_i - 1)),
-        gtsam::rotation(X(knot_i)),
-        gtsam::rotation(X(knot_i + 1)),
-        gtsam::rotation(X(knot_i + 2)),
-        p,
-        ct->knot_interval);
+              gtsam::rotation(X(knot_i - 1)), gtsam::rotation(X(knot_i)),
+              gtsam::rotation(X(knot_i + 1)), gtsam::rotation(X(knot_i + 2)), p,
+              ct->knot_interval);
       const auto dr_dt = dr_dt_.value(*values);
       check_error(dr_dt, Hs_rot0.front(), "Angular vel", 1e-1);
 
       const auto dt_dt_ = gtsam_points::bspline_linear_vel(
-        gtsam::translation(X(knot_i - 1)),
-        gtsam::translation(X(knot_i)),
-        gtsam::translation(X(knot_i + 1)),
-        gtsam::translation(X(knot_i + 2)),
-        p,
-        ct->knot_interval);
+              gtsam::translation(X(knot_i - 1)), gtsam::translation(X(knot_i)),
+              gtsam::translation(X(knot_i + 1)),
+              gtsam::translation(X(knot_i + 2)), p, ct->knot_interval);
 
       std::vector<gtsam::Matrix> Hs_tvel(dt_dt_.keys().size());
       const auto dt_dt = dt_dt_.value(*values, Hs_tvel);
       check_error(dt_dt, Hs_trans0.front(), "Linear vel", 5e-2);
 
       const auto dt_dt2_ = gtsam_points::bspline_linear_acc(
-        gtsam::translation(X(knot_i - 1)),
-        gtsam::translation(X(knot_i)),
-        gtsam::translation(X(knot_i + 1)),
-        gtsam::translation(X(knot_i + 2)),
-        p,
-        ct->knot_interval);
+              gtsam::translation(X(knot_i - 1)), gtsam::translation(X(knot_i)),
+              gtsam::translation(X(knot_i + 1)),
+              gtsam::translation(X(knot_i + 2)), p, ct->knot_interval);
       const auto dt_dt2 = dt_dt2_.value(*values);
       check_error(dt_dt2, Hs_tvel.front(), "Linear acc", 5e-2);
 
       const Eigen::Vector3d g(0.0, 0.0, 9.80665);
       const auto imu_ = gtsam_points::bspline_imu(  //
-        gtsam::Pose3_(X(knot_i - 1)),
-        gtsam::Pose3_(X(knot_i)),
-        gtsam::Pose3_(X(knot_i + 1)),
-        gtsam::Pose3_(X(knot_i + 2)),
-        p,
-        ct->knot_interval,
-        g);
+              gtsam::Pose3_(X(knot_i - 1)), gtsam::Pose3_(X(knot_i)),
+              gtsam::Pose3_(X(knot_i + 1)), gtsam::Pose3_(X(knot_i + 2)), p,
+              ct->knot_interval, g);
       const auto imu = imu_.value(*values);
-      gtsam::Vector6 imu2 = (gtsam::Vector6() << rot0.unrotate(dt_dt2 + g), dr_dt).finished();
+      gtsam::Vector6 imu2 =
+              (gtsam::Vector6() << rot0.unrotate(dt_dt2 + g), dr_dt).finished();
       check_error(imu2.head<3>(), imu.head<3>(), "IMU self w", 5e-2);
       check_error(imu2.tail<3>(), imu.tail<3>(), "IMU self a", 5e-2);
     }
@@ -156,7 +152,7 @@ public:
     }
   }
 
-public:
+  public:
   std::vector<double> stamps;
   std::vector<gtsam::Pose3> poses;
   std::vector<gtsam::Vector7> imu_data;

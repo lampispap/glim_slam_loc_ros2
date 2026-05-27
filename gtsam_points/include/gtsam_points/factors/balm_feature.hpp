@@ -9,10 +9,11 @@ namespace gtsam_points {
 
 /**
  * @brief Utility class to calculate eigenvalues and derivatives of those
- *        Liu and Zhang, "BALM: Bundle Adjustment for Lidar Mapping", IEEE RA-L, 2021
+ *        Liu and Zhang, "BALM: Bundle Adjustment for Lidar Mapping", IEEE RA-L,
+ * 2021
  */
 struct BALMFeature {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /**
@@ -52,7 +53,9 @@ public:
    * @note  Eq. (7)
    */
   template <int k>
-  Eigen::Matrix3d Hij(const Eigen::Vector3d& p_i, const Eigen::Vector3d& p_j, bool i_equals_j) const {
+  Eigen::Matrix3d Hij(const Eigen::Vector3d& p_i,
+                      const Eigen::Vector3d& p_j,
+                      bool i_equals_j) const {
     const int N = num_points;
     Eigen::Matrix3d F_k;
     F_k.row(0) = Fmn<0, k>(p_j);

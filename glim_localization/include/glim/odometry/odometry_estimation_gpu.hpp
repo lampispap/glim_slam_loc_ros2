@@ -14,7 +14,7 @@ namespace glim {
  * @brief Parameters for OdometryEstimationGPU
  */
 struct OdometryEstimationGPUParams : public OdometryEstimationIMUParams {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   OdometryEstimationGPUParams();
@@ -22,7 +22,7 @@ public:
 
   enum class KeyframeUpdateStrategy { OVERLAP, DISPLACEMENT, ENTROPY };
 
-public:
+  public:
   // Registration params
   double voxel_resolution;
   int voxelmap_levels;
@@ -45,22 +45,30 @@ public:
  *
  */
 class OdometryEstimationGPU : public OdometryEstimationIMU {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  OdometryEstimationGPU(const OdometryEstimationGPUParams& params = OdometryEstimationGPUParams());
+  OdometryEstimationGPU(const OdometryEstimationGPUParams& params =
+                                OdometryEstimationGPUParams());
   virtual ~OdometryEstimationGPU() override;
 
-private:
+  private:
   virtual void create_frame(EstimationFrame::Ptr& frame) override;
-  virtual gtsam::NonlinearFactorGraph create_factors(const int current, const std::shared_ptr<gtsam::ImuFactor>& imu_factor, gtsam::Values& new_values) override;
-  virtual void update_frames(const int current, const gtsam::NonlinearFactorGraph& new_factors) override;
+  virtual gtsam::NonlinearFactorGraph create_factors(
+          const int current,
+          const std::shared_ptr<gtsam::ImuFactor>& imu_factor,
+          gtsam::Values& new_values) override;
+  virtual void update_frames(
+          const int current,
+          const gtsam::NonlinearFactorGraph& new_factors) override;
 
   void update_keyframes_overlap(int current);
   void update_keyframes_displacement(int current);
-  void update_keyframes_entropy(const gtsam::NonlinearFactorGraph& matching_cost_factors, int current);
+  void update_keyframes_entropy(
+          const gtsam::NonlinearFactorGraph& matching_cost_factors,
+          int current);
 
-private:
+  private:
   // Keyframe params
   int entropy_num_frames;
   double entropy_running_average;
@@ -68,7 +76,8 @@ private:
 
   // CUDA-related
   std::unique_ptr<gtsam_points::CUDAStream> stream;
-  std::unique_ptr<gtsam_points::StreamTempBufferRoundRobin> stream_buffer_roundrobin;
+  std::unique_ptr<gtsam_points::StreamTempBufferRoundRobin>
+          stream_buffer_roundrobin;
 };
 
 }  // namespace glim

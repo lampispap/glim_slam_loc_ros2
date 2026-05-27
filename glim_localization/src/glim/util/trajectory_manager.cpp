@@ -12,7 +12,9 @@ TrajectoryManager::TrajectoryManager() {
 
 TrajectoryManager::~TrajectoryManager() {}
 
-void TrajectoryManager::add_odom(double stamp, const Eigen::Isometry3d& T_odom_sensor, int priority) {
+void TrajectoryManager::add_odom(double stamp,
+                                 const Eigen::Isometry3d& T_odom_sensor,
+                                 int priority) {
   if (odom_priority < priority) {
     odom_priority = priority;
     this->odom_stamps = {0.0};
@@ -25,8 +27,10 @@ void TrajectoryManager::add_odom(double stamp, const Eigen::Isometry3d& T_odom_s
   this->T_odom_sensor.push_back(T_odom_sensor);
 }
 
-void TrajectoryManager::update_anchor(double stamp, const Eigen::Isometry3d& T_world_sensor) {
-  const auto found = std::lower_bound(odom_stamps.begin(), odom_stamps.end(), stamp);
+void TrajectoryManager::update_anchor(double stamp,
+                                      const Eigen::Isometry3d& T_world_sensor) {
+  const auto found =
+          std::lower_bound(odom_stamps.begin(), odom_stamps.end(), stamp);
   const int idx = std::distance(odom_stamps.begin(), found);
 
   if (std::abs(stamp - odom_stamps[idx]) < 1e-6 || idx == 0) {
@@ -45,7 +49,9 @@ void TrajectoryManager::update_anchor(double stamp, const Eigen::Isometry3d& T_w
     const Eigen::Isometry3d T1 = T_odom_sensor[idx];
     Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
     T.translation() = T0.translation() * (1.0 - p) + T1.translation() * p;
-    T.linear() = Eigen::Quaterniond(T0.linear()).slerp(p, Eigen::Quaterniond(T1.linear())).toRotationMatrix();
+    T.linear() = Eigen::Quaterniond(T0.linear())
+                         .slerp(p, Eigen::Quaterniond(T1.linear()))
+                         .toRotationMatrix();
     T_world_odom = T_world_sensor * T.inverse();
   }
 
@@ -59,11 +65,13 @@ Eigen::Isometry3d TrajectoryManager::current_pose() const {
   return T_world_odom * T_odom_sensor.back();
 }
 
-Eigen::Isometry3d TrajectoryManager::odom2world(const Eigen::Isometry3d& pose) const {
+Eigen::Isometry3d TrajectoryManager::odom2world(
+        const Eigen::Isometry3d& pose) const {
   return T_world_odom * pose;
 }
 
-Eigen::Vector3d TrajectoryManager::odom2world(const Eigen::Vector3d& point) const {
+Eigen::Vector3d TrajectoryManager::odom2world(
+        const Eigen::Vector3d& point) const {
   return T_world_odom * point;
 }
 

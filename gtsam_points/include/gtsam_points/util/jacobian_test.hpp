@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
-#include <random>
-#include <vector>
 #include <gtsam/linear/VectorValues.h>
 #include <gtsam/nonlinear/NonlinearFactor.h>
+
+#include <random>
+#include <vector>
 
 namespace gtsam_points {
 
 /**
  * @brief Utility function for testing Jacobian of a factor.
- * @note  This function cannot properly evaluate Jacobian of factors that measures errors in a manifold (e.g., BetweenFactor<Pose3>).
+ * @note  This function cannot properly evaluate Jacobian of factors that
+measures errors in a manifold (e.g., BetweenFactor<Pose3>).
  *
  * @example
 
@@ -19,7 +21,8 @@ auto generate_factor(std::mt19937& mt) {
   std::uniform_real_distribution<> udist(-1.0, 1.0);
 
   gtsam::Vector3 rel_pose = Eigen::Vector3d(udist(mt), udist(mt), udist(mt));
-  return gtsam::make_shared<gtsam::BetweenFactor<gtsam::Vector3>>(0, 1, rel_pose, gtsam::noiseModel::Isotropic::Sigma(6, 1.0));
+  return gtsam::make_shared<gtsam::BetweenFactor<gtsam::Vector3>>(0, 1,
+rel_pose, gtsam::noiseModel::Isotropic::Sigma(6, 1.0));
 }
 
 gtsam::Values generate_values(std::mt19937& mt) {
@@ -41,7 +44,9 @@ int main(int argc, char** argv) {
 
  */
 template <typename GenerateFactor, typename GenerateValues>
-bool test_factor_jacobian(std::mt19937& mt, const GenerateFactor& generate_factor, const GenerateValues& generate_values) {
+bool test_factor_jacobian(std::mt19937& mt,
+                          const GenerateFactor& generate_factor,
+                          const GenerateValues& generate_values) {
   auto factor = generate_factor(mt);
   gtsam::Values values = generate_values(mt);
 

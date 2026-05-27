@@ -14,13 +14,16 @@ struct NearestNeighborSearch;
 
 /**
  * @brief Continuous Time ICP Factor
- *        Bellenbach et al., "CT-ICP: Real-time Elastic LiDAR Odometry with Loop Closure", 2021
+ *        Bellenbach et al., "CT-ICP: Real-time Elastic LiDAR Odometry with Loop
+ * Closure", 2021
  */
-template <typename TargetFrame = gtsam_points::PointCloud, typename SourceFrame = gtsam_points::PointCloud>
+template <typename TargetFrame = gtsam_points::PointCloud,
+          typename SourceFrame = gtsam_points::PointCloud>
 class IntegratedCT_ICPFactor_ : public gtsam::NonlinearFactor {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  using shared_ptr = boost::shared_ptr<IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>>;
+  using shared_ptr =
+          boost::shared_ptr<IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>>;
 
   /**
    * @brief Constructor
@@ -31,11 +34,11 @@ public:
    * @param target_tree     NN search for the target point cloud
    */
   IntegratedCT_ICPFactor_(
-    gtsam::Key source_t0_key,
-    gtsam::Key source_t1_key,
-    const std::shared_ptr<const TargetFrame>& target,
-    const std::shared_ptr<const SourceFrame>& source,
-    const std::shared_ptr<NearestNeighborSearch>& target_tree);
+          gtsam::Key source_t0_key,
+          gtsam::Key source_t1_key,
+          const std::shared_ptr<const TargetFrame>& target,
+          const std::shared_ptr<const SourceFrame>& source,
+          const std::shared_ptr<NearestNeighborSearch>& target_tree);
 
   /**
    * @brief Constructor
@@ -44,34 +47,39 @@ public:
    * @param target          Target point cloud
    * @param source          Source point cloud
    */
-  IntegratedCT_ICPFactor_(
-    gtsam::Key source_t0_key,
-    gtsam::Key source_t1_key,
-    const std::shared_ptr<const TargetFrame>& target,
-    const std::shared_ptr<const SourceFrame>& source);
+  IntegratedCT_ICPFactor_(gtsam::Key source_t0_key,
+                          gtsam::Key source_t1_key,
+                          const std::shared_ptr<const TargetFrame>& target,
+                          const std::shared_ptr<const SourceFrame>& source);
 
   virtual ~IntegratedCT_ICPFactor_() override;
 
   virtual size_t dim() const override { return 6; }
   virtual double error(const gtsam::Values& values) const override;
-  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& values) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(
+          const gtsam::Values& values) const override;
 
   void set_num_threads(int n) { num_threads = n; }
-  void set_max_correspondence_distance(double dist) { max_correspondence_distance_sq = dist * dist; }
+  void set_max_correspondence_distance(double dist) {
+    max_correspondence_distance_sq = dist * dist;
+  }
 
   const std::vector<double>& get_time_table() const { return time_table; }
   const std::vector<int>& get_time_indices() const { return time_indices; }
-  const std::vector<gtsam::Pose3>& get_source_poses() const { return source_poses; }
+  const std::vector<gtsam::Pose3>& get_source_poses() const {
+    return source_poses;
+  }
 
-  std::vector<Eigen::Vector4d> deskewed_source_points(const gtsam::Values& values, bool local = false);
+  std::vector<Eigen::Vector4d> deskewed_source_points(
+          const gtsam::Values& values, bool local = false);
 
-public:
+  public:
   virtual void update_poses(const gtsam::Values& values) const;
 
-protected:
+  protected:
   virtual void update_correspondences() const;
 
-protected:
+  protected:
   int num_threads;
   double max_correspondence_distance_sq;
 

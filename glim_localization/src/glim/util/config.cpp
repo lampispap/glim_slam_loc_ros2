@@ -1,5 +1,4 @@
 #include <glim/util/config.hpp>
-
 #include <glim/util/config_impl.hpp>
 
 namespace glim {

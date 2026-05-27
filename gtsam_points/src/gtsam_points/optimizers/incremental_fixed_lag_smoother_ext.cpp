@@ -11,24 +11,29 @@
 
 /**
  * @file    IncrementalFixedLagSmoother.cpp
- * @brief   An iSAM2-based fixed-lag smoother. To the extent possible, this class mimics the iSAM2
- * interface. However, additional parameters, such as the smoother lag and the timestamp associated
- * with each variable are needed.
+ * @brief   An iSAM2-based fixed-lag smoother. To the extent possible, this
+ * class mimics the iSAM2 interface. However, additional parameters, such as the
+ * smoother lag and the timestamp associated with each variable are needed.
  *
  * @author  Michael Kaess, Stephen Williams
  * @date    Oct 14, 2012
  */
 
-#include <gtsam_points/optimizers/incremental_fixed_lag_smoother_ext.hpp>
 #include <gtsam/base/debug.h>
 #include <gtsam/inference/Symbol.h>
+
+#include <gtsam_points/optimizers/incremental_fixed_lag_smoother_ext.hpp>
 
 namespace gtsam_points {
 
 /* ************************************************************************* */
-void recursiveMarkAffectedKeys(const Key& key, const ISAM2Clique::shared_ptr& clique, std::set<Key>& additionalKeys) {
+void recursiveMarkAffectedKeys(const Key& key,
+                               const ISAM2Clique::shared_ptr& clique,
+                               std::set<Key>& additionalKeys) {
   // Check if the separator keys of the current clique contain the specified key
-  if (std::find(clique->conditional()->beginParents(), clique->conditional()->endParents(), key) != clique->conditional()->endParents()) {
+  if (std::find(clique->conditional()->beginParents(),
+                clique->conditional()->endParents(),
+                key) != clique->conditional()->endParents()) {
     // Mark the frontal keys of the current clique
     for (Key i : clique->conditional()->frontals()) {
       additionalKeys.insert(i);
@@ -39,24 +44,32 @@ void recursiveMarkAffectedKeys(const Key& key, const ISAM2Clique::shared_ptr& cl
       recursiveMarkAffectedKeys(key, child, additionalKeys);
     }
   }
-  // If the key was not found in the separator/parents, then none of its children can have it either
+  // If the key was not found in the separator/parents, then none of its
+  // children can have it either
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::print(const std::string& s, const KeyFormatter& keyFormatter) const {
+void IncrementalFixedLagSmootherExt::print(
+        const std::string& s, const KeyFormatter& keyFormatter) const {
   FixedLagSmoother::print(s, keyFormatter);
   // TODO: What else to print?
 }
 
 /* ************************************************************************* */
-bool IncrementalFixedLagSmootherExt::equals(const FixedLagSmoother& rhs, double tol) const {
-  const IncrementalFixedLagSmootherExt* e = dynamic_cast<const IncrementalFixedLagSmootherExt*>(&rhs);
-  return e != nullptr && FixedLagSmoother::equals(*e, tol) && isam_.equals(e->isam_, tol);
+bool IncrementalFixedLagSmootherExt::equals(const FixedLagSmoother& rhs,
+                                            double tol) const {
+  const IncrementalFixedLagSmootherExt* e =
+          dynamic_cast<const IncrementalFixedLagSmootherExt*>(&rhs);
+  return e != nullptr && FixedLagSmoother::equals(*e, tol) &&
+         isam_.equals(e->isam_, tol);
 }
 
 /* ************************************************************************* */
-FixedLagSmoother::Result
-IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, const Values& newTheta, const KeyTimestampMap& timestamps, const FactorIndices& factorsToRemove) {
+FixedLagSmoother::Result IncrementalFixedLagSmootherExt::update(
+        const NonlinearFactorGraph& newFactors,
+        const Values& newTheta,
+        const KeyTimestampMap& timestamps,
+        const FactorIndices& factorsToRemove) {
   const bool debug = ISDEBUG("IncrementalFixedLagSmootherExt update");
 
   if (debug) {
@@ -66,7 +79,7 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   }
 
   FastVector<size_t> removedFactors;
-  std::optional<FastMap<Key, int> > constrainedKeys = std::nullopt;
+  std::optional<FastMap<Key, int>> constrainedKeys = std::nullopt;
 
   // Update the Timestamps associated with the factor keys
   updateKeyTimestampMap(timestamps);
@@ -74,10 +87,12 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   // Get current timestamp
   double current_timestamp = getCurrentTimestamp();
 
-  if (debug) std::cout << "Current Timestamp: " << current_timestamp << std::endl;
+  if (debug)
+    std::cout << "Current Timestamp: " << current_timestamp << std::endl;
 
   // Find the set of variables to be marginalized out
-  KeyVector marginalizableKeys = findKeysBefore(current_timestamp - smootherLag_);
+  KeyVector marginalizableKeys =
+          findKeysBefore(current_timestamp - smootherLag_);
 
   if (debug) {
     std::cout << "Marginalizable Keys: ";
@@ -93,8 +108,10 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   if (debug) {
     std::cout << "Constrained Keys: ";
     if (constrainedKeys) {
-      for (FastMap<Key, int>::const_iterator iter = constrainedKeys->begin(); iter != constrainedKeys->end(); ++iter) {
-        std::cout << DefaultKeyFormatter(iter->first) << "(" << iter->second << ")  ";
+      for (FastMap<Key, int>::const_iterator iter = constrainedKeys->begin();
+           iter != constrainedKeys->end(); ++iter) {
+        std::cout << DefaultKeyFormatter(iter->first) << "(" << iter->second
+                  << ")  ";
       }
     }
     std::cout << std::endl;
@@ -111,18 +128,22 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   KeyList additionalMarkedKeys(additionalKeys.begin(), additionalKeys.end());
 
   // Update iSAM2
-  auto result_ = isam_.update(newFactors, newTheta, factorsToRemove, constrainedKeys, std::nullopt, additionalMarkedKeys);
+  auto result_ =
+          isam_.update(newFactors, newTheta, factorsToRemove, constrainedKeys,
+                       std::nullopt, additionalMarkedKeys);
   // std::cout << result_.to_string() << std::endl;
   isamResult_ = result_;
 
   if (debug) {
-    PrintSymbolicTree(isam_, "Bayes Tree After Update, Before Marginalization:");
+    PrintSymbolicTree(isam_,
+                      "Bayes Tree After Update, Before Marginalization:");
     std::cout << "END" << std::endl;
   }
 
   // Marginalize out any needed variables
   if (marginalizableKeys.size() > 0) {
-    FastList<Key> leafKeys(marginalizableKeys.begin(), marginalizableKeys.end());
+    FastList<Key> leafKeys(marginalizableKeys.begin(),
+                           marginalizableKeys.end());
     isam_.marginalizeLeaves(leafKeys);
   }
 
@@ -141,7 +162,8 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   result.nonlinearVariables = 0;
   result.error = 0;
 
-  if (debug) std::cout << "IncrementalFixedLagSmootherExt::update() Finish" << std::endl;
+  if (debug)
+    std::cout << "IncrementalFixedLagSmootherExt::update() Finish" << std::endl;
 
   return result;
 }
@@ -157,11 +179,13 @@ void IncrementalFixedLagSmootherExt::eraseKeysBefore(double timestamp) {
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::createOrderingConstraints(const KeyVector& marginalizableKeys, std::optional<FastMap<Key, int> >& constrainedKeys) const {
+void IncrementalFixedLagSmootherExt::createOrderingConstraints(
+        const KeyVector& marginalizableKeys,
+        std::optional<FastMap<Key, int>>& constrainedKeys) const {
   if (marginalizableKeys.size() > 0) {
     constrainedKeys = FastMap<Key, int>();
-    // Generate ordering constraints so that the marginalizable variables will be eliminated first
-    // Set all variables to Group1
+    // Generate ordering constraints so that the marginalizable variables will
+    // be eliminated first Set all variables to Group1
     for (const TimestampKeyMap::value_type& timestamp_key : timestampKeyMap_) {
       constrainedKeys->operator[](timestamp_key.second) = 1;
     }
@@ -173,7 +197,8 @@ void IncrementalFixedLagSmootherExt::createOrderingConstraints(const KeyVector& 
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::PrintKeySet(const std::set<Key>& keys, const std::string& label) {
+void IncrementalFixedLagSmootherExt::PrintKeySet(const std::set<Key>& keys,
+                                                 const std::string& label) {
   std::cout << label;
   for (Key key : keys) {
     std::cout << " " << DefaultKeyFormatter(key);
@@ -182,7 +207,8 @@ void IncrementalFixedLagSmootherExt::PrintKeySet(const std::set<Key>& keys, cons
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::PrintSymbolicFactor(const GaussianFactor::shared_ptr& factor) {
+void IncrementalFixedLagSmootherExt::PrintSymbolicFactor(
+        const GaussianFactor::shared_ptr& factor) {
   std::cout << "f(";
   for (Key key : factor->keys()) {
     std::cout << " " << DefaultKeyFormatter(key);
@@ -191,7 +217,8 @@ void IncrementalFixedLagSmootherExt::PrintSymbolicFactor(const GaussianFactor::s
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::PrintSymbolicGraph(const GaussianFactorGraph& graph, const std::string& label) {
+void IncrementalFixedLagSmootherExt::PrintSymbolicGraph(
+        const GaussianFactorGraph& graph, const std::string& label) {
   std::cout << label << std::endl;
   for (const GaussianFactor::shared_ptr& factor : graph) {
     PrintSymbolicFactor(factor);
@@ -199,7 +226,8 @@ void IncrementalFixedLagSmootherExt::PrintSymbolicGraph(const GaussianFactorGrap
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::PrintSymbolicTree(const ISAM2Ext& isam, const std::string& label) {
+void IncrementalFixedLagSmootherExt::PrintSymbolicTree(
+        const ISAM2Ext& isam, const std::string& label) {
   std::cout << label << std::endl;
   if (!isam.roots().empty()) {
     for (const ISAM2Ext::sharedClique& root : isam.roots()) {
@@ -210,7 +238,8 @@ void IncrementalFixedLagSmootherExt::PrintSymbolicTree(const ISAM2Ext& isam, con
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::PrintSymbolicTreeHelper(const ISAM2Clique::shared_ptr& clique, const std::string indent) {
+void IncrementalFixedLagSmootherExt::PrintSymbolicTreeHelper(
+        const ISAM2Clique::shared_ptr& clique, const std::string indent) {
   // Print the current clique
   std::cout << indent << "P( ";
   for (Key key : clique->conditional()->frontals()) {

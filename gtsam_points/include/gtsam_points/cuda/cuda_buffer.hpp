@@ -11,16 +11,17 @@ namespace gtsam_points {
 
 /**
  * @brief Device buffer for asynchronous data transfer.
- * @note  To enable asynchronous upload/download, use_pinned_buffer needs to be true.
+ * @note  To enable asynchronous upload/download, use_pinned_buffer needs to be
+ * true.
  */
 class CUDABuffer {
-public:
+  public:
   CUDABuffer(bool use_pinned_buffer = true);
   ~CUDABuffer();
 
   /**
-   * @brief Resize the buffer size. This method only expands the device/host buffers and
-   *        doesn't shrink them when buffer_size < size.
+   * @brief Resize the buffer size. This method only expands the device/host
+   * buffers and doesn't shrink them when buffer_size < size.
    * @param size   Buffer size
    * @param stream CUDA stream
    */
@@ -96,7 +97,7 @@ public:
     return reinterpret_cast<T*>(device_buffer());
   }
 
-private:
+  private:
   const bool use_pinned_buffer;
 
   size_t buffer_size;

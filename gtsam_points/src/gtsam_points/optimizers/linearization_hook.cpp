@@ -2,14 +2,15 @@
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
 #include <gtsam_points/optimizers/linearization_hook.hpp>
-
 #include <numeric>
 
 namespace gtsam_points {
 
-std::vector<std::function<std::shared_ptr<NonlinearFactorSet>()>> LinearizationHook::hook_constructors;
+std::vector<std::function<std::shared_ptr<NonlinearFactorSet>()>>
+        LinearizationHook::hook_constructors;
 
-void LinearizationHook::register_hook(const std::function<std::shared_ptr<NonlinearFactorSet>()>& hook) {
+void LinearizationHook::register_hook(
+        const std::function<std::shared_ptr<NonlinearFactorSet>()>& hook) {
   hook_constructors.emplace_back(hook);
 }
 
@@ -24,7 +25,7 @@ LinearizationHook::~LinearizationHook() {}
 
 int LinearizationHook::size() const {
   int count = 0;
-  for(const auto& hook: hooks) {
+  for (const auto& hook : hooks) {
     count += hook->size();
   }
   return count;
@@ -84,7 +85,9 @@ void LinearizationHook::error(const gtsam::Values& values) {
   }
 }
 
-std::vector<gtsam::GaussianFactor::shared_ptr> LinearizationHook::calc_linear_factors(const gtsam::Values& linearization_point) {
+std::vector<gtsam::GaussianFactor::shared_ptr>
+LinearizationHook::calc_linear_factors(
+        const gtsam::Values& linearization_point) {
   std::vector<gtsam::GaussianFactor::shared_ptr> linear_factors;
   for (auto& hook : hooks) {
     auto factors = hook->calc_linear_factors(linearization_point);

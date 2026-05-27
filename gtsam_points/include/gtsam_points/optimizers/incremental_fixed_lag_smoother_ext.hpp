@@ -21,6 +21,7 @@
 #pragma once
 
 #include <gtsam_unstable/nonlinear/FixedLagSmoother.h>
+
 #include <gtsam_points/optimizers/isam2_ext.hpp>
 
 namespace gtsam_points {
@@ -28,25 +29,29 @@ namespace gtsam_points {
 using namespace gtsam;
 
 /**
- * This is a base class for the various HMF2 implementations. The HMF2 eliminates the factor graph
- * such that the active states are placed in/near the root. This base class implements a function
- * to calculate the ordering, and an update function to incorporate new factors into the HMF.
+ * This is a base class for the various HMF2 implementations. The HMF2
+ * eliminates the factor graph such that the active states are placed in/near
+ * the root. This base class implements a function to calculate the ordering,
+ * and an update function to incorporate new factors into the HMF.
  */
 class IncrementalFixedLagSmootherExt : public FixedLagSmoother {
-public:
+  public:
   /// Typedef for a shared pointer to an Incremental Fixed-Lag Smoother
   typedef boost::shared_ptr<IncrementalFixedLagSmootherExt> shared_ptr;
 
   /** default constructor */
-  IncrementalFixedLagSmootherExt(double smootherLag = 0.0, const ISAM2Params& parameters = DefaultISAM2Params())
-  : FixedLagSmoother(smootherLag),
-    isam_(parameters) {}
+  IncrementalFixedLagSmootherExt(
+          double smootherLag = 0.0,
+          const ISAM2Params& parameters = DefaultISAM2Params())
+      : FixedLagSmoother(smootherLag), isam_(parameters) {}
 
   /** destructor */
   ~IncrementalFixedLagSmootherExt() override {}
 
   /** Print the factor for debugging and testing (implementing Testable) */
-  void print(const std::string& s = "IncrementalFixedLagSmootherExt:\n", const KeyFormatter& keyFormatter = DefaultKeyFormatter) const override;
+  void print(const std::string& s = "IncrementalFixedLagSmootherExt:\n",
+             const KeyFormatter& keyFormatter =
+                     DefaultKeyFormatter) const override;
 
   /** Check if two IncrementalFixedLagSmoother Objects are equal */
   bool equals(const FixedLagSmoother& rhs, double tol = 1e-9) const override;
@@ -59,22 +64,27 @@ public:
    * @param factorsToRemove an (optional) list of factors to remove.
    */
   Result update(
-    const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
-    const Values& newTheta = Values(),  //
-    const KeyTimestampMap& timestamps = KeyTimestampMap(),
-    const FactorIndices& factorsToRemove = FactorIndices()) override;
+          const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
+          const Values& newTheta = Values(),  //
+          const KeyTimestampMap& timestamps = KeyTimestampMap(),
+          const FactorIndices& factorsToRemove = FactorIndices()) override;
 
-  /** Compute an estimate from the incomplete linear delta computed during the last update.
-   * This delta is incomplete because it was not updated below wildfire_threshold.  If only
-   * a single variable is needed, it is faster to call calculateEstimate(const KEY&).
+  /** Compute an estimate from the incomplete linear delta computed during the
+   * last update. This delta is incomplete because it was not updated below
+   * wildfire_threshold.  If only a single variable is needed, it is faster to
+   * call calculateEstimate(const KEY&).
    */
-  Values calculateEstimate() const override { return isam_.calculateEstimate(); }
+  Values calculateEstimate() const override {
+    return isam_.calculateEstimate();
+  }
 
-  const Value& calculateEstimate(Key key) const { return isam_.calculateEstimate(key); }
+  const Value& calculateEstimate(Key key) const {
+    return isam_.calculateEstimate(key);
+  }
 
-  /** Compute an estimate for a single variable using its incomplete linear delta computed
-   * during the last update.  This is faster than calling the no-argument version of
-   * calculateEstimate, which operates on all variables.
+  /** Compute an estimate for a single variable using its incomplete linear
+   * delta computed during the last update.  This is faster than calling the
+   * no-argument version of calculateEstimate, which operates on all variables.
    * @param key
    * @return
    */
@@ -87,24 +97,32 @@ public:
   const ISAM2Params& params() const { return isam_.params(); }
 
   /** Access the current set of factors */
-  const NonlinearFactorGraph& getFactors() const { return isam_.getFactorsUnsafe(); }
+  const NonlinearFactorGraph& getFactors() const {
+    return isam_.getFactorsUnsafe();
+  }
 
   /** Access the current set of linearized factors */
-  const GaussianFactorGraph& getLinearFactors() const { return isam_.getLinearFactorsUnsafe(); }
+  const GaussianFactorGraph& getLinearFactors() const {
+    return isam_.getLinearFactorsUnsafe();
+  }
 
   /** Access the current linearization point */
-  const Values& getLinearizationPoint() const { return isam_.getLinearizationPoint(); }
+  const Values& getLinearizationPoint() const {
+    return isam_.getLinearizationPoint();
+  }
 
   /** Access the current set of deltas to the linearization point */
   const VectorValues& getDelta() const { return isam_.getDelta(); }
 
   /// Calculate marginal covariance on given variable
-  Matrix marginalCovariance(Key key) const { return isam_.marginalCovariance(key); }
+  Matrix marginalCovariance(Key key) const {
+    return isam_.marginalCovariance(key);
+  }
 
   /// Get results of latest isam2 update
   const ISAM2Result& getISAM2Result() const { return isamResult_; }
 
-protected:
+  protected:
   /** Create default parameters */
   static ISAM2Params DefaultISAM2Params() {
     ISAM2Params params;
@@ -122,16 +140,24 @@ protected:
   /** Erase any keys associated with timestamps before the provided time */
   void eraseKeysBefore(double timestamp);
 
-  /** Fill in an iSAM2 ConstrainedKeys structure such that the provided keys are eliminated before all others */
-  void createOrderingConstraints(const KeyVector& marginalizableKeys, std::optional<FastMap<Key, int> >& constrainedKeys) const;
+  /** Fill in an iSAM2 ConstrainedKeys structure such that the provided keys are
+   * eliminated before all others */
+  void createOrderingConstraints(
+          const KeyVector& marginalizableKeys,
+          std::optional<FastMap<Key, int>>& constrainedKeys) const;
 
-private:
+  private:
   /** Private methods for printing debug information */
-  static void PrintKeySet(const std::set<Key>& keys, const std::string& label = "Keys:");
+  static void PrintKeySet(const std::set<Key>& keys,
+                          const std::string& label = "Keys:");
   static void PrintSymbolicFactor(const GaussianFactor::shared_ptr& factor);
-  static void PrintSymbolicGraph(const GaussianFactorGraph& graph, const std::string& label = "Factor Graph:");
-  static void PrintSymbolicTree(const ISAM2Ext& isam, const std::string& label = "Bayes Tree:");
-  static void PrintSymbolicTreeHelper(const gtsam::ISAM2Clique::shared_ptr& clique, const std::string indent = "");
+  static void PrintSymbolicGraph(const GaussianFactorGraph& graph,
+                                 const std::string& label = "Factor Graph:");
+  static void PrintSymbolicTree(const ISAM2Ext& isam,
+                                const std::string& label = "Bayes Tree:");
+  static void PrintSymbolicTreeHelper(
+          const gtsam::ISAM2Clique::shared_ptr& clique,
+          const std::string indent = "");
 };
 // IncrementalFixedLagSmootherExt
 

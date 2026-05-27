@@ -1,35 +1,38 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/integrated_loam_factor.hpp>
-
 #include <gtsam/geometry/SO3.h>
+
 #include <gtsam_points/ann/kdtree2.hpp>
+#include <gtsam_points/factors/integrated_loam_factor.hpp>
 
 namespace gtsam_points {
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::IntegratedPointToPlaneFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
-  num_threads(1),
-  max_correspondence_distance_sq(1.0),
-  correspondence_update_tolerance_rot(0.0),
-  correspondence_update_tolerance_trans(0.0),
-  target(target),
-  source(source) {
+IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::
+        IntegratedPointToPlaneFactor_(
+                gtsam::Key target_key,
+                gtsam::Key source_key,
+                const std::shared_ptr<const TargetFrame>& target,
+                const std::shared_ptr<const SourceFrame>& source,
+                const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
+      num_threads(1),
+      max_correspondence_distance_sq(1.0),
+      correspondence_update_tolerance_rot(0.0),
+      correspondence_update_tolerance_trans(0.0),
+      target(target),
+      source(source) {
   //
   if (!frame::has_points(*target)) {
-    std::cerr << "error: target frame doesn't have required attributes for loam" << std::endl;
+    std::cerr << "error: target frame doesn't have required attributes for loam"
+              << std::endl;
     abort();
   }
 
   if (!frame::has_points(*source)) {
-    std::cerr << "error: source frame doesn't have required attributes for loam" << std::endl;
+    std::cerr << "error: source frame doesn't have required attributes for loam"
+              << std::endl;
     abort();
   }
 
@@ -41,23 +44,30 @@ IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::IntegratedPointToPlaneF
 }
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::IntegratedPointToPlaneFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: IntegratedPointToPlaneFactor_(target_key, source_key, target, source, nullptr) {}
+IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::
+        IntegratedPointToPlaneFactor_(
+                gtsam::Key target_key,
+                gtsam::Key source_key,
+                const std::shared_ptr<const TargetFrame>& target,
+                const std::shared_ptr<const SourceFrame>& source)
+    : IntegratedPointToPlaneFactor_(
+              target_key, source_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::~IntegratedPointToPlaneFactor_() {}
+IntegratedPointToPlaneFactor_<TargetFrame,
+                              SourceFrame>::~IntegratedPointToPlaneFactor_() {}
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::update_correspondences(const Eigen::Isometry3d& delta) const {
-  if (correspondences.size() == frame::size(*source) && (correspondence_update_tolerance_trans > 0.0 || correspondence_update_tolerance_rot > 0.0)) {
+void IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::
+        update_correspondences(const Eigen::Isometry3d& delta) const {
+  if (correspondences.size() == frame::size(*source) &&
+      (correspondence_update_tolerance_trans > 0.0 ||
+       correspondence_update_tolerance_rot > 0.0)) {
     Eigen::Isometry3d diff = delta.inverse() * last_correspondence_point;
     double diff_rot = Eigen::AngleAxisd(diff.linear()).angle();
     double diff_trans = diff.translation().norm();
-    if (diff_rot < correspondence_update_tolerance_rot && diff_trans < correspondence_update_tolerance_trans) {
+    if (diff_rot < correspondence_update_tolerance_rot &&
+        diff_trans < correspondence_update_tolerance_trans) {
       return;
     }
   }
@@ -70,12 +80,15 @@ void IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::update_corresponde
 
     std::array<size_t, 3> k_indices;
     std::array<double, 3> k_sq_dists;
-    size_t num_found = target_tree->knn_search(pt.data(), 3, k_indices.data(), k_sq_dists.data(), max_correspondence_distance_sq);
+    size_t num_found = target_tree->knn_search(pt.data(), 3, k_indices.data(),
+                                               k_sq_dists.data(),
+                                               max_correspondence_distance_sq);
 
     if (num_found < 3 || k_sq_dists.back() > max_correspondence_distance_sq) {
       correspondences[i] = std::make_tuple(-1, -1, -1);
     } else {
-      correspondences[i] = std::make_tuple(k_indices[0], k_indices[1], k_indices[2]);
+      correspondences[i] =
+              std::make_tuple(k_indices[0], k_indices[1], k_indices[2]);
     }
   }
 
@@ -84,12 +97,12 @@ void IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::update_corresponde
 
 template <typename TargetFrame, typename SourceFrame>
 double IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::evaluate(
-  const Eigen::Isometry3d& delta,
-  Eigen::Matrix<double, 6, 6>* H_target,
-  Eigen::Matrix<double, 6, 6>* H_source,
-  Eigen::Matrix<double, 6, 6>* H_target_source,
-  Eigen::Matrix<double, 6, 1>* b_target,
-  Eigen::Matrix<double, 6, 1>* b_source) const {
+        const Eigen::Isometry3d& delta,
+        Eigen::Matrix<double, 6, 6>* H_target,
+        Eigen::Matrix<double, 6, 6>* H_source,
+        Eigen::Matrix<double, 6, 6>* H_target_source,
+        Eigen::Matrix<double, 6, 1>* b_target,
+        Eigen::Matrix<double, 6, 1>* b_source) const {
   //
   if (correspondences.size() != frame::size(*source)) {
     update_correspondences(delta);
@@ -112,7 +125,8 @@ double IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::evaluate(
     bs_source.resize(num_threads, Eigen::Matrix<double, 6, 1>::Zero());
   }
 
-#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) schedule(guided, 8)
+#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) \
+        schedule(guided, 8)
   for (int i = 0; i < frame::size(*source); i++) {
     auto target_indices = correspondences[i];
     if (std::get<0>(target_indices) < 0) {
@@ -126,7 +140,8 @@ double IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::evaluate(
 
     Eigen::Vector4d transed_x_i = delta * x_i;
     Eigen::Vector4d normal = Eigen::Vector4d::Zero();
-    normal.head<3>() = (x_j - x_l).template head<3>().cross((x_j - x_m).template head<3>());
+    normal.head<3>() = (x_j - x_l).template head<3>().cross(
+            (x_j - x_m).template head<3>());
     normal = normal / normal.norm();
 
     Eigen::Vector4d error = x_j - transed_x_i;
@@ -142,7 +157,8 @@ double IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::evaluate(
     J_target.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
 
     Eigen::Matrix<double, 4, 6> J_source = Eigen::Matrix<double, 4, 6>::Zero();
-    J_source.block<3, 3>(0, 0) = delta.linear() * gtsam::SO3::Hat(x_i.template head<3>());
+    J_source.block<3, 3>(0, 0) =
+            delta.linear() * gtsam::SO3::Hat(x_i.template head<3>());
     J_source.block<3, 3>(0, 3) = -delta.linear();
 
     J_target = normal.asDiagonal() * J_target;
@@ -180,22 +196,24 @@ double IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>::evaluate(
 }
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::IntegratedPointToEdgeFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
-  num_threads(1),
-  max_correspondence_distance_sq(1.0),
-  correspondence_update_tolerance_rot(0.0),
-  correspondence_update_tolerance_trans(0.0),
-  target(target),
-  source(source) {
+IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::
+        IntegratedPointToEdgeFactor_(
+                gtsam::Key target_key,
+                gtsam::Key source_key,
+                const std::shared_ptr<const TargetFrame>& target,
+                const std::shared_ptr<const SourceFrame>& source,
+                const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
+      num_threads(1),
+      max_correspondence_distance_sq(1.0),
+      correspondence_update_tolerance_rot(0.0),
+      correspondence_update_tolerance_trans(0.0),
+      target(target),
+      source(source) {
   //
   if (!frame::has_points(*target) || !frame::has_points(*source)) {
-    std::cerr << "error: target or source points has not been allocated!!" << std::endl;
+    std::cerr << "error: target or source points has not been allocated!!"
+              << std::endl;
     abort();
   }
 
@@ -207,23 +225,30 @@ IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::IntegratedPointToEdgeFac
 }
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::IntegratedPointToEdgeFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: gtsam_points::IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(target_key, source_key, target, source, nullptr) {}
+IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::
+        IntegratedPointToEdgeFactor_(
+                gtsam::Key target_key,
+                gtsam::Key source_key,
+                const std::shared_ptr<const TargetFrame>& target,
+                const std::shared_ptr<const SourceFrame>& source)
+    : gtsam_points::IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(
+              target_key, source_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::~IntegratedPointToEdgeFactor_() {}
+IntegratedPointToEdgeFactor_<TargetFrame,
+                             SourceFrame>::~IntegratedPointToEdgeFactor_() {}
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::update_correspondences(const Eigen::Isometry3d& delta) const {
-  if (correspondences.size() == frame::size(*source) && (correspondence_update_tolerance_trans > 0.0 || correspondence_update_tolerance_rot > 0.0)) {
+void IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::
+        update_correspondences(const Eigen::Isometry3d& delta) const {
+  if (correspondences.size() == frame::size(*source) &&
+      (correspondence_update_tolerance_trans > 0.0 ||
+       correspondence_update_tolerance_rot > 0.0)) {
     Eigen::Isometry3d diff = delta.inverse() * last_correspondence_point;
     double diff_rot = Eigen::AngleAxisd(diff.linear()).angle();
     double diff_trans = diff.translation().norm();
-    if (diff_rot < correspondence_update_tolerance_rot && diff_trans < correspondence_update_tolerance_trans) {
+    if (diff_rot < correspondence_update_tolerance_rot &&
+        diff_trans < correspondence_update_tolerance_trans) {
       return;
     }
   }
@@ -236,7 +261,9 @@ void IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::update_corresponden
 
     std::array<size_t, 2> k_indices;
     std::array<double, 2> k_sq_dists;
-    size_t num_found = target_tree->knn_search(pt.data(), 2, k_indices.data(), k_sq_dists.data(), max_correspondence_distance_sq);
+    size_t num_found = target_tree->knn_search(pt.data(), 2, k_indices.data(),
+                                               k_sq_dists.data(),
+                                               max_correspondence_distance_sq);
 
     if (num_found < 2 || k_sq_dists.back() > max_correspondence_distance_sq) {
       correspondences[i] = std::make_tuple(-1, -1);
@@ -250,12 +277,12 @@ void IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::update_corresponden
 
 template <typename TargetFrame, typename SourceFrame>
 double IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::evaluate(
-  const Eigen::Isometry3d& delta,
-  Eigen::Matrix<double, 6, 6>* H_target,
-  Eigen::Matrix<double, 6, 6>* H_source,
-  Eigen::Matrix<double, 6, 6>* H_target_source,
-  Eigen::Matrix<double, 6, 1>* b_target,
-  Eigen::Matrix<double, 6, 1>* b_source) const {
+        const Eigen::Isometry3d& delta,
+        Eigen::Matrix<double, 6, 6>* H_target,
+        Eigen::Matrix<double, 6, 6>* H_source,
+        Eigen::Matrix<double, 6, 6>* H_target_source,
+        Eigen::Matrix<double, 6, 1>* b_target,
+        Eigen::Matrix<double, 6, 1>* b_source) const {
   //
   if (correspondences.size() != frame::size(*source)) {
     update_correspondences(delta);
@@ -278,7 +305,8 @@ double IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::evaluate(
     bs_source.resize(num_threads, Eigen::Matrix<double, 6, 1>::Zero());
   }
 
-#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) schedule(guided, 8)
+#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) \
+        schedule(guided, 8)
   for (int i = 0; i < frame::size(*source); i++) {
     auto target_indices = correspondences[i];
     if (std::get<0>(target_indices) < 0) {
@@ -304,11 +332,13 @@ double IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::evaluate(
     }
 
     Eigen::Matrix<double, 4, 6> J_target = Eigen::Matrix<double, 4, 6>::Zero();
-    J_target.block<3, 3>(0, 0) = -gtsam::SO3::Hat(transed_x_i.template head<3>());
+    J_target.block<3, 3>(0, 0) =
+            -gtsam::SO3::Hat(transed_x_i.template head<3>());
     J_target.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
 
     Eigen::Matrix<double, 4, 6> J_source = Eigen::Matrix<double, 4, 6>::Zero();
-    J_source.block<3, 3>(0, 0) = delta.linear() * gtsam::SO3::Hat(x_i.template head<3>());
+    J_source.block<3, 3>(0, 0) =
+            delta.linear() * gtsam::SO3::Hat(x_i.template head<3>());
     J_source.block<3, 3>(0, 3) = -delta.linear();
 
     Eigen::Matrix<double, 4, 4> J_e = Eigen::Matrix4d::Zero();
@@ -352,36 +382,42 @@ double IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>::evaluate(
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedLOAMFactor_<TargetFrame, SourceFrame>::IntegratedLOAMFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target_edges,
-  const std::shared_ptr<const TargetFrame>& target_planes,
-  const std::shared_ptr<const SourceFrame>& source_edges,
-  const std::shared_ptr<const SourceFrame>& source_planes,
-  const std::shared_ptr<NearestNeighborSearch>& target_edges_tree,
-  const std::shared_ptr<NearestNeighborSearch>& target_planes_tree)
-: gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
-  enable_correspondence_validation(false) {
+        gtsam::Key target_key,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target_edges,
+        const std::shared_ptr<const TargetFrame>& target_planes,
+        const std::shared_ptr<const SourceFrame>& source_edges,
+        const std::shared_ptr<const SourceFrame>& source_planes,
+        const std::shared_ptr<NearestNeighborSearch>& target_edges_tree,
+        const std::shared_ptr<NearestNeighborSearch>& target_planes_tree)
+    : gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
+      enable_correspondence_validation(false) {
   //
-  edge_factor.reset(
-    new IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(target_key, source_key, target_edges, source_edges, target_edges_tree));
+  edge_factor.reset(new IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(
+          target_key, source_key, target_edges, source_edges,
+          target_edges_tree));
   plane_factor.reset(
-    new IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>(target_key, source_key, target_planes, source_planes, target_planes_tree));
+          new IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>(
+                  target_key, source_key, target_planes, source_planes,
+                  target_planes_tree));
 }
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedLOAMFactor_<TargetFrame, SourceFrame>::IntegratedLOAMFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target_edges,
-  const std::shared_ptr<const TargetFrame>& target_planes,
-  const std::shared_ptr<const SourceFrame>& source_edges,
-  const std::shared_ptr<const SourceFrame>& source_planes)
-: gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
-  enable_correspondence_validation(false) {
+        gtsam::Key target_key,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target_edges,
+        const std::shared_ptr<const TargetFrame>& target_planes,
+        const std::shared_ptr<const SourceFrame>& source_edges,
+        const std::shared_ptr<const SourceFrame>& source_planes)
+    : gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
+      enable_correspondence_validation(false) {
   //
-  edge_factor.reset(new IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(target_key, source_key, target_edges, source_edges));
-  plane_factor.reset(new IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>(target_key, source_key, target_planes, source_planes));
+  edge_factor.reset(new IntegratedPointToEdgeFactor_<TargetFrame, SourceFrame>(
+          target_key, source_key, target_edges, source_edges));
+  plane_factor.reset(
+          new IntegratedPointToPlaneFactor_<TargetFrame, SourceFrame>(
+                  target_key, source_key, target_planes, source_planes));
 }
 
 template <typename TargetFrame, typename SourceFrame>
@@ -394,18 +430,21 @@ void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::set_num_threads(int n) {
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::set_max_correspondence_distance(double dist_edge, double dist_plane) {
+void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::
+        set_max_correspondence_distance(double dist_edge, double dist_plane) {
   edge_factor->set_max_correspondence_distance(dist_edge);
   plane_factor->set_max_correspondence_distance(dist_plane);
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::set_enable_correspondence_validation(bool enable) {
+void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::
+        set_enable_correspondence_validation(bool enable) {
   enable_correspondence_validation = enable;
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::update_correspondences(const Eigen::Isometry3d& delta) const {
+void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::update_correspondences(
+        const Eigen::Isometry3d& delta) const {
   edge_factor->update_correspondences(delta);
   plane_factor->update_correspondences(delta);
 
@@ -414,15 +453,16 @@ void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::update_correspondences(con
 
 template <typename TargetFrame, typename SourceFrame>
 double IntegratedLOAMFactor_<TargetFrame, SourceFrame>::evaluate(
-  const Eigen::Isometry3d& delta,
-  Eigen::Matrix<double, 6, 6>* H_target,
-  Eigen::Matrix<double, 6, 6>* H_source,
-  Eigen::Matrix<double, 6, 6>* H_target_source,
-  Eigen::Matrix<double, 6, 1>* b_target,
-  Eigen::Matrix<double, 6, 1>* b_source) const {
+        const Eigen::Isometry3d& delta,
+        Eigen::Matrix<double, 6, 6>* H_target,
+        Eigen::Matrix<double, 6, 6>* H_source,
+        Eigen::Matrix<double, 6, 6>* H_target_source,
+        Eigen::Matrix<double, 6, 1>* b_target,
+        Eigen::Matrix<double, 6, 1>* b_source) const {
   //
 
-  double error = edge_factor->evaluate(delta, H_target, H_source, H_target_source, b_target, b_source);
+  double error = edge_factor->evaluate(delta, H_target, H_source,
+                                       H_target_source, b_target, b_source);
 
   if (H_target && H_source && H_target_source && b_target && b_source) {
     Eigen::Matrix<double, 6, 6> H_t, H_s, H_ts;
@@ -442,13 +482,15 @@ double IntegratedLOAMFactor_<TargetFrame, SourceFrame>::evaluate(
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::set_correspondence_update_tolerance(double angle, double trans) {
+void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::
+        set_correspondence_update_tolerance(double angle, double trans) {
   plane_factor->set_correspondence_update_tolerance(angle, trans);
   edge_factor->set_correspondence_update_tolerance(angle, trans);
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::validate_correspondences() const {
+void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::validate_correspondences()
+        const {
   if (!enable_correspondence_validation) {
     return;
   }
@@ -486,7 +528,8 @@ void IntegratedLOAMFactor_<TargetFrame, SourceFrame>::validate_correspondences()
     const double v_theta3 = std::atan2(pt3.z(), pt3.template head<2>().norm());
 
     // Reject pairs in a same scan line
-    if (std::abs(v_theta1 - v_theta2) < 0.1 * M_PI / 180.0 && std::abs(v_theta1 - v_theta3) < 0.1 * M_PI * 180.0) {
+    if (std::abs(v_theta1 - v_theta2) < 0.1 * M_PI / 180.0 &&
+        std::abs(v_theta1 - v_theta3) < 0.1 * M_PI * 180.0) {
       corr = std::make_tuple(-1, -1, -1);
     }
   }

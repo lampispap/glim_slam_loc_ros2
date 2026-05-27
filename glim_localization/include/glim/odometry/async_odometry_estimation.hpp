@@ -1,11 +1,10 @@
 #pragma once
 
+#include <atomic>
+#include <glim/odometry/odometry_estimation_base.hpp>
+#include <glim/util/concurrent_vector.hpp>
 #include <mutex>
 #include <thread>
-#include <atomic>
-
-#include <glim/util/concurrent_vector.hpp>
-#include <glim/odometry/odometry_estimation_base.hpp>
 
 namespace spdlog {
 class logger;
@@ -14,17 +13,20 @@ class logger;
 namespace glim {
 
 /**
- * @brief Odometry estimation executor to wrap and asynchronously run OdometryEstimationBase
+ * @brief Odometry estimation executor to wrap and asynchronously run
+ * OdometryEstimationBase
  * @note  All the exposed public methods are thread-safe
  *
  */
 class AsyncOdometryEstimation {
-public:
+  public:
   /**
    * @brief Construct a new Async Odometry Estimation object
    * @param odometry_estimation  Odometry estimation to be wrapped
    */
-  AsyncOdometryEstimation(const std::shared_ptr<OdometryEstimationBase>& odometry_estimation, bool enable_imu);
+  AsyncOdometryEstimation(
+          const std::shared_ptr<OdometryEstimationBase>& odometry_estimation,
+          bool enable_imu);
 
   /**
    * @brief Destroy the Async Odometry Estimation object
@@ -44,17 +46,9 @@ public:
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
-
-
-    /**
-   * @brief Insert an Raw Differential Wheel angular velocity
-   * @param stamp         Timestamp
-   * @param left_angular_vel    Left wheel angular velocity rad/s
-   * @param right_angular_vel   Right wheel angular velocity rad/s
-   */
-  void insert_gps(const double stamp, const double lat, const double lon, const double alt, const double hdop);
-
+  void insert_imu(const double stamp,
+                  const Eigen::Vector3d& linear_acc,
+                  const Eigen::Vector3d& angular_vel);
 
   /**
    * @brief Insert an Raw Differential Wheel angular velocity
@@ -62,7 +56,21 @@ public:
    * @param left_angular_vel    Left wheel angular velocity rad/s
    * @param right_angular_vel   Right wheel angular velocity rad/s
    */
-  void insert_raw_odom(const double stamp, const double left_angular_vel, const double right_angular_vel);
+  void insert_gps(const double stamp,
+                  const double lat,
+                  const double lon,
+                  const double alt,
+                  const double hdop);
+
+  /**
+   * @brief Insert an Raw Differential Wheel angular velocity
+   * @param stamp         Timestamp
+   * @param left_angular_vel    Left wheel angular velocity rad/s
+   * @param right_angular_vel   Right wheel angular velocity rad/s
+   */
+  void insert_raw_odom(const double stamp,
+                       const double left_angular_vel,
+                       const double right_angular_vel);
 
   /**
    * @brief Insert a preprocessed point cloud into odometry estimation
@@ -85,16 +93,19 @@ public:
    * @param estimation_results    Estimation results
    * @param marginalized_frames   Marginalized frames
    */
-  void get_results(std::vector<EstimationFrame::ConstPtr>& estimation_results, std::vector<EstimationFrame::ConstPtr>& marginalized_frames);
+  void get_results(std::vector<EstimationFrame::ConstPtr>& estimation_results,
+                   std::vector<EstimationFrame::ConstPtr>& marginalized_frames);
 
   EstimationFrame::ConstPtr get_latest_frame() const;
 
-private:
+  private:
   void run();
 
-private:
-  std::atomic_bool kill_switch;      // Flag to stop the thread immediately (Hard kill switch)
-  std::atomic_bool end_of_sequence;  // Flag to stop the thread when the input queues become empty (Soft kill switch)
+  private:
+  std::atomic_bool kill_switch;  // Flag to stop the thread immediately (Hard
+                                 // kill switch)
+  std::atomic_bool end_of_sequence;  // Flag to stop the thread when the input
+                                     // queues become empty (Soft kill switch)
   std::thread thread;
 
   // Input queues

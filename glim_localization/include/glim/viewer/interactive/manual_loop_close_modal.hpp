@@ -1,8 +1,9 @@
 #pragma once
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
-#include <gtsam_points/types/point_cloud.hpp>
+
 #include <glk/drawable.hpp>
+#include <gtsam_points/types/point_cloud.hpp>
 
 namespace guik {
 class GLCanvas;
@@ -17,23 +18,27 @@ namespace glim {
  * @brief ImGUI modal for manually creating loop factors
  */
 class ManualLoopCloseModal {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ManualLoopCloseModal();
   ~ManualLoopCloseModal();
 
-  void set_target(const gtsam::Key target_key, const gtsam_points::PointCloud::ConstPtr& target, const Eigen::Isometry3d& target_pose);
-  void set_source(const gtsam::Key target_key, const gtsam_points::PointCloud::ConstPtr& source, const Eigen::Isometry3d& source_pose);
+  void set_target(const gtsam::Key target_key,
+                  const gtsam_points::PointCloud::ConstPtr& target,
+                  const Eigen::Isometry3d& target_pose);
+  void set_source(const gtsam::Key target_key,
+                  const gtsam_points::PointCloud::ConstPtr& source,
+                  const Eigen::Isometry3d& source_pose);
 
   gtsam::NonlinearFactor::shared_ptr run();
 
-private:
+  private:
   std::shared_ptr<Eigen::Isometry3d> align(guik::ProgressInterface& progress);
   gtsam::NonlinearFactor::shared_ptr create_factor();
   void draw_canvas();
 
-private:
+  private:
   bool request_to_open;
   std::unique_ptr<guik::GLCanvas> canvas;
   std::unique_ptr<guik::ProgressModal> progress_modal;

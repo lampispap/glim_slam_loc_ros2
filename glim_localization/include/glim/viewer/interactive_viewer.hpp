@@ -1,21 +1,20 @@
 #pragma once
 
-#include <atomic>
-#include <memory>
-#include <map>
-#include <thread>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <atomic>
+#include <boost/shared_ptr.hpp>
+#include <map>
+#include <memory>
+#include <thread>
+#include <vector>
 
 // #include <gtsam/inference/Symbol.h>
 #include <gtsam/geometry/Pose3.h>
 
 #include <glim/mapping/sub_map.hpp>
-#include <glim/util/extension_module.hpp>
 #include <glim/util/concurrent_vector.hpp>
+#include <glim/util/extension_module.hpp>
 
 namespace spdlog {
 class logger;
@@ -39,7 +38,7 @@ class ManualLoopCloseModal;
 class BundleAdjustmentModal;
 
 class InteractiveViewer : public ExtensionModule {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   enum class PickType { POINTS = 1, FRAME = (1 << 1), FACTOR = (1 << 2) };
@@ -53,7 +52,7 @@ public:
   void stop();
   void clear();
 
-protected:
+  protected:
   void viewer_loop();
 
   virtual void setup_ui() {}
@@ -68,11 +67,16 @@ protected:
 
   void odometry_on_new_frame(const EstimationFrame::ConstPtr& new_frame);
   void globalmap_on_insert_submap(const SubMap::ConstPtr& submap);
-  void globalmap_on_update_submaps(const std::vector<SubMap::Ptr>& updated_submaps);
-  void globalmap_on_smoother_update(gtsam_points::ISAM2Ext& isam2, gtsam::NonlinearFactorGraph& new_factors, gtsam::Values& new_values);
-  void globalmap_on_smoother_update_result(gtsam_points::ISAM2Ext& isam2, const gtsam_points::ISAM2ResultExt& result);
+  void globalmap_on_update_submaps(
+          const std::vector<SubMap::Ptr>& updated_submaps);
+  void globalmap_on_smoother_update(gtsam_points::ISAM2Ext& isam2,
+                                    gtsam::NonlinearFactorGraph& new_factors,
+                                    gtsam::Values& new_values);
+  void globalmap_on_smoother_update_result(
+          gtsam_points::ISAM2Ext& isam2,
+          const gtsam_points::ISAM2ResultExt& result);
 
-protected:
+  protected:
   std::atomic_bool request_to_clear;
   std::atomic_bool request_to_terminate;
   std::atomic_bool kill_switch;
@@ -116,9 +120,9 @@ protected:
   std::vector<SubMap::ConstPtr> submaps;
 
   // Factors
-  std::vector<std::tuple<FactorType, std::uint64_t, std::uint64_t>> global_factors;
+  std::vector<std::tuple<FactorType, std::uint64_t, std::uint64_t>>
+          global_factors;
   std::map<uint64_t, gtsam::Point3> global_gps_factors;
-
 
   // Factors to be inserted into the global mapping graph
   ConcurrentVector<std::shared_ptr<gtsam::NonlinearFactor>> new_factors;

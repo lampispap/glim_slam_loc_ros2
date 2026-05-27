@@ -1,8 +1,8 @@
 #pragma once
 
-#include <map>
-#include <glim/util/callback_slot.hpp>
 #include <glim/odometry/estimation_frame.hpp>
+#include <glim/util/callback_slot.hpp>
+#include <map>
 
 namespace cv {
 class Mat;
@@ -24,19 +24,22 @@ namespace glim {
  * @brief IMU state initialization-related callbacks
  */
 struct IMUStateInitializationCallbacks {
-public:
+  public:
   /**
    * @brief Initialization update callback
    * @param points         Input points
    * @param T_world_lidar  Estimated LiDAR pose w.r.t. the first frame
    */
-  static CallbackSlot<void(const PreprocessedFrame::ConstPtr& points, const Eigen::Isometry3d& T_odom_lidar)> on_updated;
+  static CallbackSlot<void(const PreprocessedFrame::ConstPtr& points,
+                           const Eigen::Isometry3d& T_odom_lidar)>
+          on_updated;
 
   /**
    * @brief IMU state initialization termination callback
    * @param estimated_frame  Estimated LiDAR-IMU state
    */
-  static CallbackSlot<void(const EstimationFrame::ConstPtr& estimated_frame)> on_finished;
+  static CallbackSlot<void(const EstimationFrame::ConstPtr& estimated_frame)>
+          on_finished;
 };
 
 /**
@@ -49,7 +52,8 @@ struct OdometryEstimationCallbacks {
    * @param stamp  Timestamp
    * @param image  Image
    */
-  static CallbackSlot<void(const double stamp, const cv::Mat& image)> on_insert_image;
+  static CallbackSlot<void(const double stamp, const cv::Mat& image)>
+          on_insert_image;
 
   /**
    * @brief IMU input callback
@@ -57,19 +61,25 @@ struct OdometryEstimationCallbacks {
    * @param linear_acc   Linear acceleration
    * @param angular_vel  Angular velocity
    */
-  static CallbackSlot<void(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel)> on_insert_imu;
+  static CallbackSlot<void(const double stamp,
+                           const Eigen::Vector3d& linear_acc,
+                           const Eigen::Vector3d& angular_vel)>
+          on_insert_imu;
 
   /**
    * @brief PointCloud input callback
    * @param frame  Preprocessed point cloud frame
    */
-  static CallbackSlot<void(const PreprocessedFrame::Ptr& frame)> on_insert_frame;
+  static CallbackSlot<void(const PreprocessedFrame::Ptr& frame)>
+          on_insert_frame;
 
   /**
    * @brief New odometry estimation frame creation callback
-   * @param frame  Odometry estimation frame (deskewed points and initial transformation estimate)
+   * @param frame  Odometry estimation frame (deskewed points and initial
+   * transformation estimate)
    */
-  static CallbackSlot<void(const EstimationFrame::ConstPtr& frame)> on_new_frame;
+  static CallbackSlot<void(const EstimationFrame::ConstPtr& frame)>
+          on_new_frame;
 
   /**
    * @brief Odometry estimation frames update callback
@@ -77,7 +87,9 @@ struct OdometryEstimationCallbacks {
    * @note  Sensor states will be updated in the odometry estimation thread
    *        Accessing them from another thread is not thread-safe
    */
-  static CallbackSlot<void(const std::vector<EstimationFrame::ConstPtr>& frames)> on_update_frames;
+  static CallbackSlot<void(
+          const std::vector<EstimationFrame::ConstPtr>& frames)>
+          on_update_frames;
 
   /**
    * @brief Odometry estimation keyframes update callback
@@ -85,19 +97,25 @@ struct OdometryEstimationCallbacks {
    * @note  Sensor states will be updated in the odometry estimation thread
    *        Accessing them from another thread is not thread-safe
    */
-  static CallbackSlot<void(const std::vector<EstimationFrame::ConstPtr>& keyframes)> on_update_keyframes;
+  static CallbackSlot<void(
+          const std::vector<EstimationFrame::ConstPtr>& keyframes)>
+          on_update_keyframes;
 
   /**
    * @brief Odometry estimation frame marginalization callback
    * @param marginalized_frames  Marginalized odometry frames
    */
-  static CallbackSlot<void(const std::vector<EstimationFrame::ConstPtr>& marginalized_frames)> on_marginalized_frames;
+  static CallbackSlot<void(
+          const std::vector<EstimationFrame::ConstPtr>& marginalized_frames)>
+          on_marginalized_frames;
 
   /**
    * @brief Odometry estimation keyframe marginalization callback
    * @param marginalized_keyframes  Marginalized odometry keyframes
    */
-  static CallbackSlot<void(const std::vector<EstimationFrame::ConstPtr>& marginalized_keyframes)> on_marginalized_keyframes;
+  static CallbackSlot<void(
+          const std::vector<EstimationFrame::ConstPtr>& marginalized_keyframes)>
+          on_marginalized_keyframes;
 
   /**
    * @brief Odometry estimation optimization callback (just before optimization)
@@ -106,26 +124,28 @@ struct OdometryEstimationCallbacks {
    * @param new_values   New values to be inserted into the graph
    */
   static CallbackSlot<void(
-    gtsam_points::IncrementalFixedLagSmootherExtWithFallback& smoother,
-    gtsam::NonlinearFactorGraph& new_factors,
-    gtsam::Values& new_values,
-    std::map<std::uint64_t, double>& new_stamps)>
-    on_smoother_update;
+          gtsam_points::IncrementalFixedLagSmootherExtWithFallback& smoother,
+          gtsam::NonlinearFactorGraph& new_factors,
+          gtsam::Values& new_values,
+          std::map<std::uint64_t, double>& new_stamps)>
+          on_smoother_update;
 
   /**
    * @brief Odometry estimation optimization callback (just after optimization)
    * @param smoother     FixedLagSmoother
    */
-  static CallbackSlot<void(gtsam_points::IncrementalFixedLagSmootherExtWithFallback& smoother)> on_smoother_update_finish;
+  static CallbackSlot<void(
+          gtsam_points::IncrementalFixedLagSmootherExtWithFallback& smoother)>
+          on_smoother_update_finish;
 
   /**
    * @brief Smoother corruption callback
-   * @note  We should not forget that FixedLagSmoothers are in "gtsam_unstable" directory!!
+   * @note  We should not forget that FixedLagSmoothers are in "gtsam_unstable"
+   * directory!!
    */
   static CallbackSlot<void(double)> on_smoother_corruption;
 
   static CallbackSlot<void(double, double, double)> on_gps_update;
-
 };
 
 }  // namespace glim

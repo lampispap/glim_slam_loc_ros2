@@ -2,10 +2,9 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
-#include <opencv2/core.hpp>
 #include <glim/odometry/estimation_frame.hpp>
 #include <glim/preprocess/preprocessed_frame.hpp>
+#include <opencv2/core.hpp>
 
 namespace spdlog {
 class logger;
@@ -18,7 +17,7 @@ namespace glim {
  *
  */
 class OdometryEstimationBase {
-public:
+  public:
   OdometryEstimationBase();
   virtual ~OdometryEstimationBase() {}
 
@@ -40,7 +39,9 @@ public:
    * @param linear_acc   Linear acceleration
    * @param angular_vel  Angular velocity
    */
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel);
 
   /**
    * @brief Insert an GPS data
@@ -55,7 +56,9 @@ public:
    * @param left_angular_vel    Left wheel angular velocity rad/s
    * @param right_angular_vel   Right wheel angular velocity rad/s
    */
-  virtual void insert_raw_odom(const double stamp, const double left_angular_vel, const double right_angular_vel) {}
+  virtual void insert_raw_odom(const double stamp,
+                               const double left_angular_vel,
+                               const double right_angular_vel) {}
 
   /**
    * @brief Insert a point cloud
@@ -63,24 +66,32 @@ public:
    * @param marginalized_states         [out] Marginalized estimation frames
    * @return EstimationFrame::ConstPtr  Estimation result for the latest frame
    */
-  virtual EstimationFrame::ConstPtr insert_frame(const PreprocessedFrame::Ptr& frame, std::vector<EstimationFrame::ConstPtr>& marginalized_states);
+  virtual EstimationFrame::ConstPtr insert_frame(
+          const PreprocessedFrame::Ptr& frame,
+          std::vector<EstimationFrame::ConstPtr>& marginalized_states);
 
   /**
-   * @brief Pop out the remaining non-marginalized frames (called at the end of the sequence)
+   * @brief Pop out the remaining non-marginalized frames (called at the end of
+   * the sequence)
    * @return std::vector<EstimationFrame::ConstPtr>
    */
-  virtual std::vector<EstimationFrame::ConstPtr> get_remaining_frames() { return std::vector<EstimationFrame::ConstPtr>(); }
+  virtual std::vector<EstimationFrame::ConstPtr> get_remaining_frames() {
+    return std::vector<EstimationFrame::ConstPtr>();
+  }
 
   /**
    * @brief Load an odometry estimation module from a dynamic library
    * @param so_name  Dynamic library name
    * @return         Loaded odometry estimation module
    */
-  static std::shared_ptr<OdometryEstimationBase> load_module(const std::string& so_name);
+  static std::shared_ptr<OdometryEstimationBase> load_module(
+          const std::string& so_name);
 
-  virtual EstimationFrame::ConstPtr get_latest_frame() const {return nullptr;};
+  virtual EstimationFrame::ConstPtr get_latest_frame() const {
+    return nullptr;
+  };
 
-protected:
+  protected:
   // Logging
   std::shared_ptr<spdlog::logger> logger;
 };

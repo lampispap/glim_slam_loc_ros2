@@ -10,7 +10,7 @@ struct CUstream_st;
 namespace gtsam_points {
 
 struct CUDAStream {
-public:
+  public:
   CUDAStream();
   ~CUDAStream();
 
@@ -28,13 +28,13 @@ public:
     resources.emplace_back(std::make_shared<T>(args...));
   }
 
-public:
+  public:
   CUstream_st* stream;
   std::vector<std::shared_ptr<void>> resources;
 };
 
 struct RegisteredMemory {
-public:
+  public:
   RegisteredMemory(void* ptr, size_t size, unsigned int flags = 0x00);
   ~RegisteredMemory();
 

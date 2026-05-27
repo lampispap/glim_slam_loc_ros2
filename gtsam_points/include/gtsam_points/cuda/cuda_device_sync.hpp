@@ -10,4 +10,4 @@ namespace gtsam_points {
  */
 void cuda_device_synchronize();
 
-}
+}  // namespace gtsam_points

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/bundle_adjustment_factor_lsq.hpp>
-
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/linear/HessianFactor.h>
+
+#include <gtsam_points/factors/bundle_adjustment_factor_lsq.hpp>
 #include <gtsam_points/util/expressions.hpp>
 
 namespace gtsam_points {
 
 struct LsqBundleAdjustmentFactor::FrameDistribution {
-public:
+  public:
   FrameDistribution() {
     update_required = false;
     num_points = 0;
@@ -62,7 +62,8 @@ LsqBundleAdjustmentFactor::LsqBundleAdjustmentFactor() {
 
 LsqBundleAdjustmentFactor::~LsqBundleAdjustmentFactor() {}
 
-void LsqBundleAdjustmentFactor::add(const gtsam::Point3& pt, const gtsam::Key& key) {
+void LsqBundleAdjustmentFactor::add(const gtsam::Point3& pt,
+                                    const gtsam::Key& key) {
   if (std::find(keys_.begin(), keys_.end(), key) == keys_.end()) {
     this->keys_.push_back(key);
   }
@@ -87,7 +88,8 @@ double LsqBundleAdjustmentFactor::error(const gtsam::Values& c) const {
   for (const auto& key : keys_) {
     const auto found = frame_dists.find(key);
     if (found == frame_dists.end()) {
-      std::cerr << "error: key " << key << " not found in frame_dists!!" << std::endl;
+      std::cerr << "error: key " << key << " not found in frame_dists!!"
+                << std::endl;
       abort();
     }
 
@@ -103,15 +105,19 @@ double LsqBundleAdjustmentFactor::error(const gtsam::Values& c) const {
     const auto& R_ex = frame_dist->eigenvectors.col(2);
     const auto& R_ey = frame_dist->eigenvectors.col(1);
 
-    sum_errors += n_k * lambda[2] * std::pow((R_k * R_ex).dot(global_normal), 2);
-    sum_errors += n_k * lambda[1] * std::pow((R_k * R_ey).dot(global_normal), 2);
-    sum_errors += n_k * std::pow((pose * mean_k - global_mean).dot(global_normal), 2);
+    sum_errors +=
+            n_k * lambda[2] * std::pow((R_k * R_ex).dot(global_normal), 2);
+    sum_errors +=
+            n_k * lambda[1] * std::pow((R_k * R_ey).dot(global_normal), 2);
+    sum_errors +=
+            n_k * std::pow((pose * mean_k - global_mean).dot(global_normal), 2);
   }
 
   return sum_errors;
 }
 
-std::shared_ptr<gtsam::GaussianFactor> LsqBundleAdjustmentFactor::linearize(const gtsam::Values& c) const {
+std::shared_ptr<gtsam::GaussianFactor> LsqBundleAdjustmentFactor::linearize(
+        const gtsam::Values& c) const {
   update_global_distribution(c);
 
   double sum_errors = 0.0;
@@ -133,7 +139,8 @@ std::shared_ptr<gtsam::GaussianFactor> LsqBundleAdjustmentFactor::linearize(cons
     const auto key = keys_[i];
     const auto found = frame_dists.find(key);
     if (found == frame_dists.end()) {
-      std::cerr << "error: key " << key << " not found in frame_dists!!" << std::endl;
+      std::cerr << "error: key " << key << " not found in frame_dists!!"
+                << std::endl;
       abort();
     }
 
@@ -153,16 +160,19 @@ std::shared_ptr<gtsam::GaussianFactor> LsqBundleAdjustmentFactor::linearize(cons
     double e2 = (R_k * R_ey).dot(global_normal);
     double e3 = global_normal.transpose() * (R_k * mean_k + t_k - global_mean);
 
-    sum_errors += n_k * lambda[2] * e1 * e1 + n_k * lambda[1] * e2 * e2 + n_k * e3 * e3;
+    sum_errors += n_k * lambda[2] * e1 * e1 + n_k * lambda[1] * e2 * e2 +
+                  n_k * e3 * e3;
 
     auto& H_k = Hs[Hs_indices[i]];
     auto& b_k = bs[i];
 
-    gtsam::Matrix13 H0 = global_normal.transpose() * R_k * -gtsam::SO3::Hat(R_ex);
+    gtsam::Matrix13 H0 =
+            global_normal.transpose() * R_k * -gtsam::SO3::Hat(R_ex);
     H_k.block<3, 3>(0, 0) += H0.transpose() * n_k * lambda[2] * H0;
     b_k.head<3>() -= H0.transpose() * n_k * lambda[2] * e1;
 
-    gtsam::Matrix13 H1 = global_normal.transpose() * R_k * -gtsam::SO3::Hat(R_ey);
+    gtsam::Matrix13 H1 =
+            global_normal.transpose() * R_k * -gtsam::SO3::Hat(R_ey);
     H_k.block<3, 3>(0, 0) += H1.transpose() * n_k * lambda[1] * H1;
     b_k.head<3>() -= H1.transpose() * n_k * lambda[1] * e2;
 
@@ -178,7 +188,8 @@ std::shared_ptr<gtsam::GaussianFactor> LsqBundleAdjustmentFactor::linearize(cons
   return gtsam::make_shared<gtsam::HessianFactor>(keys_, Hs, bs, sum_errors);
 }
 
-void LsqBundleAdjustmentFactor::update_global_distribution(const gtsam::Values& values) const {
+void LsqBundleAdjustmentFactor::update_global_distribution(
+        const gtsam::Values& values) const {
   global_mean.setZero();
   global_cov.setZero();
 
@@ -198,9 +209,11 @@ void LsqBundleAdjustmentFactor::update_global_distribution(const gtsam::Values& 
 
     const int n_k = frame_dist.second->num_points;
     const Eigen::Vector3d mean_k = pose_k * frame_dist.second->mean;
-    const Eigen::Matrix3d cov_k = R_k * frame_dist.second->cov * R_k.transpose();
+    const Eigen::Matrix3d cov_k =
+            R_k * frame_dist.second->cov * R_k.transpose();
     const Eigen::Vector3d diff_k = mean_k - global_mean;
-    global_cov += n_k / static_cast<double>(global_num_points) * (cov_k + diff_k * diff_k.transpose());
+    global_cov += n_k / static_cast<double>(global_num_points) *
+                  (cov_k + diff_k * diff_k.transpose());
   }
 
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig(global_cov);

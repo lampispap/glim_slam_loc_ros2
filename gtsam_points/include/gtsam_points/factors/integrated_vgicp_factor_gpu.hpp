@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <gtsam_points/types/point_cloud.hpp>
-#include <gtsam_points/types/gaussian_voxelmap_gpu.hpp>
 #include <gtsam_points/factors/nonlinear_factor_gpu.hpp>
+#include <gtsam_points/types/gaussian_voxelmap_gpu.hpp>
+#include <gtsam_points/types/point_cloud.hpp>
 
 struct CUstream_st;
 
@@ -21,11 +21,12 @@ class TempBufferManager;
 
 /**
  * @brief GPU-accelerated Voxelized GICP matching cost factor
- *        Koide et al., "Voxelized GICP for Fast and Accurate 3D Point Cloud Registration", ICRA2021
- *        Koide et al., "Globally Consistent 3D LiDAR Mapping with GPU-accelerated GICP Matching Cost Factors", RA-L2021
+ *        Koide et al., "Voxelized GICP for Fast and Accurate 3D Point Cloud
+ * Registration", ICRA2021 Koide et al., "Globally Consistent 3D LiDAR Mapping
+ * with GPU-accelerated GICP Matching Cost Factors", RA-L2021
  */
 class IntegratedVGICPFactorGPU : public gtsam_points::NonlinearFactorGPU {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   using shared_ptr = boost::shared_ptr<IntegratedVGICPFactorGPU>;
 
@@ -39,15 +40,16 @@ public:
    * @param temp_buffer   CUDA temporary buffer manager
    */
   IntegratedVGICPFactorGPU(
-    gtsam::Key target_key,
-    gtsam::Key source_key,
-    const GaussianVoxelMap::ConstPtr& target,
-    const PointCloud::ConstPtr& source,
-    CUstream_st* stream = nullptr,
-    std::shared_ptr<TempBufferManager> temp_buffer = nullptr);
+          gtsam::Key target_key,
+          gtsam::Key source_key,
+          const GaussianVoxelMap::ConstPtr& target,
+          const PointCloud::ConstPtr& source,
+          CUstream_st* stream = nullptr,
+          std::shared_ptr<TempBufferManager> temp_buffer = nullptr);
 
   /**
-   * @brief Create a unary VGICP_GPU factor between a fixed target pose and an active source pose.
+   * @brief Create a unary VGICP_GPU factor between a fixed target pose and an
+   * active source pose.
    * @param targfixed_target_pose  Fixed target pose
    * @param source_key             Source key
    * @param target                 Target voxelmap
@@ -56,21 +58,24 @@ public:
    * @param temp_buffer            CUDA temporary buffer manager
    */
   IntegratedVGICPFactorGPU(
-    const gtsam::Pose3& fixed_target_pose,
-    gtsam::Key source_key,
-    const GaussianVoxelMap::ConstPtr& target,
-    const PointCloud::ConstPtr& source,
-    CUstream_st* stream = nullptr,
-    std::shared_ptr<TempBufferManager> temp_buffer = nullptr);
+          const gtsam::Pose3& fixed_target_pose,
+          gtsam::Key source_key,
+          const GaussianVoxelMap::ConstPtr& target,
+          const PointCloud::ConstPtr& source,
+          CUstream_st* stream = nullptr,
+          std::shared_ptr<TempBufferManager> temp_buffer = nullptr);
 
   virtual ~IntegratedVGICPFactorGPU() override;
 
-  /// @brief Enable or disable surface orientation validation for correspondence search
-  /// @note  To enable surface orientation validation, source frame must have point normals
+  /// @brief Enable or disable surface orientation validation for correspondence
+  /// search
+  /// @note  To enable surface orientation validation, source frame must have
+  /// point normals
   void set_enable_surface_validation(bool enable);
 
   /// @brief Set the threshold values to trigger inlier points update.
-  ///        Setting larger values reduces GPU sync but may affect the registration accuracy.
+  ///        Setting larger values reduces GPU sync but may affect the
+  ///        registration accuracy.
   void set_inlier_update_thresh(double trans, double angle);
 
   Eigen::Isometry3f get_fixed_target_pose() const { return fixed_target_pose; }
@@ -83,35 +88,36 @@ public:
 
   virtual size_t dim() const override { return 6; }
   virtual double error(const gtsam::Values& values) const override;
-  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& values) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(
+          const gtsam::Values& values) const override;
 
   virtual size_t linearization_input_size() const override;
   virtual size_t linearization_output_size() const override;
   virtual size_t evaluation_input_size() const override;
   virtual size_t evaluation_output_size() const override;
 
-  virtual void set_linearization_point(const gtsam::Values& values, void* lin_input_cpu) override;
-  virtual void issue_linearize(
-    const void* lin_input_cpu,
-    const void* lin_input_gpu,
-    void* lin_output_gpu) override;
+  virtual void set_linearization_point(const gtsam::Values& values,
+                                       void* lin_input_cpu) override;
+  virtual void issue_linearize(const void* lin_input_cpu,
+                               const void* lin_input_gpu,
+                               void* lin_output_gpu) override;
   virtual void store_linearized(const void* lin_output_cpu) override;
 
-  virtual void set_evaluation_point(const gtsam::Values& values, void* eval_input_cpu) override;
-  virtual void issue_compute_error(
-    const void* lin_input_cpu,
-    const void* eval_input_cpu,
-    const void* lin_input_gpu,
-    const void* eval_input_gpu,
-    void* eval_output_gpu) override;
+  virtual void set_evaluation_point(const gtsam::Values& values,
+                                    void* eval_input_cpu) override;
+  virtual void issue_compute_error(const void* lin_input_cpu,
+                                   const void* eval_input_cpu,
+                                   const void* lin_input_gpu,
+                                   const void* eval_input_gpu,
+                                   void* eval_output_gpu) override;
   virtual void store_computed_error(const void* eval_output_cpu) override;
 
   virtual void sync() override;
 
-private:
+  private:
   Eigen::Isometry3f calc_delta(const gtsam::Values& values) const;
 
-private:
+  private:
   bool is_binary;
   Eigen::Isometry3f fixed_target_pose;
 

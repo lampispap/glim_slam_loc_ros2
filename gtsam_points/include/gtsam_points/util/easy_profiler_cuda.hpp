@@ -3,33 +3,32 @@
 
 #pragma once
 
-#include <vector>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 struct CUevent_st;
 struct CUstream_st;
 
 namespace gtsam_points {
 class EasyProfilerCuda {
-public:
-  EasyProfilerCuda(
-    const std::string& prof_label,
-    CUstream_st* stream,
-    int events_cache_size = 10,
-    bool enabled = true,
-    bool debug = false,
-    std::ostream& ost = std::cout);
+  public:
+  EasyProfilerCuda(const std::string& prof_label,
+                   CUstream_st* stream,
+                   int events_cache_size = 10,
+                   bool enabled = true,
+                   bool debug = false,
+                   std::ostream& ost = std::cout);
 
   ~EasyProfilerCuda();
 
   void push(const std::string& label, CUstream_st* stream = nullptr);
 
-private:
+  private:
   CUevent_st* get_event();
 
-public:
+  public:
   const bool enabled;
   const bool debug;
   const std::string prof_label;

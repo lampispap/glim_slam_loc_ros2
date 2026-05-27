@@ -1,12 +1,10 @@
-#include <glim/mapping/sub_map.hpp>
-
-#include <fstream>
 #include <spdlog/spdlog.h>
-#include <boost/format.hpp>
+
 #include <boost/filesystem.hpp>
-
+#include <boost/format.hpp>
+#include <fstream>
+#include <glim/mapping/sub_map.hpp>
 #include <gtsam_points/types/point_cloud_cpu.hpp>
-
 
 namespace glim {
 
@@ -24,14 +22,19 @@ void SubMap::save(const std::string& path) const {
   boost::filesystem::create_directories(path);
   std::ofstream ofs(path + "/data.txt");
   ofs << "id: " << id << std::endl;
-  ofs << "T_world_origin: " << std::endl << T_world_origin.matrix() << std::endl;
-  ofs << "T_origin_endpoint_L: " << std::endl << T_origin_endpoint_L.matrix() << std::endl;
-  ofs << "T_origin_endpoint_R: " << std::endl << T_origin_endpoint_R.matrix() << std::endl;
+  ofs << "T_world_origin: " << std::endl
+      << T_world_origin.matrix() << std::endl;
+  ofs << "T_origin_endpoint_L: " << std::endl
+      << T_origin_endpoint_L.matrix() << std::endl;
+  ofs << "T_origin_endpoint_R: " << std::endl
+      << T_origin_endpoint_R.matrix() << std::endl;
 
   if (!frames.empty()) {
-    ofs << "T_lidar_imu: " << std::endl << frames.back()->T_lidar_imu.matrix() << std::endl;
+    ofs << "T_lidar_imu: " << std::endl
+        << frames.back()->T_lidar_imu.matrix() << std::endl;
     ofs << "imu_bias: " << frames.back()->imu_bias.transpose() << std::endl;
-    ofs << "frame_id: " << static_cast<int>(frames.back()->frame_id) << std::endl;
+    ofs << "frame_id: " << static_cast<int>(frames.back()->frame_id)
+        << std::endl;
   }
 
   ofs << "num_frames: " << frames.size() << std::endl;
@@ -40,8 +43,10 @@ void SubMap::save(const std::string& path) const {
     ofs << "frame_" << i << std::endl;
     ofs << "id: " << frames[i]->id << std::endl;
     ofs << "stamp: " << boost::format("%.9f") % frames[i]->stamp << std::endl;
-    ofs << "T_odom_lidar: " << std::endl << odom_frames[i]->T_world_lidar.matrix() << std::endl;
-    ofs << "T_world_lidar: " << std::endl << frames[i]->T_world_lidar.matrix() << std::endl;
+    ofs << "T_odom_lidar: " << std::endl
+        << odom_frames[i]->T_world_lidar.matrix() << std::endl;
+    ofs << "T_world_lidar: " << std::endl
+        << frames[i]->T_world_lidar.matrix() << std::endl;
     ofs << "v_world_imu: " << frames[i]->v_world_imu.transpose() << std::endl;
   }
 
@@ -53,7 +58,10 @@ void SubMap::save(const std::string& path) const {
 
     for (int i = 0; i < frame->imu_rate_trajectory.cols(); i++) {
       const auto& data = frame->imu_rate_trajectory.col(i);
-      ofs_imu_rate << boost::format("%.9f %.6f %.6f %.6f %.6f %.6f %.6f %.6f") % data[0] % data[1] % data[2] % data[3] % data[4] % data[5] % data[6] % data[7] << std::endl;
+      ofs_imu_rate << boost::format("%.9f %.6f %.6f %.6f %.6f %.6f %.6f %.6f") %
+                              data[0] % data[1] % data[2] % data[3] % data[4] %
+                              data[5] % data[6] % data[7]
+                   << std::endl;
     }
   }
 

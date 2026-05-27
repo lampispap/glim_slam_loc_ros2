@@ -27,11 +27,10 @@ from launch.actions import AppendEnvironmentVariable
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
-        # args that can be set from the command line or a default will be used
-    use_sim_time_arg = DeclareLaunchArgument(
-        "use_sim_time", default_value='true'
-    )
+    # args that can be set from the command line or a default will be used
+    use_sim_time_arg = DeclareLaunchArgument("use_sim_time", default_value="true")
     config_launch_arg = DeclareLaunchArgument(
         "config", default_value=TextSubstitution(text="config/velodyne")
     )
@@ -46,38 +45,41 @@ def generate_launch_description():
     )
 
     glim_ros_node = Node(
-        package='glim_ros',
-        executable='offline_viewer',
-        name='glim_ros',
-        parameters=[{
-            "config_path": LaunchConfiguration('config'),
-                "use_sim_time": LaunchConfiguration("use_sim_time")
-        }],
-
-        arguments=[LaunchConfiguration('config')],
-        output='screen'
+        package="glim_ros",
+        executable="offline_viewer",
+        name="glim_ros",
+        parameters=[
+            {
+                "config_path": LaunchConfiguration("config"),
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
+            }
+        ],
+        arguments=[LaunchConfiguration("config")],
+        output="screen",
     )
 
     octomap_server = Node(
-        package='octomap_server',
-        executable='octomap_server_node',
-        name='octomap_server',
-        parameters=[{
-                "resolution": LaunchConfiguration('resolution'),
-                "frame_id": LaunchConfiguration('frame_id'),
+        package="octomap_server",
+        executable="octomap_server_node",
+        name="octomap_server",
+        parameters=[
+            {
+                "resolution": LaunchConfiguration("resolution"),
+                "frame_id": LaunchConfiguration("frame_id"),
                 "base_frame_id": "base_footprint",
-                "sensor_model.max_range": LaunchConfiguration('max_range'),
+                "sensor_model.max_range": LaunchConfiguration("max_range"),
                 # "point_cloud_min_z": -0.5,
                 # "point_cloud_max_z": 1.0,
                 "ground_filter.distance": 0.2,
                 "ground_filter.plane_distance": 0.2,
                 "use_sim_time": LaunchConfiguration("use_sim_time"),
                 # "incremental_2D_projection": True,
-            }],
-        remappings=[
-            ('/cloud_in', '/glim_ros/map'),
+            }
         ],
-        output='screen'
+        remappings=[
+            ("/cloud_in", "/glim_ros/map"),
+        ],
+        output="screen",
     )
 
     static_tf_node = Node(
@@ -85,10 +87,12 @@ def generate_launch_description():
         executable="static_transform_publisher",
         output="screen",
         arguments=["0", "0", "1.5", "0", "0", "0", "base_footprint", "imu"],
-        parameters=[{
-            # "config_path": LaunchConfiguration('config'),
-            "use_sim_time": LaunchConfiguration("use_sim_time")
-        }],
+        parameters=[
+            {
+                # "config_path": LaunchConfiguration('config'),
+                "use_sim_time": LaunchConfiguration("use_sim_time")
+            }
+        ],
     )
 
     ld = LaunchDescription()
@@ -101,7 +105,6 @@ def generate_launch_description():
     ld.add_action(glim_ros_node)
     ld.add_action(octomap_server)
     ld.add_action(static_tf_node)
-
 
     # Add the commands to the launch description
 

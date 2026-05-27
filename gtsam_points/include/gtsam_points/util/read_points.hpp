@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <vector>
+#include <Eigen/Core>
 #include <fstream>
 #include <iostream>
-#include <Eigen/Core>
+#include <vector>
 
 namespace gtsam_points {
 
@@ -39,7 +39,8 @@ std::vector<Eigen::Vector3f> read_points(const std::string& path) {
 
   ifs.seekg(0, std::ios::beg);
   std::vector<Eigen::Vector3f> points(num_points);
-  ifs.read(reinterpret_cast<char*>(points.data()), sizeof(Eigen::Vector3f) * num_points);
+  ifs.read(reinterpret_cast<char*>(points.data()),
+           sizeof(Eigen::Vector3f) * num_points);
 
   return points;
 }
@@ -56,7 +57,8 @@ std::vector<Eigen::Vector4f> read_points4(const std::string& path) {
 
   ifs.seekg(0, std::ios::beg);
   std::vector<Eigen::Vector4f> points(num_points);
-  ifs.read(reinterpret_cast<char*>(points.data()), sizeof(Eigen::Vector4f) * num_points);
+  ifs.read(reinterpret_cast<char*>(points.data()),
+           sizeof(Eigen::Vector4f) * num_points);
 
   return points;
 }

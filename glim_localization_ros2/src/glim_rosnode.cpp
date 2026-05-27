@@ -1,10 +1,10 @@
-#include <iostream>
 #include <spdlog/spdlog.h>
-#include <rclcpp/rclcpp.hpp>
 
-#include <glim_ros/glim_ros.hpp>
 #include <glim/util/config.hpp>
 #include <glim/util/extension_module_ros2.hpp>
+#include <glim_ros/glim_ros.hpp>
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
@@ -17,10 +17,9 @@ int main(int argc, char** argv) {
     rclcpp::spin(glim);
   }
 
-  catch (std::exception &ex) {
-
+  catch (std::exception& ex) {
   }
-  
+
   rclcpp::shutdown();
 
   // std::string dump_path = "/tmp/dump";

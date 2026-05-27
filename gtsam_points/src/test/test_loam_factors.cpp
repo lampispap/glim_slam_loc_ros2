@@ -1,28 +1,27 @@
-#include <random>
-#include <string>
-#include <fstream>
-#include <iostream>
+#include <gtest/gtest.h>
+#include <gtsam/geometry/Pose3.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/slam/PriorFactor.h>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <boost/format.hpp>
-
-#include <gtest/gtest.h>
-
-#include <gtsam/geometry/Pose3.h>
-#include <gtsam/slam/PriorFactor.h>
-#include <gtsam/nonlinear/NonlinearFactorGraph.h>
-
-#include <gtsam_points/types/point_cloud_cpu.hpp>
+#include <fstream>
 #include <gtsam_points/factors/integrated_loam_factor.hpp>
 #include <gtsam_points/optimizers/levenberg_marquardt_ext.hpp>
+#include <gtsam_points/types/point_cloud_cpu.hpp>
 #include <gtsam_points/util/read_points.hpp>
+#include <iostream>
+#include <random>
+#include <string>
 
 struct LOAMTestBase : public testing::Test {
   virtual void SetUp() {
     const std::string data_path = "./data/newer_01";
 
     std::ifstream ifs(data_path + "/graph.txt");
-    EXPECT_EQ(ifs.is_open(), true) << "Failed to open " << data_path << "/graph.txt";
+    EXPECT_EQ(ifs.is_open(), true)
+            << "Failed to open " << data_path << "/graph.txt";
 
     std::mt19937 mt(0);
     for (int i = 0; i < 5; i++) {
@@ -30,7 +29,8 @@ struct LOAMTestBase : public testing::Test {
       std::string token;
       Eigen::Vector3d trans;
       Eigen::Quaterniond quat;
-      ifs >> token >> trans.x() >> trans.y() >> trans.z() >> quat.x() >> quat.y() >> quat.z() >> quat.w();
+      ifs >> token >> trans.x() >> trans.y() >> trans.z() >> quat.x() >>
+              quat.y() >> quat.z() >> quat.w();
 
       Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
       pose.translation() = trans;
@@ -39,8 +39,11 @@ struct LOAMTestBase : public testing::Test {
       poses_gt.insert(i, gtsam::Pose3(pose.matrix()));
 
       // Load points
-      const std::string edge_path = (boost::format("%s/edges_%06d.bin") % data_path % (i * 10)).str();
-      const std::string plane_path = (boost::format("%s/planes_%06d.bin") % data_path % (i * 10)).str();
+      const std::string edge_path =
+              (boost::format("%s/edges_%06d.bin") % data_path % (i * 10)).str();
+      const std::string plane_path =
+              (boost::format("%s/planes_%06d.bin") % data_path % (i * 10))
+                      .str();
 
       auto edge_points = gtsam_points::read_points(edge_path);
       auto plane_points = gtsam_points::read_points(plane_path);
@@ -48,9 +51,13 @@ struct LOAMTestBase : public testing::Test {
       EXPECT_NE(edge_points.size(), true) << "Faile to read edge points";
       EXPECT_NE(plane_points.size(), true) << "Faile to read plane points";
 
-      edge_frames.emplace_back(std::make_shared<gtsam_points::PointCloudCPU>(edge_points));
-      plane_frames.emplace_back(std::make_shared<gtsam_points::PointCloudCPU>(plane_points));
-      plane_frames.back() = gtsam_points::randomgrid_sampling(plane_frames.back(), 1.0, 5000.0 / plane_frames.back()->size(), mt);
+      edge_frames.emplace_back(
+              std::make_shared<gtsam_points::PointCloudCPU>(edge_points));
+      plane_frames.emplace_back(
+              std::make_shared<gtsam_points::PointCloudCPU>(plane_points));
+      plane_frames.back() = gtsam_points::randomgrid_sampling(
+              plane_frames.back(), 1.0, 5000.0 / plane_frames.back()->size(),
+              mt);
     }
   }
 
@@ -67,33 +74,41 @@ TEST_F(LOAMTestBase, LoadCheck) {
   EXPECT_EQ(poses_gt.size(), 5) << "Failed to load GT poses";
 }
 
-class LOAMFactorTest : public LOAMTestBase, public testing::WithParamInterface<std::string> {
-public:
+class LOAMFactorTest : public LOAMTestBase,
+                       public testing::WithParamInterface<std::string> {
+  public:
   gtsam::NonlinearFactor::shared_ptr create_factor(
-    gtsam::Key target_key,
-    gtsam::Key source_key,
-    const gtsam_points::PointCloud::ConstPtr& target_edges,
-    const gtsam_points::PointCloud::ConstPtr& target_planes,
-    const gtsam_points::PointCloud::ConstPtr& source_edges,
-    const gtsam_points::PointCloud::ConstPtr& source_planes) {
+          gtsam::Key target_key,
+          gtsam::Key source_key,
+          const gtsam_points::PointCloud::ConstPtr& target_edges,
+          const gtsam_points::PointCloud::ConstPtr& target_planes,
+          const gtsam_points::PointCloud::ConstPtr& source_edges,
+          const gtsam_points::PointCloud::ConstPtr& source_planes) {
     std::string method = GetParam();
 
     gtsam::NonlinearFactor::shared_ptr factor;
     if (method == "LOAM") {
-      factor.reset(new gtsam_points::IntegratedLOAMFactor(target_key, source_key, target_edges, target_planes, source_edges, source_planes));
+      factor.reset(new gtsam_points::IntegratedLOAMFactor(
+              target_key, source_key, target_edges, target_planes, source_edges,
+              source_planes));
     } else if (method == "EDGE") {
-      factor.reset(new gtsam_points::IntegratedPointToEdgeFactor(target_key, source_key, target_edges, source_edges));
+      factor.reset(new gtsam_points::IntegratedPointToEdgeFactor(
+              target_key, source_key, target_edges, source_edges));
     } else if (method == "PLANE") {
-      factor.reset(new gtsam_points::IntegratedPointToPlaneFactor(target_key, source_key, target_planes, source_planes));
+      factor.reset(new gtsam_points::IntegratedPointToPlaneFactor(
+              target_key, source_key, target_planes, source_planes));
     }
 
     return factor;
   }
 
-  void test_graph(const gtsam::NonlinearFactorGraph& graph, const gtsam::Values& values, const std::string& note = "") {
+  void test_graph(const gtsam::NonlinearFactorGraph& graph,
+                  const gtsam::Values& values,
+                  const std::string& note = "") {
     gtsam_points::LevenbergMarquardtExtParams lm_params;
     lm_params.setRelativeErrorTol(1e-4);
-    gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values, lm_params);
+    gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values,
+                                                           lm_params);
     gtsam::Values result = optimizer.optimize();
 
     bool is_first = true;
@@ -120,10 +135,14 @@ public:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(gtsam_points, LOAMFactorTest, testing::Values("EDGE", "PLANE", "LOAM"), [](const auto& info) { return info.param; });
+INSTANTIATE_TEST_SUITE_P(gtsam_points,
+                         LOAMFactorTest,
+                         testing::Values("EDGE", "PLANE", "LOAM"),
+                         [](const auto& info) { return info.param; });
 
 TEST_P(LOAMFactorTest, AlignmentTest) {
-  auto f = create_factor(0, 1, edge_frames[0], plane_frames[0], edge_frames[1], plane_frames[1]);
+  auto f = create_factor(0, 1, edge_frames[0], plane_frames[0], edge_frames[1],
+                         plane_frames[1]);
   if (f == nullptr) {
     std::cerr << "[          ] SKIP:" << GetParam() << std::endl;
     return;
@@ -135,13 +154,18 @@ TEST_P(LOAMFactorTest, AlignmentTest) {
 
     values.insert(i, poses.at(i));
     values.insert(i + 1, poses.at(i + 1));
-    graph.add(create_factor(i, i + 1, edge_frames[i], plane_frames[i], edge_frames[i + 1], plane_frames[i + 1]));
-    graph.add(gtsam::PriorFactor<gtsam::Pose3>(i, poses.at<gtsam::Pose3>(i), gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
+    graph.add(create_factor(i, i + 1, edge_frames[i], plane_frames[i],
+                            edge_frames[i + 1], plane_frames[i + 1]));
+    graph.add(gtsam::PriorFactor<gtsam::Pose3>(
+            i, poses.at<gtsam::Pose3>(i),
+            gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
 
     test_graph(graph, values, "FORWARD_TEST_" + std::to_string(i));
 
     graph.erase(graph.begin() + static_cast<int>(graph.size()) - 1);
-    graph.add(gtsam::PriorFactor<gtsam::Pose3>(i + 1, poses.at<gtsam::Pose3>(i + 1), gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
+    graph.add(gtsam::PriorFactor<gtsam::Pose3>(
+            i + 1, poses.at<gtsam::Pose3>(i + 1),
+            gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
 
     test_graph(graph, values, "BACKWARD_TEST_" + std::to_string(i));
   }
@@ -153,10 +177,13 @@ TEST_P(LOAMFactorTest, AlignmentTest) {
   }
 
   for (int i = 1; i < 5; i++) {
-    graph.add(create_factor(i - 1, i, edge_frames[i - 1], plane_frames[i - 1], edge_frames[i], plane_frames[i]));
+    graph.add(create_factor(i - 1, i, edge_frames[i - 1], plane_frames[i - 1],
+                            edge_frames[i], plane_frames[i]));
   }
 
-  graph.add(gtsam::PriorFactor<gtsam::Pose3>(0, poses.at<gtsam::Pose3>(0), gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
+  graph.add(gtsam::PriorFactor<gtsam::Pose3>(
+          0, poses.at<gtsam::Pose3>(0),
+          gtsam::noiseModel::Isotropic::Precision(6, 1e6)));
   test_graph(graph, values, "MULTI_FRAME");
 }
 

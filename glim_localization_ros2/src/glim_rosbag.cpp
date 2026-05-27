@@ -1,24 +1,26 @@
 #include <glob.h>
-#include <chrono>
-#include <iostream>
 #include <spdlog/spdlog.h>
-#include <boost/format.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/compressed_image.hpp>
-#include <rosbag2_cpp/reader.hpp>
-#include <rosbag2_cpp/readers/sequential_reader.hpp>
-#include <rosbag2_compression/sequential_compression_reader.hpp>
-#include <rosbag2_storage/storage_filter.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <boost/format.hpp>
+#include <chrono>
 #include <glim/util/config.hpp>
 #include <glim/util/extension_module_ros2.hpp>
 #include <glim_ros/glim_ros.hpp>
 #include <glim_ros/ros_compatibility.hpp>
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
+#include <rosbag2_compression/sequential_compression_reader.hpp>
+#include <rosbag2_cpp/reader.hpp>
+#include <rosbag2_cpp/readers/sequential_reader.hpp>
+#include <rosbag2_storage/storage_filter.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
 
 class SpeedCounter {
-public:
-  SpeedCounter() : last_sim_time(0.0), last_real_time(std::chrono::high_resolution_clock::now()) {}
+  public:
+  SpeedCounter()
+      : last_sim_time(0.0),
+        last_real_time(std::chrono::high_resolution_clock::now()) {}
 
   void update(const double& stamp) {
     const auto now = std::chrono::high_resolution_clock::now();
@@ -29,7 +31,10 @@ public:
     if (last_sim_time > 0.0) {
       const auto real = now - last_real_time;
       const auto sim = stamp - last_sim_time;
-      const double playback_speed = sim / (std::chrono::duration_cast<std::chrono::nanoseconds>(real).count() / 1e9);
+      const double playback_speed =
+              sim / (std::chrono::duration_cast<std::chrono::nanoseconds>(real)
+                             .count() /
+                     1e9);
       spdlog::info("playback speed: {:.3f}x", playback_speed);
     }
 
@@ -37,7 +42,7 @@ public:
     last_real_time = now;
   }
 
-private:
+  private:
   double last_sim_time;
   std::chrono::high_resolution_clock::time_point last_real_time;
 };
@@ -55,9 +60,12 @@ int main(int argc, char** argv) {
   // List topics
   glim::Config config_ros(glim::GlobalConfig::get_config_path("config_ros"));
 
-  const std::string imu_topic = config_ros.param<std::string>("glim_ros", "imu_topic", "/imu");
-  const std::string points_topic = config_ros.param<std::string>("glim_ros", "points_topic", "/points");
-  const std::string image_topic = config_ros.param<std::string>("glim_ros", "image_topic", "/image");
+  const std::string imu_topic =
+          config_ros.param<std::string>("glim_ros", "imu_topic", "/imu");
+  const std::string points_topic =
+          config_ros.param<std::string>("glim_ros", "points_topic", "/points");
+  const std::string image_topic =
+          config_ros.param<std::string>("glim_ros", "image_topic", "/image");
   std::vector<std::string> topics = {imu_topic, points_topic, image_topic};
 
   rosbag2_storage::StorageFilter filter;
@@ -68,7 +76,9 @@ int main(int argc, char** argv) {
   }
 
   //
-  std::unordered_map<std::string, std::vector<glim::GenericTopicSubscription::Ptr>> subscription_map;
+  std::unordered_map<std::string,
+                     std::vector<glim::GenericTopicSubscription::Ptr>>
+          subscription_map;
   for (const auto& sub : glim->extension_subscriptions()) {
     spdlog::info("- {} (ext)", sub->topic);
     filter.topics.push_back(sub->topic);
@@ -87,7 +97,8 @@ int main(int argc, char** argv) {
     }
     globfree(&globbuf);
 
-    bag_filenames.insert(bag_filenames.end(), filenames.begin(), filenames.end());
+    bag_filenames.insert(bag_filenames.end(), filenames.begin(),
+                         filenames.end());
   }
   std::sort(bag_filenames.begin(), bag_filenames.end());
 
@@ -96,7 +107,8 @@ int main(int argc, char** argv) {
     spdlog::info("- {}", bag_filename);
   }
 
-  const double playback_speed = config_ros.param<double>("glim_ros", "playback_speed", 100.0);
+  const double playback_speed =
+          config_ros.param<double>("glim_ros", "playback_speed", 100.0);
   const auto real_t0 = std::chrono::high_resolution_clock::now();
   rcutils_time_point_value_t bag_t0 = 0;
   SpeedCounter speed_counter;
@@ -110,14 +122,17 @@ int main(int argc, char** argv) {
     rosbag2_cpp::ConverterOptions converter_options;
 
     // rosbag2_cpp::Reader reader;
-    std::unique_ptr<rosbag2_cpp::reader_interfaces::BaseReaderInterface> reader_;
+    std::unique_ptr<rosbag2_cpp::reader_interfaces::BaseReaderInterface>
+            reader_;
     reader_ = std::make_unique<rosbag2_cpp::readers::SequentialReader>();
     reader_->open(options, converter_options);
 
     if (reader_->get_metadata().compression_format != "") {
-      spdlog::info("compression detected (format={})", reader_->get_metadata().compression_format);
+      spdlog::info("compression detected (format={})",
+                   reader_->get_metadata().compression_format);
       spdlog::info("opening bag with SequentialCompressionReader");
-      reader_ = std::make_unique<rosbag2_compression::SequentialCompressionReader>();
+      reader_ = std::make_unique<
+              rosbag2_compression::SequentialCompressionReader>();
       reader_->open(options, converter_options);
     }
 
@@ -133,7 +148,8 @@ int main(int argc, char** argv) {
     rclcpp::Serialization<sensor_msgs::msg::Imu> imu_serialization;
     rclcpp::Serialization<sensor_msgs::msg::PointCloud2> points_serialization;
     rclcpp::Serialization<sensor_msgs::msg::Image> image_serialization;
-    rclcpp::Serialization<sensor_msgs::msg::CompressedImage> compressed_image_serialization;
+    rclcpp::Serialization<sensor_msgs::msg::CompressedImage>
+            compressed_image_serialization;
 
     while (reader.has_next()) {
       if (!rclcpp::ok()) {
@@ -151,7 +167,10 @@ int main(int argc, char** argv) {
       }
 
       const auto bag_elapsed = std::chrono::nanoseconds(msg_time - bag_t0);
-      while (playback_speed > 0.0 && (std::chrono::high_resolution_clock::now() - real_t0) * playback_speed < bag_elapsed) {
+      while (playback_speed > 0.0 &&
+             (std::chrono::high_resolution_clock::now() - real_t0) *
+                             playback_speed <
+                     bag_elapsed) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
 
@@ -161,22 +180,29 @@ int main(int argc, char** argv) {
         glim->imu_callback(imu_msg);
       } else if (msg->topic_name == points_topic) {
         auto points_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        points_serialization.deserialize_message(&serialized_msg, points_msg.get());
+        points_serialization.deserialize_message(&serialized_msg,
+                                                 points_msg.get());
         const size_t workload = glim->points_callback(points_msg);
 
         if (workload > 5) {
           // Odometry estimation is behind
           const size_t sleep_msec = (workload - 4) * 5;
-          spdlog::debug("throttling: {} msec (workload={})", sleep_msec, workload);
+          spdlog::debug("throttling: {} msec (workload={})", sleep_msec,
+                        workload);
           std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
         }
-      } else if (msg->topic_name == image_topic && topic_type == "sensor_msgs/msg/Image") {
+      } else if (msg->topic_name == image_topic &&
+                 topic_type == "sensor_msgs/msg/Image") {
         auto image_msg = std::make_shared<sensor_msgs::msg::Image>();
-        image_serialization.deserialize_message(&serialized_msg, image_msg.get());
+        image_serialization.deserialize_message(&serialized_msg,
+                                                image_msg.get());
         glim->image_callback(image_msg);
-      } else if (msg->topic_name == image_topic && topic_type == "sensor_msgs/msg/CompressedImage") {
-        auto compressed_image_msg = std::make_shared<sensor_msgs::msg::CompressedImage>();
-        compressed_image_serialization.deserialize_message(&serialized_msg, compressed_image_msg.get());
+      } else if (msg->topic_name == image_topic &&
+                 topic_type == "sensor_msgs/msg/CompressedImage") {
+        auto compressed_image_msg =
+                std::make_shared<sensor_msgs::msg::CompressedImage>();
+        compressed_image_serialization.deserialize_message(
+                &serialized_msg, compressed_image_msg.get());
       }
 
       auto found = subscription_map.find(msg->topic_name);
@@ -192,8 +218,10 @@ int main(int argc, char** argv) {
       const auto t0 = std::chrono::high_resolution_clock::now();
       while (glim->needs_wait()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        if (std::chrono::high_resolution_clock::now() - t0 > std::chrono::seconds(1)) {
-          spdlog::warn("throttling timeout (an extension module may be hanged)");
+        if (std::chrono::high_resolution_clock::now() - t0 >
+            std::chrono::seconds(1)) {
+          spdlog::warn(
+                  "throttling timeout (an extension module may be hanged)");
           break;
         }
       }

@@ -2,12 +2,12 @@
 
 #include <any>
 #include <atomic>
+#include <boost/shared_ptr.hpp>
+#include <glim/mapping/global_mapping_base.hpp>
+#include <glim/util/concurrent_vector.hpp>
 #include <memory>
 #include <random>
 #include <thread>
-#include <boost/shared_ptr.hpp>
-#include <glim/util/concurrent_vector.hpp>
-#include <glim/mapping/global_mapping_base.hpp>
 
 namespace gtsam {
 class Values;
@@ -31,11 +31,11 @@ class IMUIntegration;
  * @brief GlobalMappingPoseGraph parameters.
  */
 struct GlobalMappingPoseGraphParams {
-public:
+  public:
   GlobalMappingPoseGraphParams();
   ~GlobalMappingPoseGraphParams();
 
-public:
+  public:
   bool enable_optimization;
 
   std::string registration_type;
@@ -86,11 +86,13 @@ struct LoopCandidate {
 
 /**
  * @brief Global mapping with the old conventional pose graph optimization.
- * @note  We recommend using GlobalMapping instead of this class if accuracy matters.
+ * @note  We recommend using GlobalMapping instead of this class if accuracy
+ * matters.
  */
 class GlobalMappingPoseGraph : public GlobalMappingBase {
-public:
-  GlobalMappingPoseGraph(const GlobalMappingPoseGraphParams& params = GlobalMappingPoseGraphParams());
+  public:
+  GlobalMappingPoseGraph(const GlobalMappingPoseGraphParams& params =
+                                 GlobalMappingPoseGraphParams());
   virtual ~GlobalMappingPoseGraph();
 
   virtual void insert_submap(const SubMap::Ptr& submap) override;
@@ -100,10 +102,11 @@ public:
   virtual void save(const std::string& path) override;
   virtual std::vector<Eigen::Vector4d> export_points() override;
 
-private:
+  private:
   void insert_submap(int current, const SubMap::Ptr& submap);
 
-  std::shared_ptr<gtsam::NonlinearFactorGraph> create_odometry_factors(int current) const;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_odometry_factors(
+          int current) const;
   void find_loop_candidates(int current);
   std::shared_ptr<gtsam::NonlinearFactorGraph> collect_detected_loops();
 
@@ -111,7 +114,7 @@ private:
 
   void loop_detection_task();
 
-private:
+  private:
   using Params = GlobalMappingPoseGraphParams;
   Params params;
 

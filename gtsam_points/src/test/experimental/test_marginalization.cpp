@@ -1,27 +1,32 @@
-#include <iostream>
-#include <unordered_set>
-
 #include <gtsam/geometry/Pose3.h>
-#include <gtsam/slam/BetweenFactor.h>
 #include <gtsam/inference/Ordering.h>
 #include <gtsam/linear/GaussianFactorGraph.h>
 #include <gtsam/nonlinear/LinearContainerFactor.h>
-#include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/slam/BetweenFactor.h>
+
+#include <iostream>
+#include <unordered_set>
 
 class ShurMarginalizer {
-public:
-  void marginalize(gtsam::NonlinearFactorGraph& factors, gtsam::Values& values, const gtsam::KeyVector& keys_to_eliminate) const {
+  public:
+  void marginalize(gtsam::NonlinearFactorGraph& factors,
+                   gtsam::Values& values,
+                   const gtsam::KeyVector& keys_to_eliminate) const {
     if (keys_to_eliminate.empty()) {
       return;
     }
 
-    std::unordered_set<gtsam::Key> keyset_to_eliminate(keys_to_eliminate.begin(), keys_to_eliminate.end());
+    std::unordered_set<gtsam::Key> keyset_to_eliminate(
+            keys_to_eliminate.begin(), keys_to_eliminate.end());
 
-    auto factors_to_eliminate = find_factors_to_eliminate(factors, keyset_to_eliminate);
+    auto factors_to_eliminate =
+            find_factors_to_eliminate(factors, keyset_to_eliminate);
     auto linearized_factors = factors_to_eliminate.linearize(values);
 
-    gtsam::Ordering ordering = gtsam::Ordering::ColamdConstrainedLast(factors_to_eliminate, keys_to_eliminate);
+    gtsam::Ordering ordering = gtsam::Ordering::ColamdConstrainedLast(
+            factors_to_eliminate, keys_to_eliminate);
 
     std::vector<int> dims;
     std::vector<int> start_locs;
@@ -46,8 +51,10 @@ public:
 
     // Schur complement
     // should use sparse operations?
-    gtsam::Matrix M = H11 - H12 * H22.selfadjointView<Eigen::Upper>().ldlt().solve(H21);
-    gtsam::Vector b = g1 - H12 * H22.selfadjointView<Eigen::Upper>().ldlt().solve(g2);
+    gtsam::Matrix M =
+            H11 - H12 * H22.selfadjointView<Eigen::Upper>().ldlt().solve(H21);
+    gtsam::Vector b =
+            g1 - H12 * H22.selfadjointView<Eigen::Upper>().ldlt().solve(g2);
 
     for (const auto& key : keys_to_eliminate) {
       values.erase(key);
@@ -55,8 +62,8 @@ public:
   }
 
   gtsam::NonlinearFactorGraph find_factors_to_eliminate(
-    gtsam::NonlinearFactorGraph& factors,
-    const std::unordered_set<gtsam::Key>& keyset_to_eliminate) const {
+          gtsam::NonlinearFactorGraph& factors,
+          const std::unordered_set<gtsam::Key>& keyset_to_eliminate) const {
     gtsam::NonlinearFactorGraph factors_to_eliminate;
     for (int i = 0; i < factors.size(); i++) {
       const auto& factor = factors.at(i);
@@ -64,7 +71,10 @@ public:
         continue;
       }
 
-      if (!std::any_of(factor->begin(), factor->end(), [&](const gtsam::Key& key) { return keyset_to_eliminate.count(key); })) {
+      if (!std::any_of(factor->begin(), factor->end(),
+                       [&](const gtsam::Key& key) {
+                         return keyset_to_eliminate.count(key);
+                       })) {
         continue;
       }
 
@@ -91,7 +101,9 @@ int main(int argc, char** argv) {
 
   return 0;
 
-  auto factor = gtsam::make_shared<gtsam::BetweenFactor<gtsam::Pose3>>(0, 1, gtsam::Pose3(), gtsam::noiseModel::Isotropic::Precision(6, 1e3));
+  auto factor = gtsam::make_shared<gtsam::BetweenFactor<gtsam::Pose3>>(
+          0, 1, gtsam::Pose3(),
+          gtsam::noiseModel::Isotropic::Precision(6, 1e3));
 
   gtsam::Values values;
   values.insert(0, gtsam::Pose3::Expmap(gtsam::Vector6::Random()));

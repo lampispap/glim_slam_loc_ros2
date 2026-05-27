@@ -10,7 +10,7 @@ struct CUstream_st;
 namespace gtsam_points {
 
 class CUDAGraphExec {
-public:
+  public:
   CUDAGraphExec(CUgraph_st* graph);
   ~CUDAGraphExec();
 
@@ -19,7 +19,7 @@ public:
 
   void launch(CUstream_st* stream);
 
-private:
+  private:
   CUgraphExec_st* instance;
 };
 

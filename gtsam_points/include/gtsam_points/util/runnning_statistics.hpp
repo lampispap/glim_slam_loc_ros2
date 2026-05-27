@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <iostream>
 #include <Eigen/Core>
+#include <iostream>
 
 namespace gtsam_points {
 
@@ -13,8 +13,13 @@ namespace gtsam_points {
 /// @note  For vector types, the statistics are calculated element-wise.
 template <typename T>
 struct RunningStatistics {
-public:
-  RunningStatistics() : num_data(0), sum(0), sum_sq(0), min_(std::numeric_limits<double>::max()), max_(std::numeric_limits<double>::lowest()) {}
+  public:
+  RunningStatistics()
+      : num_data(0),
+        sum(0),
+        sum_sq(0),
+        min_(std::numeric_limits<double>::max()),
+        max_(std::numeric_limits<double>::lowest()) {}
 
   /// @brief Add a data point.
   void add(const T& x) {
@@ -72,7 +77,7 @@ public:
   /// @brief Maximum value.
   const T& max() const { return max_; }
 
-private:
+  private:
   size_t num_data;  ///< Number of data points
   T sum;            ///< Sum of data points
   T sum_sq;         ///< Sum of squared data points
@@ -84,12 +89,17 @@ private:
 
 namespace std {
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const gtsam_points::RunningStatistics<T>& stats) {
+std::ostream& operator<<(std::ostream& os,
+                         const gtsam_points::RunningStatistics<T>& stats) {
   if constexpr (std::is_floating_point_v<T>) {
-    os << "num_data=" << stats.size() << " mean=" << stats.mean() << " std=" << stats.std() << " min=" << stats.min() << " max=" << stats.max();
+    os << "num_data=" << stats.size() << " mean=" << stats.mean()
+       << " std=" << stats.std() << " min=" << stats.min()
+       << " max=" << stats.max();
   } else {
-    os << "num_data=" << stats.size() << " mean=" << stats.mean().transpose() << " std=" << stats.std().transpose()
-       << " min=" << stats.min().transpose() << " max=" << stats.max().transpose();
+    os << "num_data=" << stats.size() << " mean=" << stats.mean().transpose()
+       << " std=" << stats.std().transpose()
+       << " min=" << stats.min().transpose()
+       << " max=" << stats.max().transpose();
   }
 
   return os;

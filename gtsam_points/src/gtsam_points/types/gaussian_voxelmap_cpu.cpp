@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/types/gaussian_voxelmap_cpu.hpp>
-
-#include <memory>
-#include <fstream>
-#include <iostream>
-#include <unordered_set>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
-#include <gtsam_points/util/fast_floor.hpp>
-#include <gtsam_points/ann/incremental_voxelmap.hpp>
+#include <fstream>
 #include <gtsam_points/ann/impl/incremental_voxelmap_impl.hpp>
+#include <gtsam_points/ann/incremental_voxelmap.hpp>
+#include <gtsam_points/types/gaussian_voxelmap_cpu.hpp>
+#include <gtsam_points/util/fast_floor.hpp>
+#include <iostream>
+#include <memory>
+#include <unordered_set>
 
 namespace gtsam_points {
 
 template class IncrementalVoxelMap<GaussianVoxel>;
 
-void GaussianVoxel::add(const Setting& setting, const PointCloud& points, size_t i) {
+void GaussianVoxel::add(const Setting& setting,
+                        const PointCloud& points,
+                        size_t i) {
   if (finalized) {
     this->finalized = false;
     this->mean *= num_points;
@@ -41,21 +40,22 @@ void GaussianVoxel::finalize() {
   finalized = true;
 }
 
-GaussianVoxelMapCPU::GaussianVoxelMapCPU(double resolution) : IncrementalVoxelMap<GaussianVoxel>(resolution) {
+GaussianVoxelMapCPU::GaussianVoxelMapCPU(double resolution)
+    : IncrementalVoxelMap<GaussianVoxel>(resolution) {
   offsets = neighbor_offsets(1);
 }
 
 GaussianVoxelMapCPU::~GaussianVoxelMapCPU() {}
 
-double GaussianVoxelMapCPU::voxel_resolution() const {
-  return leaf_size();
-}
+double GaussianVoxelMapCPU::voxel_resolution() const { return leaf_size(); }
 
-Eigen::Vector3i GaussianVoxelMapCPU::voxel_coord(const Eigen::Vector4d& x) const {
+Eigen::Vector3i GaussianVoxelMapCPU::voxel_coord(
+        const Eigen::Vector4d& x) const {
   return fast_floor(x * inv_leaf_size).head<3>();
 }
 
-int GaussianVoxelMapCPU::lookup_voxel_index(const Eigen::Vector3i& coord) const {
+int GaussianVoxelMapCPU::lookup_voxel_index(
+        const Eigen::Vector3i& coord) const {
   auto found = voxels.find(coord);
   if (found == voxels.end()) {
     return -1;
@@ -74,7 +74,7 @@ void GaussianVoxelMapCPU::insert(const PointCloud& frame) {
 namespace {
 
 struct GaussianVoxelData {
-public:
+  public:
   GaussianVoxelData() {}
 
   GaussianVoxelData(const Eigen::Vector3i& coord, const GaussianVoxel& voxel) {
@@ -84,7 +84,8 @@ public:
     this->coord = coord;
     this->num_points = voxel.num_points;
     this->mean << mean[0], mean[1], mean[2];
-    this->cov << cov(0, 0), cov(0, 1), cov(0, 2), cov(1, 1), cov(1, 2), cov(2, 2);
+    this->cov << cov(0, 0), cov(0, 1), cov(0, 2), cov(1, 1), cov(1, 2),
+            cov(2, 2);
   }
 
   std::shared_ptr<std::pair<VoxelInfo, GaussianVoxel>> uncompact() const {
@@ -107,7 +108,7 @@ public:
     return uncompacted;
   }
 
-public:
+  public:
   Eigen::Vector3i coord;
   int num_points;
   Eigen::Vector3f mean;
@@ -118,9 +119,10 @@ public:
 
 void GaussianVoxelMapCPU::save_compact(const std::string& path) const {
   std::vector<GaussianVoxelData> serial_voxels(flat_voxels.size());
-  std::transform(flat_voxels.begin(), flat_voxels.end(), serial_voxels.begin(), [](const auto& voxel) {
-    return GaussianVoxelData(voxel->first.coord, voxel->second);
-  });
+  std::transform(flat_voxels.begin(), flat_voxels.end(), serial_voxels.begin(),
+                 [](const auto& voxel) {
+                   return GaussianVoxelData(voxel->first.coord, voxel->second);
+                 });
 
   std::ofstream ofs(path);
   ofs << "compact " << 1 << std::endl;
@@ -131,7 +133,8 @@ void GaussianVoxelMapCPU::save_compact(const std::string& path) const {
   ofs << "voxel_bytes " << sizeof(GaussianVoxelData) << std::endl;
   ofs << "num_voxels " << serial_voxels.size() << std::endl;
 
-  ofs.write(reinterpret_cast<const char*>(serial_voxels.data()), sizeof(GaussianVoxelData) * serial_voxels.size());
+  ofs.write(reinterpret_cast<const char*>(serial_voxels.data()),
+            sizeof(GaussianVoxelData) * serial_voxels.size());
 }
 
 GaussianVoxelMapCPU::Ptr GaussianVoxelMapCPU::load(const std::string& path) {
@@ -159,7 +162,8 @@ GaussianVoxelMapCPU::Ptr GaussianVoxelMapCPU::load(const std::string& path) {
   std::getline(ifs, token);
 
   std::vector<GaussianVoxelData> flat_voxels(num_voxels);
-  ifs.read(reinterpret_cast<char*>(flat_voxels.data()), sizeof(GaussianVoxelData) * num_voxels);
+  ifs.read(reinterpret_cast<char*>(flat_voxels.data()),
+           sizeof(GaussianVoxelData) * num_voxels);
 
   voxelmap->set_voxel_resolution(resolution);
   voxelmap->flat_voxels.reserve(flat_voxels.size() * 2);

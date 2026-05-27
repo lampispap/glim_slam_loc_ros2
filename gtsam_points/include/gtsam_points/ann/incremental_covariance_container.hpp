@@ -9,14 +9,20 @@ namespace gtsam_points {
 
 /// @brief Linear container for incremental covariance and normal estimation.
 struct IncrementalCovarianceContainer {
-public:
+  public:
   /// @brief FlatContainer setting.
   struct Setting {
-    void set_min_dist_in_cell(double dist) { this->min_sq_dist_in_cell = dist * dist; }
-    void set_max_num_points_in_cell(size_t num_points) { this->max_num_points_in_cell = num_points; }
+    void set_min_dist_in_cell(double dist) {
+      this->min_sq_dist_in_cell = dist * dist;
+    }
+    void set_max_num_points_in_cell(size_t num_points) {
+      this->max_num_points_in_cell = num_points;
+    }
 
-    double min_sq_dist_in_cell = 0.1 * 0.1;  ///< Minimum squared distance between points in a cell.
-    size_t max_num_points_in_cell = 20;      ///< Maximum number of points in a cell.
+    double min_sq_dist_in_cell =
+            0.1 * 0.1;  ///< Minimum squared distance between points in a cell.
+    size_t max_num_points_in_cell =
+            20;  ///< Maximum number of points in a cell.
   };
 
   /// @brief Constructor.
@@ -78,7 +84,7 @@ public:
   /// @brief Remove old invalid points.
   size_t remove_old_invalid(int age_thresh, size_t lru);
 
-public:
+  public:
   static constexpr size_t VALID_BIT = 1ull << 63;
   static constexpr size_t BIRTHDAY_MASK = (VALID_BIT >> 1) - 1;
 
@@ -93,17 +99,39 @@ namespace frame {
 
 template <>
 struct traits<IncrementalCovarianceContainer> {
-  static int size(const IncrementalCovarianceContainer& frame) { return frame.size(); }
+  static int size(const IncrementalCovarianceContainer& frame) {
+    return frame.size();
+  }
 
-  static bool has_points(const IncrementalCovarianceContainer& frame) { return !frame.points.empty(); }
-  static bool has_normals(const IncrementalCovarianceContainer& frame) { return true; }
-  static bool has_covs(const IncrementalCovarianceContainer& frame) { return true; }
-  static bool has_intensities(const IncrementalCovarianceContainer& frame) { return false; }
+  static bool has_points(const IncrementalCovarianceContainer& frame) {
+    return !frame.points.empty();
+  }
+  static bool has_normals(const IncrementalCovarianceContainer& frame) {
+    return true;
+  }
+  static bool has_covs(const IncrementalCovarianceContainer& frame) {
+    return true;
+  }
+  static bool has_intensities(const IncrementalCovarianceContainer& frame) {
+    return false;
+  }
 
-  static const Eigen::Vector4d& point(const IncrementalCovarianceContainer& frame, size_t i) { return frame.points[i]; }
-  static const Eigen::Vector4d& normal(const IncrementalCovarianceContainer& frame, size_t i) { return frame.normals[i]; }
-  static const Eigen::Matrix4d& cov(const IncrementalCovarianceContainer& frame, size_t i) { return frame.covs[i]; }
-  static double intensity(const IncrementalCovarianceContainer& frame, size_t i) { return 0.0; }
+  static const Eigen::Vector4d& point(
+          const IncrementalCovarianceContainer& frame, size_t i) {
+    return frame.points[i];
+  }
+  static const Eigen::Vector4d& normal(
+          const IncrementalCovarianceContainer& frame, size_t i) {
+    return frame.normals[i];
+  }
+  static const Eigen::Matrix4d& cov(const IncrementalCovarianceContainer& frame,
+                                    size_t i) {
+    return frame.covs[i];
+  }
+  static double intensity(const IncrementalCovarianceContainer& frame,
+                          size_t i) {
+    return 0.0;
+  }
 };
 
 }  // namespace frame

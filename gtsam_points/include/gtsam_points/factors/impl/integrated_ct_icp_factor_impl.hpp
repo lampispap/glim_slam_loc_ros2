@@ -1,33 +1,37 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/integrated_ct_icp_factor.hpp>
-
 #include <gtsam/linear/HessianFactor.h>
+
 #include <gtsam_points/ann/kdtree2.hpp>
+#include <gtsam_points/factors/integrated_ct_icp_factor.hpp>
 
 namespace gtsam_points {
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::IntegratedCT_ICPFactor_(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: gtsam::NonlinearFactor(gtsam::KeyVector{source_t0_key, source_t1_key}),
-  num_threads(1),
-  max_correspondence_distance_sq(1.0),
-  target(target),
-  source(source) {
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source,
+        const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : gtsam::NonlinearFactor(gtsam::KeyVector{source_t0_key, source_t1_key}),
+      num_threads(1),
+      max_correspondence_distance_sq(1.0),
+      target(target),
+      source(source) {
   //
   if (!frame::has_points(*target)) {
-    std::cerr << "error: target frame doesn't have required attributes for ct_icp" << std::endl;
+    std::cerr
+            << "error: target frame doesn't have required attributes for ct_icp"
+            << std::endl;
     abort();
   }
 
   if (!frame::has_points(*source) || !frame::has_times(*source)) {
-    std::cerr << "error: source frame doesn't have required attributes for ct_icp" << std::endl;
+    std::cerr
+            << "error: source frame doesn't have required attributes for ct_icp"
+            << std::endl;
     abort();
   }
 
@@ -56,17 +60,19 @@ IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::IntegratedCT_ICPFactor_(
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::IntegratedCT_ICPFactor_(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: IntegratedCT_ICPFactor_(source_t0_key, source_t1_key, target, source, nullptr) {}
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source)
+    : IntegratedCT_ICPFactor_(
+              source_t0_key, source_t1_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::~IntegratedCT_ICPFactor_() {}
 
 template <typename TargetFrame, typename SourceFrame>
-double IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::error(const gtsam::Values& values) const {
+double IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::error(
+        const gtsam::Values& values) const {
   update_poses(values);
   if (correspondences.size() != frame::size(*source)) {
     update_correspondences();
@@ -86,7 +92,8 @@ double IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::error(const gtsam::Val
     const auto& target_pt = frame::point(*target, target_index);
     const auto& target_normal = frame::normal(*target, target_index);
 
-    gtsam::Point3 transed_source_pt = pose.transformFrom(source_pt.template head<3>().eval());
+    gtsam::Point3 transed_source_pt =
+            pose.transformFrom(source_pt.template head<3>().eval());
     gtsam::Point3 residual = transed_source_pt - target_pt.template head<3>();
     double error = gtsam::dot(residual, target_normal.template head<3>());
 
@@ -97,7 +104,9 @@ double IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::error(const gtsam::Val
 }
 
 template <typename TargetFrame, typename SourceFrame>
-std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::linearize(const gtsam::Values& values) const {
+std::shared_ptr<gtsam::GaussianFactor>
+IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::linearize(
+        const gtsam::Values& values) const {
   if (!frame::has_normals(*target)) {
     std::cerr << "error: target cloud doesn't have normals!!" << std::endl;
     abort();
@@ -130,12 +139,14 @@ std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_ICPFactor_<TargetFrame, Sour
     const auto& target_normal = frame::normal(*target, target_index);
 
     gtsam::Matrix36 H_transed_pose;
-    gtsam::Point3 transed_source_pt = pose.transformFrom(source_pt.template head<3>(), H_transed_pose);
+    gtsam::Point3 transed_source_pt =
+            pose.transformFrom(source_pt.template head<3>(), H_transed_pose);
 
     gtsam::Point3 residual = transed_source_pt - target_pt.template head<3>();
 
     gtsam::Matrix13 H_error_transed;
-    double error = gtsam::dot(residual, target_normal.template head<3>(), H_error_transed);
+    double error = gtsam::dot(residual, target_normal.template head<3>(),
+                              H_error_transed);
 
     gtsam::Matrix16 H_error_pose = H_error_transed * H_transed_pose;
     gtsam::Matrix16 H_0 = H_error_pose * H_pose_0;
@@ -149,12 +160,14 @@ std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_ICPFactor_<TargetFrame, Sour
     b_1 += H_1.transpose() * error;
   }
 
-  auto factor = gtsam::HessianFactor::shared_ptr(new gtsam::HessianFactor(keys_[0], keys_[1], H_00, H_01, -b_0, H_11, -b_1, sum_errors));
+  auto factor = gtsam::HessianFactor::shared_ptr(new gtsam::HessianFactor(
+          keys_[0], keys_[1], H_00, H_01, -b_0, H_11, -b_1, sum_errors));
   return factor;
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_poses(const gtsam::Values& values) const {
+void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_poses(
+        const gtsam::Values& values) const {
   gtsam::Pose3 pose0 = values.at<gtsam::Pose3>(keys_[0]);
   gtsam::Pose3 pose1 = values.at<gtsam::Pose3>(keys_[1]);
 
@@ -185,7 +198,8 @@ void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_poses(const gtsam
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_correspondences() const {
+void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_correspondences()
+        const {
   correspondences.resize(frame::size(*source));
 
   for (int i = 0; i < frame::size(*source); i++) {
@@ -196,7 +210,9 @@ void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_correspondences()
 
     size_t k_index = -1;
     double k_sq_dist = -1;
-    size_t num_found = target_tree->knn_search(transed_pt.data(), 1, &k_index, &k_sq_dist, max_correspondence_distance_sq);
+    size_t num_found =
+            target_tree->knn_search(transed_pt.data(), 1, &k_index, &k_sq_dist,
+                                    max_correspondence_distance_sq);
 
     if (num_found == 0 || k_sq_dist > max_correspondence_distance_sq) {
       correspondences[i] = -1;
@@ -207,7 +223,9 @@ void IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::update_correspondences()
 }
 
 template <typename TargetFrame, typename SourceFrame>
-std::vector<Eigen::Vector4d> IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::deskewed_source_points(const gtsam::Values& values, bool local) {
+std::vector<Eigen::Vector4d>
+IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::deskewed_source_points(
+        const gtsam::Values& values, bool local) {
   update_poses(values);
 
   if (local) {
@@ -220,7 +238,11 @@ std::vector<Eigen::Vector4d> IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>::
   for (int i = 0; i < frame::size(*source); i++) {
     const int time_index = time_indices[i];
     const auto& pose = source_poses[time_index];
-    deskewed[i] = pose.matrix() * (Eigen::Vector4d() << frame::point(*source, i).template head<3>(), 1.0).finished();
+    deskewed[i] =
+            pose.matrix() *
+            (Eigen::Vector4d() << frame::point(*source, i).template head<3>(),
+             1.0)
+                    .finished();
   }
 
   return deskewed;

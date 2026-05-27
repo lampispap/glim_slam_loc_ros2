@@ -9,7 +9,8 @@
 
 namespace gtsam_points {
 
-gtsam::Pose3 scaled_transform(const gtsam::Similarity3& sim3, gtsam::OptionalJacobian<6, 7> H = boost::none) {
+gtsam::Pose3 scaled_transform(const gtsam::Similarity3& sim3,
+                              gtsam::OptionalJacobian<6, 7> H = boost::none) {
   if (H) {
     H->setZero();
     H->block<3, 3>(0, 0).setIdentity();
@@ -20,16 +21,20 @@ gtsam::Pose3 scaled_transform(const gtsam::Similarity3& sim3, gtsam::OptionalJac
   return gtsam::Pose3(sim3.rotation(), sim3.scale() * sim3.translation());
 }
 
-class BetweenSim3SE3Factor : public gtsam::NoiseModelFactor2<gtsam::Similarity3, gtsam::Pose3> {
-public:
-  BetweenSim3SE3Factor(const gtsam::Key x1_key, const gtsam::Key x2_key, const gtsam::SharedNoiseModel& noise_model)
-  : gtsam::NoiseModelFactor2<gtsam::Similarity3, gtsam::Pose3>(noise_model, x1_key, x2_key) {}
+class BetweenSim3SE3Factor
+    : public gtsam::NoiseModelFactor2<gtsam::Similarity3, gtsam::Pose3> {
+  public:
+  BetweenSim3SE3Factor(const gtsam::Key x1_key,
+                       const gtsam::Key x2_key,
+                       const gtsam::SharedNoiseModel& noise_model)
+      : gtsam::NoiseModelFactor2<gtsam::Similarity3, gtsam::Pose3>(
+                noise_model, x1_key, x2_key) {}
 
   virtual gtsam::Vector evaluateError(
-    const gtsam::Similarity3& x1,
-    const gtsam::Pose3& x2,
-    boost::optional<gtsam::Matrix&> H1 = boost::none,
-    boost::optional<gtsam::Matrix&> H2 = boost::none) const override {
+          const gtsam::Similarity3& x1,
+          const gtsam::Pose3& x2,
+          boost::optional<gtsam::Matrix&> H1 = boost::none,
+          boost::optional<gtsam::Matrix&> H2 = boost::none) const override {
     //
     if (!H1 || !H2) {
       gtsam::Pose3 delta = scaled_transform(x1).between(x2);

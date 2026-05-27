@@ -1,44 +1,51 @@
-#include <iostream>
-#include <boost/format.hpp>
-
 #include <gtest/gtest.h>
-
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 
+#include <boost/format.hpp>
 #include <gtsam_points/ann/kdtree.hpp>
-#include <gtsam_points/types/point_cloud_cpu.hpp>
-#include <gtsam_points/util/read_points.hpp>
-#include <gtsam_points/util/normal_estimation.hpp>
-#include <gtsam_points/util/covariance_estimation.hpp>
-#include <gtsam_points/factors/integrated_ct_icp_factor.hpp>
 #include <gtsam_points/factors/integrated_ct_gicp_factor.hpp>
+#include <gtsam_points/factors/integrated_ct_icp_factor.hpp>
 #include <gtsam_points/optimizers/levenberg_marquardt_ext.hpp>
+#include <gtsam_points/types/point_cloud_cpu.hpp>
+#include <gtsam_points/util/covariance_estimation.hpp>
+#include <gtsam_points/util/normal_estimation.hpp>
+#include <gtsam_points/util/read_points.hpp>
+#include <iostream>
 
 struct ContinuousTimeFactorsTestBase : public testing::Test {
-public:
+  public:
   virtual void SetUp() {
     for (int i = 0; i < 3; i++) {
-      auto times = gtsam_points::read_times((boost::format("data/newer_06/times_%02d.bin") % i).str());
-      auto raw_points = gtsam_points::read_points((boost::format("data/newer_06/raw_%02d.bin") % i).str());
-      auto deskewed_points = gtsam_points::read_points((boost::format("data/newer_06/deskewed_%02d.bin") % i).str());
+      auto times = gtsam_points::read_times(
+              (boost::format("data/newer_06/times_%02d.bin") % i).str());
+      auto raw_points = gtsam_points::read_points(
+              (boost::format("data/newer_06/raw_%02d.bin") % i).str());
+      auto deskewed_points = gtsam_points::read_points(
+              (boost::format("data/newer_06/deskewed_%02d.bin") % i).str());
 
       ASSERT_EQ(times.empty(), false) << "Failed to load point times";
       ASSERT_EQ(times.size(), raw_points.size()) << "Failed to raw points";
-      ASSERT_EQ(times.size(), deskewed_points.size()) << "Failed to deskewed points";
+      ASSERT_EQ(times.size(), deskewed_points.size())
+              << "Failed to deskewed points";
 
       for (auto& pt : raw_points) {
         Eigen::Quaternionf q(0, 0, 0, 1);
         pt = q * pt;
       }
 
-      gtsam_points::PointCloudCPU::Ptr source(new gtsam_points::PointCloudCPU(raw_points));
+      gtsam_points::PointCloudCPU::Ptr source(
+              new gtsam_points::PointCloudCPU(raw_points));
       source->add_times(times);
-      source->add_covs(gtsam_points::estimate_covariances(source->points, source->size()));
+      source->add_covs(gtsam_points::estimate_covariances(source->points,
+                                                          source->size()));
 
-      gtsam_points::PointCloudCPU::Ptr target(new gtsam_points::PointCloudCPU(deskewed_points));
-      target->add_covs(gtsam_points::estimate_covariances(target->points, target->size()));
-      target->add_normals(gtsam_points::estimate_normals(target->points, target->covs, target->size()));
+      gtsam_points::PointCloudCPU::Ptr target(
+              new gtsam_points::PointCloudCPU(deskewed_points));
+      target->add_covs(gtsam_points::estimate_covariances(target->points,
+                                                          target->size()));
+      target->add_normals(gtsam_points::estimate_normals(
+              target->points, target->covs, target->size()));
 
       raw_source_frames.push_back(source);
       deskewed_target_frames.push_back(target);
@@ -54,9 +61,12 @@ TEST_F(ContinuousTimeFactorsTestBase, LoadCheck) {
   ASSERT_EQ(deskewed_target_frames.size(), 3) << "Failed to load target frames";
 }
 
-struct ContinuousTimeFactorTest : public ContinuousTimeFactorsTestBase, public testing::WithParamInterface<std::string> {
-public:
-  double pointcloud_distance(const gtsam_points::PointCloud::ConstPtr& frame1, const gtsam_points::PointCloud::ConstPtr& frame2) {
+struct ContinuousTimeFactorTest
+    : public ContinuousTimeFactorsTestBase,
+      public testing::WithParamInterface<std::string> {
+  public:
+  double pointcloud_distance(const gtsam_points::PointCloud::ConstPtr& frame1,
+                             const gtsam_points::PointCloud::ConstPtr& frame2) {
     gtsam_points::KdTree tree(frame2->points, frame2->size());
 
     double sum_dists = 0.0;
@@ -72,7 +82,10 @@ public:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(gtsam_points, ContinuousTimeFactorTest, testing::Values("CTICP", "CTGICP"), [](const auto& info) { return info.param; });
+INSTANTIATE_TEST_SUITE_P(gtsam_points,
+                         ContinuousTimeFactorTest,
+                         testing::Values("CTICP", "CTGICP"),
+                         [](const auto& info) { return info.param; });
 
 TEST_P(ContinuousTimeFactorTest, AlignmentTest) {
   for (int i = 0; i < 3; i++) {
@@ -85,20 +98,24 @@ TEST_P(ContinuousTimeFactorTest, AlignmentTest) {
 
     gtsam_points::IntegratedCT_ICPFactor::shared_ptr factor;
     if (GetParam() == "CTICP") {
-      factor.reset(new gtsam_points::IntegratedCT_ICPFactor(0, 1, target, source));
+      factor.reset(
+              new gtsam_points::IntegratedCT_ICPFactor(0, 1, target, source));
     } else if (GetParam() == "CTGICP") {
-      factor.reset(new gtsam_points::IntegratedCT_GICPFactor(0, 1, target, source));
+      factor.reset(
+              new gtsam_points::IntegratedCT_GICPFactor(0, 1, target, source));
     }
 
     gtsam::NonlinearFactorGraph graph;
     graph.add(factor);
 
     gtsam_points::LevenbergMarquardtExtParams lm_params;
-    gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values, lm_params);
+    gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values,
+                                                           lm_params);
     values = optimizer.optimize();
 
     auto corrected_source = factor->deskewed_source_points(values);
-    gtsam_points::PointCloud::Ptr correcred(new gtsam_points::PointCloudCPU(corrected_source));
+    gtsam_points::PointCloud::Ptr correcred(
+            new gtsam_points::PointCloudCPU(corrected_source));
 
     // The corrected point cloud should have a small distance to the target
     // double dist_before = pointcloud_distance(source, target);

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <vector>
 #include <functional>
+#include <vector>
 
 /**
  * @brief Callback slot to hold and trigger multiple callbacks
  */
 template <typename Func>
 class CallbackSlot {
-public:
+  public:
   CallbackSlot() {}
   ~CallbackSlot() {}
 
@@ -34,7 +34,9 @@ public:
    * @return false  No valid callbacks
    */
   operator bool() const {
-    return !callbacks.empty() && std::any_of(callbacks.begin(), callbacks.end(), [](const std::function<Func>& f) { return f; });
+    return !callbacks.empty() &&
+           std::any_of(callbacks.begin(), callbacks.end(),
+                       [](const std::function<Func>& f) { return f; });
   }
 
   /**
@@ -63,6 +65,6 @@ public:
     return call(args...);
   }
 
-private:
+  private:
   std::vector<std::function<Func>> callbacks;
 };

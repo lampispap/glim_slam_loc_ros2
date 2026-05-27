@@ -3,26 +3,25 @@
 
 #pragma once
 
-#include <sstream>
+#include <gtsam/nonlinear/ISAM2Result.h>
 
+#include <boost/format.hpp>
 #include <boost/utility/in_place_factory.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>
-#include <boost/format.hpp>
-
-#include <gtsam/nonlinear/ISAM2Result.h>
+#include <sstream>
 
 namespace gtsam_points {
 struct ISAM2ResultExt : public gtsam::ISAM2Result {
-public:
+  public:
   ISAM2ResultExt(bool enableDetailedResults = false)
-  : gtsam::ISAM2Result(enableDetailedResults),
-    delta(0.0),
-    update_count(0),
-    gpu_evaluation_count(0),
-    gpu_linearization_count(0),
-    num_factors(0),
-    num_values(0),
-    elapsed_time(0) {
+      : gtsam::ISAM2Result(enableDetailedResults),
+        delta(0.0),
+        update_count(0),
+        gpu_evaluation_count(0),
+        gpu_linearization_count(0),
+        num_factors(0),
+        num_values(0),
+        elapsed_time(0) {
     variablesRelinearized = 0;
     variablesReeliminated = 0;
   }
@@ -36,19 +35,24 @@ public:
     if (errorBefore && errorAfter) {
       bool dec = errorBefore.value() > errorAfter.value();
       sst1 << boost::format("%5s %15s %15s ") % "dec" % "e0" % "ei";
-      sst2 << boost::format("%5c %15g %15g ") % check[dec] % errorBefore.value() % errorAfter.value();
+      sst2 << boost::format("%5c %15g %15g ") % check[dec] %
+                      errorBefore.value() % errorAfter.value();
     }
 
-    sst1 << boost::format("%5s %5s %5s %5s %5s %5s %10s %10s") % "count" % "new" % "lin" % "elim" % "gpu_e" % "gpu_l" % "delta" % "time_msec";
-    sst2 << boost::format("%5d %5d %5d %5d %5d %5d %10g %10g") % update_count % newFactorsIndices.size() % variablesRelinearized % variablesReeliminated % gpu_evaluation_count %
-              gpu_linearization_count % delta % (elapsed_time * 1000.0);
+    sst1 << boost::format("%5s %5s %5s %5s %5s %5s %10s %10s") % "count" %
+                    "new" % "lin" % "elim" % "gpu_e" % "gpu_l" % "delta" %
+                    "time_msec";
+    sst2 << boost::format("%5d %5d %5d %5d %5d %5d %10g %10g") % update_count %
+                    newFactorsIndices.size() % variablesRelinearized %
+                    variablesReeliminated % gpu_evaluation_count %
+                    gpu_linearization_count % delta % (elapsed_time * 1000.0);
 
     sst1 << std::endl << sst2.str();
 
     return sst1.str();
   }
 
-public:
+  public:
   double delta;
   int update_count;
 

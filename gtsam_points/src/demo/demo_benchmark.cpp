@@ -1,38 +1,42 @@
-#include <regex>
-#include <chrono>
-#include <iostream>
+#include <gtsam/nonlinear/Values.h>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <boost/format.hpp>
-
-#include <gtsam/nonlinear/Values.h>
+#include <chrono>
 #include <gtsam_points/ann/kdtree.hpp>
-#include <gtsam_points/types/point_cloud_cpu.hpp>
 #include <gtsam_points/factors/integrated_gicp_factor.hpp>
 #include <gtsam_points/factors/integrated_vgicp_factor.hpp>
 #include <gtsam_points/optimizers/levenberg_marquardt_ext.hpp>
+#include <gtsam_points/types/point_cloud_cpu.hpp>
 #include <gtsam_points/util/covariance_estimation.hpp>
 #include <gtsam_points/util/read_points.hpp>
+#include <iostream>
+#include <regex>
 
 #ifdef BUILD_GTSAM_POINTS_GPU
-#include <gtsam_points/types/point_cloud_gpu.hpp>
-#include <gtsam_points/factors/integrated_vgicp_factor_gpu.hpp>
-#include <gtsam_points/cuda/stream_temp_buffer_roundrobin.hpp>
 #include <gtsam_points/cuda/cuda_device_prop.hpp>
+#include <gtsam_points/cuda/stream_temp_buffer_roundrobin.hpp>
+#include <gtsam_points/factors/integrated_vgicp_factor_gpu.hpp>
+#include <gtsam_points/types/point_cloud_gpu.hpp>
 #endif
 
 class StopWatch {
-public:
+  public:
   StopWatch() {}
 
   void start() { t1 = std::chrono::high_resolution_clock::now(); }
   void stop(const std::string& label) {
     t2 = std::chrono::high_resolution_clock::now();
-    const double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1e6;
-    std::cout << boost::format("- %-20s: %.3f[msec]") % label % elapsed << std::endl;
+    const double elapsed =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
+                    .count() /
+            1e6;
+    std::cout << boost::format("- %-20s: %.3f[msec]") % label % elapsed
+              << std::endl;
   }
 
-private:
+  private:
   std::chrono::high_resolution_clock::time_point t1;
   std::chrono::high_resolution_clock::time_point t2;
 };
@@ -42,7 +46,8 @@ double benchmark_eigen_fixed() {
   using MatrixN = Eigen::Matrix<T, N, N>;
   using VectorN = Eigen::Matrix<T, N, 1>;
 
-  std::cout << boost::format("eigen_fixed(%s%d)") % typeid(T).name() % N << std::endl;
+  std::cout << boost::format("eigen_fixed(%s%d)") % typeid(T).name() % N
+            << std::endl;
 
   const int num_points = 8192 * 10;
   const int num_iterations = 1024 * 16;
@@ -82,7 +87,8 @@ double benchmark_eigen_dynamic() {
   StopWatch stopwatch;
   double sink = 0.0;
 
-  Eigen::Matrix<T, -1, -1> A = Eigen::Matrix<T, -1, -1>::Zero(matrix_size, matrix_size);
+  Eigen::Matrix<T, -1, -1> A =
+          Eigen::Matrix<T, -1, -1>::Zero(matrix_size, matrix_size);
   Eigen::Matrix<T, -1, -1> b = Eigen::Matrix<T, -1, -1>::Zero(matrix_size, 1);
 
   stopwatch.start();
@@ -94,13 +100,18 @@ double benchmark_eigen_dynamic() {
   return sink;
 }
 
-void benchmark_alignment(const std::string& factor_type, int num_threads, int num_factors) {
-  std::cout << boost::format("%s (%d threads, x%d factors)") % factor_type % num_threads % num_factors << std::endl;
+void benchmark_alignment(const std::string& factor_type,
+                         int num_threads,
+                         int num_factors) {
+  std::cout << boost::format("%s (%d threads, x%d factors)") % factor_type %
+                       num_threads % num_factors
+            << std::endl;
 
   const std::string dump_path = "data/kitti_07_dump";
   std::ifstream ifs(dump_path + "/graph.txt");
   if (!ifs) {
-    std::cerr << "error: failed to open " << dump_path << "/graph.txt" << std::endl;
+    std::cerr << "error: failed to open " << dump_path << "/graph.txt"
+              << std::endl;
   }
 
   gtsam::Values gt_values;
@@ -109,9 +120,11 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
     std::string token;
     Eigen::Vector3d trans;
     Eigen::Quaterniond quat;
-    ifs >> token >> trans.x() >> trans.y() >> trans.z() >> quat.x() >> quat.y() >> quat.z() >> quat.w();
+    ifs >> token >> trans.x() >> trans.y() >> trans.z() >> quat.x() >>
+            quat.y() >> quat.z() >> quat.w();
 
-    gtsam::Vector6 noise_gen = (gtsam::Vector6() << 0.0, 0.1, 0.2, 0.3, 0.4, 0.5).finished();
+    gtsam::Vector6 noise_gen =
+            (gtsam::Vector6() << 0.0, 0.1, 0.2, 0.3, 0.4, 0.5).finished();
     gtsam::Vector6 noise_vec = (i + noise_gen.array()).sin();
     noise_vec.head<3>() *= 0.1;
     noise_vec.tail<3>() *= 1.0;
@@ -130,16 +143,19 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
 
   stopwatch.start();
   for (int i = 0; i < 5; i++) {
-    const auto points = gtsam_points::read_points((boost::format("%s/%06d/points.bin") % dump_path % i).str());
+    const auto points = gtsam_points::read_points(
+            (boost::format("%s/%06d/points.bin") % dump_path % i).str());
 
     if (factor_type.find("GPU") == std::string::npos) {
       auto frame = std::make_shared<gtsam_points::PointCloudCPU>(points);
-      frame->add_covs(gtsam_points::estimate_covariances(frame->points, frame->size(), 10, num_threads));
+      frame->add_covs(gtsam_points::estimate_covariances(
+              frame->points, frame->size(), 10, num_threads));
       frames.emplace_back(frame);
     } else {
 #ifdef BUILD_GTSAM_POINTS_GPU
       auto frame = std::make_shared<gtsam_points::PointCloudGPU>(points);
-      frame->add_covs(gtsam_points::estimate_covariances(frame->points, frame->size(), 10, num_threads));
+      frame->add_covs(gtsam_points::estimate_covariances(
+              frame->points, frame->size(), 10, num_threads));
       frames.emplace_back(frame);
 #else
       std::cerr << "error: gtsam_points was built without CUDA!!" << std::endl;
@@ -151,13 +167,15 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
   if (factor_type == "GICP") {
     stopwatch.start();
     for (int i = 0; i < 5; i++) {
-      trees.emplace_back(std::make_shared<gtsam_points::KdTree>(frames[i]->points, frames[i]->size()));
+      trees.emplace_back(std::make_shared<gtsam_points::KdTree>(
+              frames[i]->points, frames[i]->size()));
     }
     stopwatch.stop("kdtree creation");
   } else if (factor_type == "VGICP") {
     stopwatch.start();
     for (int i = 0; i < 5; i++) {
-      voxels.emplace_back(std::make_shared<gtsam_points::GaussianVoxelMapCPU>(1.0));
+      voxels.emplace_back(
+              std::make_shared<gtsam_points::GaussianVoxelMapCPU>(1.0));
       voxels.back()->insert(*frames[i]);
     }
     stopwatch.stop("voxelmap creation");
@@ -165,7 +183,8 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
 #ifdef BUILD_GTSAM_POINTS_GPU
     stopwatch.start();
     for (int i = 0; i < 5; i++) {
-      voxels.emplace_back(std::make_shared<gtsam_points::GaussianVoxelMapGPU>(1.0));
+      voxels.emplace_back(
+              std::make_shared<gtsam_points::GaussianVoxelMapGPU>(1.0));
       voxels.back()->insert(*frames[i]);
     }
     stopwatch.stop("voxelmap creation");
@@ -181,28 +200,36 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
 #endif
 
   gtsam::NonlinearFactorGraph graph;
-  graph.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(0, gt_values.at<gtsam::Pose3>(0), gtsam::noiseModel::Isotropic::Precision(6, 1e6));
+  graph.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
+          0, gt_values.at<gtsam::Pose3>(0),
+          gtsam::noiseModel::Isotropic::Precision(6, 1e6));
   for (int k = 0; k < num_factors; k++) {
     for (int i = 0; i < 5; i++) {
       for (int j = i + 1; j < 5; j++) {
         if (factor_type == "GICP") {
-          auto factor = gtsam::make_shared<gtsam_points::IntegratedGICPFactor>(i, j, frames[i], frames[j], trees[i]);
+          auto factor = gtsam::make_shared<gtsam_points::IntegratedGICPFactor>(
+                  i, j, frames[i], frames[j], trees[i]);
           factor->set_num_threads(num_threads);
           graph.add(factor);
         } else if (factor_type == "VGICP") {
-          auto factor = gtsam::make_shared<gtsam_points::IntegratedVGICPFactor>(i, j, voxels[i], frames[j]);
+          auto factor = gtsam::make_shared<gtsam_points::IntegratedVGICPFactor>(
+                  i, j, voxels[i], frames[j]);
           factor->set_num_threads(num_threads);
           graph.add(factor);
         } else if (factor_type == "VGICP_GPU") {
 #ifdef BUILD_GTSAM_POINTS_GPU
-          const auto stream_buffer = stream_buffer_roundrobin.get_stream_buffer();
+          const auto stream_buffer =
+                  stream_buffer_roundrobin.get_stream_buffer();
           const auto stream = stream_buffer.first;
           const auto buffer = stream_buffer.second;
 
-          auto factor = gtsam::make_shared<gtsam_points::IntegratedVGICPFactorGPU>(i, j, voxels[i], frames[j], stream, buffer);
+          auto factor =
+                  gtsam::make_shared<gtsam_points::IntegratedVGICPFactorGPU>(
+                          i, j, voxels[i], frames[j], stream, buffer);
           graph.add(factor);
 #else
-          std::cerr << "error: gtsam_points was built without CUDA!!" << std::endl;
+          std::cerr << "error: gtsam_points was built without CUDA!!"
+                    << std::endl;
 #endif
         }
       }
@@ -210,20 +237,24 @@ void benchmark_alignment(const std::string& factor_type, int num_threads, int nu
   }
 
   gtsam_points::LevenbergMarquardtExtParams lm_params;
-  gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values, lm_params);
+  gtsam_points::LevenbergMarquardtOptimizerExt optimizer(graph, values,
+                                                         lm_params);
 
   stopwatch.start();
   values = optimizer.optimize();
   stopwatch.stop("optimization");
 
   for (int i = 0; i < 5; i++) {
-    const gtsam::Pose3 error = gt_values.at<gtsam::Pose3>(i).inverse() * values.at<gtsam::Pose3>(i);
+    const gtsam::Pose3 error = gt_values.at<gtsam::Pose3>(i).inverse() *
+                               values.at<gtsam::Pose3>(i);
     const double trans_error = error.translation().norm();
-    const double rot_error = Eigen::AngleAxisd(error.rotation().matrix()).angle();
+    const double rot_error =
+            Eigen::AngleAxisd(error.rotation().matrix()).angle();
 
     if (trans_error > 0.1 || rot_error > 0.01) {
       std::cerr << "error: too large estimation error!!" << std::endl;
-      std::cerr << "     : frame=" << i << " err_t=" << trans_error << " err_r=" << rot_error << std::endl;
+      std::cerr << "     : frame=" << i << " err_t=" << trans_error
+                << " err_r=" << rot_error << std::endl;
     }
   }
 }
@@ -245,12 +276,14 @@ void print_info() {
 #ifdef BUILD_GTSAM_POINTS_GPU
   const auto cuda_devices = gtsam_points::cuda_device_names();
   for (int i = 0; i < cuda_devices.size(); i++) {
-    std::cout << boost::format("GPU model%d : %s") % i % cuda_devices[i] << std::endl;
+    std::cout << boost::format("GPU model%d : %s") % i % cuda_devices[i]
+              << std::endl;
   }
 
 #endif
 
-  std::cout << "SIMD in use: " << Eigen::SimdInstructionSetsInUse() << std::endl;
+  std::cout << "SIMD in use: " << Eigen::SimdInstructionSetsInUse()
+            << std::endl;
   std::cout << std::endl;
 }
 

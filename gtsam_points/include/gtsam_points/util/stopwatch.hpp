@@ -8,7 +8,7 @@ namespace gtsam_points {
 
 /// @brief Just a stopwatch
 struct Stopwatch {
-public:
+  public:
   void start() { t1 = t2 = std::chrono::high_resolution_clock::now(); }
   void stop() { t2 = std::chrono::high_resolution_clock::now(); }
   void lap() {
@@ -16,10 +16,18 @@ public:
     t2 = std::chrono::high_resolution_clock::now();
   }
 
-  double sec() const { return std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1e9; }
-  double msec() const { return std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1e6; }
+  double sec() const {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
+                   .count() /
+           1e9;
+  }
+  double msec() const {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
+                   .count() /
+           1e6;
+  }
 
-public:
+  public:
   std::chrono::high_resolution_clock::time_point t1;
   std::chrono::high_resolution_clock::time_point t2;
 };

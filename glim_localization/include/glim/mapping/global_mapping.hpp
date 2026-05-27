@@ -1,24 +1,23 @@
 #pragma once
 
+#include <Eigen/Core>
+#include <GeographicLib/LocalCartesian.hpp>
 #include <any>
+#include <boost/shared_ptr.hpp>
+#include <deque>
+#include <glim/mapping/global_mapping_base.hpp>
 #include <memory>
 #include <random>
-#include <deque>
-
-#include <boost/shared_ptr.hpp>
-#include <glim/mapping/global_mapping_base.hpp>
-#include <GeographicLib/LocalCartesian.hpp>
-#include <Eigen/Core>
 
 namespace gtsam {
-  class Values;
-  class NonlinearFactorGraph;
+class Values;
+class NonlinearFactorGraph;
 }  // namespace gtsam
 
 namespace gtsam_points {
-  class ISAM2Ext;
-  class StreamTempBufferRoundRobin;
-  struct ISAM2ResultExt;
+class ISAM2Ext;
+class StreamTempBufferRoundRobin;
+struct ISAM2ResultExt;
 }  // namespace gtsam_points
 
 namespace glim {
@@ -29,11 +28,11 @@ class IMUIntegration;
  * @brief Global mapping parameters
  */
 struct GlobalMappingParams {
-public:
+  public:
   GlobalMappingParams();
   ~GlobalMappingParams();
 
-public:
+  public:
   bool enable_gpu;
   bool enable_imu;
   bool enable_optimization;
@@ -66,13 +65,16 @@ public:
  * @brief Global mapping
  */
 class GlobalMapping : public GlobalMappingBase {
-public:
+  public:
   GlobalMapping(const GlobalMappingParams& params = GlobalMappingParams());
   virtual ~GlobalMapping();
 
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
   virtual void insert_submap(const SubMap::Ptr& submap) override;
-  virtual void insert_gps(double stamp, const Eigen::Vector4d& lat_lon_alt)  override;
+  virtual void insert_gps(double stamp,
+                          const Eigen::Vector4d& lat_lon_alt) override;
 
   virtual void find_overlapping_submaps(double min_overlap) override;
   virtual void optimize() override;
@@ -86,18 +88,24 @@ public:
    */
   virtual bool load(const std::string& path) override;
 
-  // virtual void relocalize(double timestamp, const Eigen::Isometry3d & initial_pose) override {}
-private:
+  // virtual void relocalize(double timestamp, const Eigen::Isometry3d &
+  // initial_pose) override {}
+  private:
   void insert_submap(int current, const SubMap::Ptr& submap);
-  gtsam::NonlinearFactorGraph create_gps_factor(const int current, gtsam::Values& new_values);
+  gtsam::NonlinearFactorGraph create_gps_factor(const int current,
+                                                gtsam::Values& new_values);
 
-  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) const;
-  std::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) const;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(
+          int current) const;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(
+          int current) const;
 
   void update_submaps();
-  gtsam_points::ISAM2ResultExt update_isam2(const gtsam::NonlinearFactorGraph& new_factors, const gtsam::Values& new_values);
+  gtsam_points::ISAM2ResultExt update_isam2(
+          const gtsam::NonlinearFactorGraph& new_factors,
+          const gtsam::Values& new_values);
 
-protected:
+  protected:
   using Params = GlobalMappingParams;
   Params params;
 
@@ -118,7 +126,7 @@ protected:
 
   GeographicLib::LocalCartesian geoConverter;
   std::deque<std::pair<double, Eigen::Vector4d>> gps_queue;
-  bool geoconverter_initialized {false};
+  bool geoconverter_initialized{false};
   int gps_data_id{0};
 };
 }  // namespace glim

@@ -18,16 +18,15 @@
  */
 
 // the following headers are necesarry to avoid incomplete class errros on nvcc
-#include <boost/utility/in_place_factory.hpp>
-#include <boost/utility/typed_in_place_factory.hpp>
-
 #include <gtsam/base/debug.h>
 #include <gtsam/config.h>            // for GTSAM_USE_TBB
 #include <gtsam/inference/Symbol.h>  // for selective linearization thresholds
-#include <gtsam_points/optimizers/isam2_ext_impl.hpp>
 
 #include <boost/range/adaptors.hpp>
+#include <boost/utility/in_place_factory.hpp>
+#include <boost/utility/typed_in_place_factory.hpp>
 #include <functional>
+#include <gtsam_points/optimizers/isam2_ext_impl.hpp>
 #include <limits>
 #include <string>
 
@@ -37,32 +36,40 @@ namespace gtsam_points {
 
 /* ************************************************************************* */
 namespace internal {
-inline static void optimizeInPlace(const ISAM2Ext::sharedClique& clique, VectorValues* result) {
+inline static void optimizeInPlace(const ISAM2Ext::sharedClique& clique,
+                                   VectorValues* result) {
   // parents are assumed to already be solved and available in result
   result->update(clique->conditional()->solve(*result));
 
   // starting from the root, call optimize on each conditional
-  for (const ISAM2Ext::sharedClique& child : clique->children) optimizeInPlace(child, result);
+  for (const ISAM2Ext::sharedClique& child : clique->children)
+    optimizeInPlace(child, result);
 }
 }  // namespace internal
 
 /* ************************************************************************* */
-size_t DeltaImpl::UpdateGaussNewtonDelta(const ISAM2Ext::Roots& roots, const KeySet& replacedKeys, double wildfireThreshold, VectorValues* delta) {
+size_t DeltaImpl::UpdateGaussNewtonDelta(const ISAM2Ext::Roots& roots,
+                                         const KeySet& replacedKeys,
+                                         double wildfireThreshold,
+                                         VectorValues* delta) {
   size_t lastBacksubVariableCount;
 
   if (wildfireThreshold <= 0.0) {
     // Threshold is zero or less, so do a full recalculation
-    for (const ISAM2Ext::sharedClique& root : roots) internal::optimizeInPlace(root, delta);
+    for (const ISAM2Ext::sharedClique& root : roots)
+      internal::optimizeInPlace(root, delta);
     lastBacksubVariableCount = delta->size();
 
   } else {
     // Optimize with wildfire
     lastBacksubVariableCount = 0;
     for (const ISAM2Ext::sharedClique& root : roots)
-      lastBacksubVariableCount += optimizeWildfireNonRecursive(root, wildfireThreshold, replacedKeys, delta);  // modifies delta
+      lastBacksubVariableCount += optimizeWildfireNonRecursive(
+              root, wildfireThreshold, replacedKeys, delta);  // modifies delta
 
 #if !defined(NDEBUG) && defined(GTSAM_POINTSRA_CONSISTENCY_CHECKS)
-    for (VectorValues::const_iterator key_delta = delta->begin(); key_delta != delta->end(); ++key_delta) {
+    for (VectorValues::const_iterator key_delta = delta->begin();
+         key_delta != delta->end(); ++key_delta) {
       assert((*delta)[key_delta->first].allFinite());
     }
 #endif
@@ -73,12 +80,11 @@ size_t DeltaImpl::UpdateGaussNewtonDelta(const ISAM2Ext::Roots& roots, const Key
 
 /* ************************************************************************* */
 namespace internal {
-void updateRgProd(
-  const ISAM2Ext::sharedClique& clique,
-  const KeySet& replacedKeys,
-  const VectorValues& grad,
-  VectorValues* RgProd,
-  size_t* varsUpdated) {
+void updateRgProd(const ISAM2Ext::sharedClique& clique,
+                  const KeySet& replacedKeys,
+                  const VectorValues& grad,
+                  VectorValues* RgProd,
+                  size_t* varsUpdated) {
   // Check if any frontal or separator keys were recalculated, if so, we need
   // update deltas and recurse to children, but if not, we do not need to
   // recurse further because of the running separator property.
@@ -93,11 +99,14 @@ void updateRgProd(
   if (anyReplaced) {
     // Update the current variable
     // Get VectorValues slice corresponding to current variables
-    Vector gR = grad.vector(KeyVector(clique->conditional()->beginFrontals(), clique->conditional()->endFrontals()));
-    Vector gS = grad.vector(KeyVector(clique->conditional()->beginParents(), clique->conditional()->endParents()));
+    Vector gR = grad.vector(KeyVector(clique->conditional()->beginFrontals(),
+                                      clique->conditional()->endFrontals()));
+    Vector gS = grad.vector(KeyVector(clique->conditional()->beginParents(),
+                                      clique->conditional()->endParents()));
 
     // Compute R*g and S*g for this clique
-    Vector RSgProd = clique->conditional()->R() * gR + clique->conditional()->S() * gS;
+    Vector RSgProd =
+            clique->conditional()->R() * gR + clique->conditional()->S() * gS;
 
     // Write into RgProd vector
     DenseIndex vectorPosition = 0;
@@ -122,18 +131,23 @@ void updateRgProd(
 }  // namespace internal
 
 /* ************************************************************************* */
-size_t DeltaImpl::UpdateRgProd(const ISAM2Ext::Roots& roots, const KeySet& replacedKeys, const VectorValues& gradAtZero, VectorValues* RgProd) {
+size_t DeltaImpl::UpdateRgProd(const ISAM2Ext::Roots& roots,
+                               const KeySet& replacedKeys,
+                               const VectorValues& gradAtZero,
+                               VectorValues* RgProd) {
   // Update variables
   size_t varsUpdated = 0;
   for (const ISAM2Ext::sharedClique& root : roots) {
-    internal::updateRgProd(root, replacedKeys, gradAtZero, RgProd, &varsUpdated);
+    internal::updateRgProd(root, replacedKeys, gradAtZero, RgProd,
+                           &varsUpdated);
   }
 
   return varsUpdated;
 }
 
 /* ************************************************************************* */
-VectorValues DeltaImpl::ComputeGradientSearch(const VectorValues& gradAtZero, const VectorValues& RgProd) {
+VectorValues DeltaImpl::ComputeGradientSearch(const VectorValues& gradAtZero,
+                                              const VectorValues& RgProd) {
   // Compute gradient squared-magnitude
   const double gradientSqNorm = gradAtZero.dot(gradAtZero);
 

@@ -3,19 +3,18 @@
 
 #pragma once
 
-#include <memory>
-#include <atomic>
-
 #include <Eigen/Core>
-
+#include <atomic>
 #include <gtsam_points/ann/flat_container.hpp>
 #include <gtsam_points/ann/incremental_voxelmap.hpp>
+#include <memory>
 
 namespace gtsam_points {
 
 /**
  * @brief Voxel-based incremental nearest neighbor search
- *        Bai et al., "Faster-LIO: Lightweight Tightly Coupled Lidar-Inertial Odometry Using Parallel Sparse Incremental Voxels", IEEE RA-L, 2022
+ *        Bai et al., "Faster-LIO: Lightweight Tightly Coupled Lidar-Inertial
+ * Odometry Using Parallel Sparse Incremental Voxels", IEEE RA-L, 2022
  * @note  Only the linear iVox is implemented
  */
 using iVox = IncrementalVoxelMap<FlatContainer>;

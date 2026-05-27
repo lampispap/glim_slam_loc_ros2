@@ -1,9 +1,9 @@
-#include <iostream>
 #include <gtsam/inference/Symbol.h>
-#include <gtsam_points/util/continuous_trajectory.hpp>
 
 #include <glk/primitives/primitives.hpp>
+#include <gtsam_points/util/continuous_trajectory.hpp>
 #include <guik/viewer/light_viewer.hpp>
+#include <iostream>
 
 int main(int argc, char** argv) {
   auto viewer = guik::LightViewer::instance();
@@ -20,16 +20,24 @@ int main(int argc, char** argv) {
     poses.push_back(gtsam::Pose3(rot, trans));
 
     Eigen::Affine3f model_matrix(poses.back().matrix().cast<float>());
-    viewer->update_drawable("target_" + std::to_string(t), glk::Primitives::coordinate_system(), guik::VertexColor(model_matrix.scale(0.5f)));
+    viewer->update_drawable("target_" + std::to_string(t),
+                            glk::Primitives::coordinate_system(),
+                            guik::VertexColor(model_matrix.scale(0.5f)));
   }
 
-  // Create continuous trajectory and optimize spline knots to fit the trajectory with the target poses
-  gtsam_points::ContinuousTrajectory ct('x', stamps.front(), stamps.back(), 0.5);
+  // Create continuous trajectory and optimize spline knots to fit the
+  // trajectory with the target poses
+  gtsam_points::ContinuousTrajectory ct('x', stamps.front(), stamps.back(),
+                                        0.5);
   gtsam::Values values = ct.fit_knots(stamps, poses);
 
   for (int i = 0; i < ct.knot_max_id(); i++) {
-    Eigen::Affine3f model_matrix(values.at<gtsam::Pose3>(gtsam::Symbol('x', i)).matrix().cast<float>());
-    viewer->update_drawable("knot_" + std::to_string(i), glk::Primitives::coordinate_system(), guik::FlatColor(0.5f, 0.5f, 0.5f, 1.0f, model_matrix.scale(0.5f)));
+    Eigen::Affine3f model_matrix(values.at<gtsam::Pose3>(gtsam::Symbol('x', i))
+                                         .matrix()
+                                         .cast<float>());
+    viewer->update_drawable(
+            "knot_" + std::to_string(i), glk::Primitives::coordinate_system(),
+            guik::FlatColor(0.5f, 0.5f, 0.5f, 1.0f, model_matrix.scale(0.5f)));
   }
 
   // Drawable filter
@@ -66,7 +74,8 @@ int main(int argc, char** argv) {
     const gtsam::Vector6_ imu_ = ct.imu(time, gtsam::Double_(time));
 
     Eigen::Affine3f model_matrix(pose.matrix().cast<float>());
-    viewer->update_drawable("pose", glk::Primitives::coordinate_system(), guik::VertexColor(model_matrix.scale(0.5f)));
+    viewer->update_drawable("pose", glk::Primitives::coordinate_system(),
+                            guik::VertexColor(model_matrix.scale(0.5f)));
 
     ImGui::Text("Linear acc : %.3f %.3f %.3f", imu[0], imu[1], imu[2]);
     ImGui::Text("Angular vel: %.3f %.3f %.3f", imu[3], imu[4], imu[5]);

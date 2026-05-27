@@ -8,7 +8,9 @@
 namespace gtsam_points {
 
 template <typename Func>
-Eigen::VectorXd numerical_jacobian(const Func& f, const Eigen::VectorXd& x, double eps = 1e-6) {
+Eigen::VectorXd numerical_jacobian(const Func& f,
+                                   const Eigen::VectorXd& x,
+                                   double eps = 1e-6) {
   const int N = x.size();
   Eigen::VectorXd j(N);
 
@@ -25,7 +27,9 @@ Eigen::VectorXd numerical_jacobian(const Func& f, const Eigen::VectorXd& x, doub
 }
 
 template <typename Func>
-Eigen::MatrixXd numerical_hessian(const Func& f, const Eigen::VectorXd& x, double eps = 1e-6) {
+Eigen::MatrixXd numerical_hessian(const Func& f,
+                                  const Eigen::VectorXd& x,
+                                  double eps = 1e-6) {
   const int N = x.size();
   Eigen::MatrixXd h(N, N);
 

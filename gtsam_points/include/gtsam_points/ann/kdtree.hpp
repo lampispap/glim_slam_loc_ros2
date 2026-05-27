@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <memory>
-#include <iostream>
 #include <Eigen/Core>
-
 #include <gtsam_points/ann/nearest_neighbor_search.hpp>
+#include <iostream>
+#include <memory>
 
 namespace gtsam_points {
 
@@ -19,10 +18,12 @@ struct AxisAlignedProjection;
  * @brief KdTree-based nearest neighbor search
  */
 struct KdTree : public NearestNeighborSearch {
-public:
+  public:
   using Index = UnsafeKdTree<KdTree, AxisAlignedProjection>;
 
-  KdTree(const Eigen::Vector4d* points, int num_points, int build_num_threads = 1);
+  KdTree(const Eigen::Vector4d* points,
+         int num_points,
+         int build_num_threads = 1);
   virtual ~KdTree() override;
 
   /// @brief Find k nearest neighbors
@@ -32,13 +33,14 @@ public:
   /// @param k_sq_dists   Squared distances of k nearest neighbors
   /// @return             Number of neighbors found
   virtual size_t knn_search(
-    const double* pt,
-    size_t k,
-    size_t* k_indices,
-    double* k_sq_dists,
-    double max_sq_dist = std::numeric_limits<double>::max()) const override;
+          const double* pt,
+          size_t k,
+          size_t* k_indices,
+          double* k_sq_dists,
+          double max_sq_dist =
+                  std::numeric_limits<double>::max()) const override;
 
-public:
+  public:
   const int num_points;
   const Eigen::Vector4d* points;
 

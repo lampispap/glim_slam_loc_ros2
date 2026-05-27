@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/intensity_gradients_ivox.hpp>
-
 #include <Eigen/Eigen>
+#include <gtsam_points/factors/intensity_gradients_ivox.hpp>
 
 namespace gtsam_points {
 
-IntensityGradientsiVox::IntensityGradientsiVox(const double voxel_resolution, const double min_points_dist, int k_neighbors, int num_threads)
-: iVox(voxel_resolution, min_points_dist),
-  k_neighbors(k_neighbors),
-  num_threads(num_threads) {}
+IntensityGradientsiVox::IntensityGradientsiVox(const double voxel_resolution,
+                                               const double min_points_dist,
+                                               int k_neighbors,
+                                               int num_threads)
+    : iVox(voxel_resolution, min_points_dist),
+      k_neighbors(k_neighbors),
+      num_threads(num_threads) {}
 
 IntensityGradientsiVox::~IntensityGradientsiVox() {}
 
@@ -27,7 +29,8 @@ void IntensityGradientsiVox::insert(const PointCloud& frame) {
   }
 
   // Find gradient voxels corresponding to iVox voxels
-  std::vector<std::pair<Eigen::Vector3i, LinearContainer::Ptr>> flat_voxels(voxelmap.begin(), voxelmap.end());
+  std::vector<std::pair<Eigen::Vector3i, LinearContainer::Ptr>> flat_voxels(
+          voxelmap.begin(), voxelmap.end());
   std::vector<LinearContainer::Ptr> flat_grads(flat_voxels.size());
   grads.resize(voxels.size());
 
@@ -37,7 +40,9 @@ void IntensityGradientsiVox::insert(const PointCloud& frame) {
     auto found = gradmap.find(coord);
 
     if (found == gradmap.end()) {
-      found = gradmap.insert(found, std::make_pair(coord, std::make_shared<LinearContainer>(0)));
+      found = gradmap.insert(
+              found,
+              std::make_pair(coord, std::make_shared<LinearContainer>(0)));
     }
 
     flat_grads[i] = found->second;
@@ -59,20 +64,28 @@ void IntensityGradientsiVox::insert(const PointCloud& frame) {
       const auto& point = voxel.second->points[j];
       const double intensity = voxel.second->intensities[j];
 
-      const int num_found = knn_search(point.data(), k_neighbors, k_indices.data(), k_sq_dists.data());
+      const int num_found = knn_search(point.data(), k_neighbors,
+                                       k_indices.data(), k_sq_dists.data());
 
-      const Eigen::Vector4d normal = estimate_normal(point, num_found, k_indices.data(), k_sq_dists.data());
-      const Eigen::Vector4d gradient = estimate_gradient(point, normal, intensity, num_found, k_indices.data(), k_sq_dists.data());
+      const Eigen::Vector4d normal = estimate_normal(
+              point, num_found, k_indices.data(), k_sq_dists.data());
+      const Eigen::Vector4d gradient =
+              estimate_gradient(point, normal, intensity, num_found,
+                                k_indices.data(), k_sq_dists.data());
       gradients->normals.push_back(normal);
       gradients->points.push_back(gradient);
     }
   }
 }
 
-Eigen::Vector4d
-IntensityGradientsiVox::estimate_normal(const Eigen::Vector4d& point, const int num_found, const size_t* k_indices, const double* k_sq_dists) const {
+Eigen::Vector4d IntensityGradientsiVox::estimate_normal(
+        const Eigen::Vector4d& point,
+        const int num_found,
+        const size_t* k_indices,
+        const double* k_sq_dists) const {
   if (num_found < 3) {
-    return (Eigen::Vector4d() << Eigen::Vector3d::Random().normalized(), 0.0).finished();
+    return (Eigen::Vector4d() << Eigen::Vector3d::Random().normalized(), 0.0)
+            .finished();
   }
 
   Eigen::Vector4d sum_points = Eigen::Vector4d::Zero();
@@ -85,12 +98,14 @@ IntensityGradientsiVox::estimate_normal(const Eigen::Vector4d& point, const int 
   }
 
   const Eigen::Vector4d mean = sum_points / num_found;
-  const Eigen::Matrix4d cov = (sum_covs - mean * sum_points.transpose()) / num_found;
+  const Eigen::Matrix4d cov =
+          (sum_covs - mean * sum_points.transpose()) / num_found;
 
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig;
   eig.computeDirect(cov.block<3, 3>(0, 0));
 
-  Eigen::Vector4d normal = (Eigen::Vector4d() << eig.eigenvectors().col(0), 0.0).finished();
+  Eigen::Vector4d normal =
+          (Eigen::Vector4d() << eig.eigenvectors().col(0), 0.0).finished();
   if (point.dot(normal) > 1.0) {
     normal = -normal;
   }
@@ -99,18 +114,19 @@ IntensityGradientsiVox::estimate_normal(const Eigen::Vector4d& point, const int 
 }
 
 Eigen::Vector4d IntensityGradientsiVox::estimate_gradient(
-  const Eigen::Vector4d& point,
-  const Eigen::Vector4d& normal,
-  const double intensity,
-  const int num_found,
-  const size_t* k_indices,
-  const double* k_sq_dists) const {
+        const Eigen::Vector4d& point,
+        const Eigen::Vector4d& normal,
+        const double intensity,
+        const int num_found,
+        const size_t* k_indices,
+        const double* k_sq_dists) const {
   //
   if (num_found < 3) {
     return Eigen::Vector4d::Zero();
   }
 
-  Eigen::Matrix<double, -1, 4> A = Eigen::Matrix<double, -1, 4>::Zero(num_found, 4);
+  Eigen::Matrix<double, -1, 4> A =
+          Eigen::Matrix<double, -1, 4>::Zero(num_found, 4);
   Eigen::VectorXd b = Eigen::VectorXd::Zero(num_found);
 
   A.row(0) = normal;
@@ -119,7 +135,8 @@ Eigen::Vector4d IntensityGradientsiVox::estimate_gradient(
   for (int i = 1; i < num_found; i++) {
     const auto& point_ = frame::point<iVox>(*this, k_indices[i]);
     const double intensity_ = frame::intensity<iVox>(*this, k_indices[i]);
-    const Eigen::Vector4d projected = point_ - (point_ - point).dot(normal) * normal;
+    const Eigen::Vector4d projected =
+            point_ - (point_ - point).dot(normal) * normal;
     A.row(i) = projected - point;
     b(i) = (intensity_ - intensity);
   }
@@ -134,7 +151,8 @@ const Eigen::Vector4d& IntensityGradientsiVox::normal(const size_t i) const {
   return grads[voxel_id(i)]->normals[point_id(i)];
 }
 
-const Eigen::Vector4d& IntensityGradientsiVox::intensity_gradient(const size_t i) const {
+const Eigen::Vector4d& IntensityGradientsiVox::intensity_gradient(
+        const size_t i) const {
   return grads[voxel_id(i)]->points[point_id(i)];
 }
 
@@ -150,13 +168,15 @@ std::vector<Eigen::Vector4d> IntensityGradientsiVox::voxel_normals() const {
 std::vector<double> IntensityGradientsiVox::voxel_intensities() const {
   std::vector<double> intensities;
   for (const auto& voxel : voxels) {
-    intensities.insert(intensities.end(), voxel->intensities.begin(), voxel->intensities.end());
+    intensities.insert(intensities.end(), voxel->intensities.begin(),
+                       voxel->intensities.end());
   }
 
   return intensities;
 }
 
-std::vector<Eigen::Vector4d> IntensityGradientsiVox::voxel_intensity_gradients() const {
+std::vector<Eigen::Vector4d> IntensityGradientsiVox::voxel_intensity_gradients()
+        const {
   std::vector<Eigen::Vector4d> gradients;
   for (const auto& grad : grads) {
     gradients.insert(gradients.end(), grad->points.begin(), grad->points.end());

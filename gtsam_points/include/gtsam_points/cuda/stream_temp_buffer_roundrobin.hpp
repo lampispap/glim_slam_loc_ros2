@@ -4,20 +4,21 @@
 #pragma once
 
 #include <deque>
+#include <gtsam_points/cuda/stream_roundrobin.hpp>
 #include <memory>
 #include <unordered_map>
-
-#include <gtsam_points/cuda/stream_roundrobin.hpp>
 
 namespace gtsam_points {
 
 /**
  * @brief Temporary buffer manager
- * @note  This class allocates a new buffer only when a buffer larger than the largest one among allocated buffers
- * @note  This is useful for managing temporary buffers when using CUB's reduce function several times on a single CUDA stream
+ * @note  This class allocates a new buffer only when a buffer larger than the
+ * largest one among allocated buffers
+ * @note  This is useful for managing temporary buffers when using CUB's reduce
+ * function several times on a single CUDA stream
  */
 class TempBufferManager {
-public:
+  public:
   struct Buffer {
     Buffer(size_t size);
     ~Buffer();
@@ -39,7 +40,7 @@ public:
   void clear();
   void clear_all();
 
-private:
+  private:
   std::vector<std::shared_ptr<Buffer>> buffers;
 };
 
@@ -47,8 +48,9 @@ private:
  * @brief Roundrobin for pairs of CUDA stream and temporary buffer manager
  */
 class StreamTempBufferRoundRobin {
-public:
-  StreamTempBufferRoundRobin(int num_streams = 16, size_t init_buffer_size = 512 * 1024);
+  public:
+  StreamTempBufferRoundRobin(int num_streams = 16,
+                             size_t init_buffer_size = 512 * 1024);
   ~StreamTempBufferRoundRobin();
 
   std::pair<CUstream_st*, TempBufferManager::Ptr> get_stream_buffer();
@@ -58,7 +60,7 @@ public:
   void clear();
   void clear_all();
 
-private:
+  private:
   size_t init_buffer_size;
   std::unique_ptr<StreamRoundRobin> stream_roundrobin;
   std::unordered_map<CUstream_st*, TempBufferManager::Ptr> buffer_map;

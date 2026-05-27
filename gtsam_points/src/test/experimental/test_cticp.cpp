@@ -1,7 +1,7 @@
-#include <iostream>
 #include <gtsam/geometry/Pose3.h>
-#include <gtsam_points/util/expressions.hpp>
 
+#include <gtsam_points/util/expressions.hpp>
+#include <iostream>
 
 void eval_expr(const gtsam::Values& values) {
   gtsam::Pose3_ pose0(0);
@@ -44,17 +44,21 @@ void eval_real(const gtsam::Values& values) {
   gtsam::Matrix6 H_pose_0_a, H_pose_inc;
   gtsam::Pose3 pose = pose0.compose(inc, H_pose_0_a, H_pose_inc);
 
-  gtsam::Matrix6 H_inc_0_b = H_pose_inc * H_inc_vel * t * H_vel_delta * H_delta_0;
+  gtsam::Matrix6 H_inc_0_b =
+          H_pose_inc * H_inc_vel * t * H_vel_delta * H_delta_0;
   gtsam::Matrix6 H_pose_0 = H_pose_0_a + H_inc_0_b;
-  gtsam::Matrix6 H_pose_1 = H_pose_inc * H_inc_vel * t * H_vel_delta * H_delta_1;
+  gtsam::Matrix6 H_pose_1 =
+          H_pose_inc * H_inc_vel * t * H_vel_delta * H_delta_1;
 
   gtsam::Matrix36 H_transed_pose;
   gtsam::Point3 pt(1, 2, 3);
   gtsam::Point3 transed = pose.transformFrom(pt, H_transed_pose);
 
   std::cout << "--- value ---" << std::endl << pt << std::endl;
-  std::cout << "--- H1 ---" << std::endl << H_transed_pose * H_pose_0 << std::endl;
-  std::cout << "--- H2 ---" << std::endl << H_transed_pose * H_pose_1 << std::endl;
+  std::cout << "--- H1 ---" << std::endl
+            << H_transed_pose * H_pose_0 << std::endl;
+  std::cout << "--- H2 ---" << std::endl
+            << H_transed_pose * H_pose_1 << std::endl;
 }
 
 int main(int argc, char** argv) {

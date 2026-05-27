@@ -3,22 +3,26 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <gtsam_points/types/point_cloud.hpp>
-#include <gtsam_points/types/gaussian_voxelmap.hpp>
 #include <gtsam_points/ann/incremental_voxelmap.hpp>
+#include <gtsam_points/types/gaussian_voxelmap.hpp>
+#include <gtsam_points/types/point_cloud.hpp>
 
 namespace gtsam_points {
 
 /// @brief Gaussian voxel that computes and stores voxel mean and covariance.
 struct GaussianVoxel {
-public:
+  public:
   using Ptr = std::shared_ptr<GaussianVoxel>;
   using ConstPtr = std::shared_ptr<const GaussianVoxel>;
 
   struct Setting {};
 
   /// @brief Constructor.
-  GaussianVoxel() : finalized(false), num_points(0), mean(Eigen::Vector4d::Zero()), cov(Eigen::Matrix4d::Zero()) {}
+  GaussianVoxel()
+      : finalized(false),
+        num_points(0),
+        mean(Eigen::Vector4d::Zero()),
+        cov(Eigen::Matrix4d::Zero()) {}
 
   /// @brief  Number of points in the voxel (Always 1 for GaussianVoxel).
   size_t size() const { return 1; }
@@ -43,9 +47,10 @@ public:
     result.push(0, sq_dist);
   }
 
-public:
-  bool finalized;        ///< If true, mean and cov are finalized, otherwise they represent the sum of input points
-  size_t num_points;     ///< Number of input points
+  public:
+  bool finalized;     ///< If true, mean and cov are finalized, otherwise they
+                      ///< represent the sum of input points
+  size_t num_points;  ///< Number of input points
   Eigen::Vector4d mean;  ///< Mean
   Eigen::Matrix4d cov;   ///< Covariance
 };
@@ -61,16 +66,23 @@ struct traits<GaussianVoxel> {
   static bool has_covs(const GaussianVoxel& frame) { return true; }
   static bool has_intensities(const GaussianVoxel& frame) { return false; }
 
-  static const Eigen::Vector4d& point(const GaussianVoxel& frame, size_t i) { return frame.mean; }
-  static const Eigen::Vector4d normal(const GaussianVoxel& frame, size_t i) { return Eigen::Vector4d::Zero(); }
-  static const Eigen::Matrix4d& cov(const GaussianVoxel& frame, size_t i) { return frame.cov; }
+  static const Eigen::Vector4d& point(const GaussianVoxel& frame, size_t i) {
+    return frame.mean;
+  }
+  static const Eigen::Vector4d normal(const GaussianVoxel& frame, size_t i) {
+    return Eigen::Vector4d::Zero();
+  }
+  static const Eigen::Matrix4d& cov(const GaussianVoxel& frame, size_t i) {
+    return frame.cov;
+  }
   static double intensity(const GaussianVoxel& frame, size_t i) { return 0.0; }
 };
 
 }  // namespace frame
 
-class GaussianVoxelMapCPU : public GaussianVoxelMap, public IncrementalVoxelMap<GaussianVoxel> {
-public:
+class GaussianVoxelMapCPU : public GaussianVoxelMap,
+                            public IncrementalVoxelMap<GaussianVoxel> {
+  public:
   using Ptr = std::shared_ptr<GaussianVoxelMapCPU>;
   using ConstPtr = std::shared_ptr<const GaussianVoxelMapCPU>;
 
@@ -111,15 +123,31 @@ namespace frame {
 
 template <>
 struct traits<GaussianVoxelMapCPU> {
-  static bool has_points(const GaussianVoxelMapCPU& ivox) { return ivox.has_points(); }
-  static bool has_normals(const GaussianVoxelMapCPU& ivox) { return ivox.has_normals(); }
-  static bool has_covs(const GaussianVoxelMapCPU& ivox) { return ivox.has_covs(); }
-  static bool has_intensities(const GaussianVoxelMapCPU& ivox) { return ivox.has_intensities(); }
+  static bool has_points(const GaussianVoxelMapCPU& ivox) {
+    return ivox.has_points();
+  }
+  static bool has_normals(const GaussianVoxelMapCPU& ivox) {
+    return ivox.has_normals();
+  }
+  static bool has_covs(const GaussianVoxelMapCPU& ivox) {
+    return ivox.has_covs();
+  }
+  static bool has_intensities(const GaussianVoxelMapCPU& ivox) {
+    return ivox.has_intensities();
+  }
 
-  static decltype(auto) point(const GaussianVoxelMapCPU& ivox, size_t i) { return ivox.point(i); }
-  static decltype(auto) normal(const GaussianVoxelMapCPU& ivox, size_t i) { return ivox.normal(i); }
-  static decltype(auto) cov(const GaussianVoxelMapCPU& ivox, size_t i) { return ivox.cov(i); }
-  static decltype(auto) intensity(const GaussianVoxelMapCPU& ivox, size_t i) { return ivox.intensity(i); }
+  static decltype(auto) point(const GaussianVoxelMapCPU& ivox, size_t i) {
+    return ivox.point(i);
+  }
+  static decltype(auto) normal(const GaussianVoxelMapCPU& ivox, size_t i) {
+    return ivox.normal(i);
+  }
+  static decltype(auto) cov(const GaussianVoxelMapCPU& ivox, size_t i) {
+    return ivox.cov(i);
+  }
+  static decltype(auto) intensity(const GaussianVoxelMapCPU& ivox, size_t i) {
+    return ivox.intensity(i);
+  }
 };
 
 }  // namespace frame

@@ -1,17 +1,16 @@
-#include <vector>
-#include <iostream>
+#include <gtest/gtest.h>
+
 #include <Eigen/Core>
 #include <boost/filesystem.hpp>
-
-#include <gtest/gtest.h>
-#include <gtsam_points/types/point_cloud_cpu.hpp>
-#include <gtsam_points/types/point_cloud_gpu.hpp>
+#include <compare_frames.hpp>
 #include <gtsam_points/types/gaussian_voxelmap_cpu.hpp>
 #include <gtsam_points/types/gaussian_voxelmap_gpu.hpp>
-
+#include <gtsam_points/types/point_cloud_cpu.hpp>
+#include <gtsam_points/types/point_cloud_gpu.hpp>
+#include <iostream>
 #include <random_set.hpp>
-#include <compare_frames.hpp>
 #include <validate_frame.hpp>
+#include <vector>
 
 template <typename T, int D>
 void creation_test() {
@@ -35,8 +34,11 @@ void creation_test() {
   compare_frames(frame, gtsam_points::PointCloudCPU::clone(*frame));
 
   for (int i = 0; i < num_points; i++) {
-    const double diff = (frame->points[i].template head<D>() - points[i].template cast<double>()).squaredNorm();
-    EXPECT_LT(diff, std::numeric_limits<double>::epsilon()) << "point copy failure";
+    const double diff = (frame->points[i].template head<D>() -
+                         points[i].template cast<double>())
+                                .squaredNorm();
+    EXPECT_LT(diff, std::numeric_limits<double>::epsilon())
+            << "point copy failure";
     EXPECT_DOUBLE_EQ(frame->points[i][3], 1.0) << "point copy failure";
   }
 
@@ -68,11 +70,18 @@ void creation_test() {
 
   for (int i = 0; i < num_points; i++) {
     const double diff_t = std::pow(frame->times[i] - times[i], 2);
-    const double diff_n = (frame->normals[i].template head<D>() - normals[i].template cast<double>()).squaredNorm();
-    const double diff_c = (frame->covs[i].template block<D, D>(0, 0) - covs[i].template cast<double>()).squaredNorm();
-    EXPECT_LT(diff_t, std::numeric_limits<double>::epsilon()) << "time copy failure";
-    EXPECT_LT(diff_n, std::numeric_limits<double>::epsilon()) << "normal copy failure";
-    EXPECT_LT(diff_c, std::numeric_limits<double>::epsilon()) << "cov copy failure";
+    const double diff_n = (frame->normals[i].template head<D>() -
+                           normals[i].template cast<double>())
+                                  .squaredNorm();
+    const double diff_c = (frame->covs[i].template block<D, D>(0, 0) -
+                           covs[i].template cast<double>())
+                                  .squaredNorm();
+    EXPECT_LT(diff_t, std::numeric_limits<double>::epsilon())
+            << "time copy failure";
+    EXPECT_LT(diff_n, std::numeric_limits<double>::epsilon())
+            << "normal copy failure";
+    EXPECT_LT(diff_c, std::numeric_limits<double>::epsilon())
+            << "cov copy failure";
 
     EXPECT_DOUBLE_EQ(frame->normals[i][3], 0.0) << "normal copy failure";
     for (int j = 0; j < 4; j++) {
@@ -87,7 +96,8 @@ void creation_test() {
 
   boost::filesystem::create_directories("/tmp/frame_test_compact");
   frame->save_compact("/tmp/frame_test_compact");
-  compare_frames(frame, gtsam_points::PointCloudCPU::load("/tmp/frame_test_compact"));
+  compare_frames(frame,
+                 gtsam_points::PointCloudCPU::load("/tmp/frame_test_compact"));
 }
 
 TEST(TestTypes, TestPointCloudCPU) {
@@ -122,7 +132,10 @@ void creation_test_gpu() {
   const auto points_gpu = gtsam_points::download_points_gpu(*frame_gpu);
   ASSERT_EQ(points_gpu.size(), num_points);
   for (int i = 0; i < num_points; i++) {
-    EXPECT_LT((points_gpu[i].template cast<double>() - frame->points[i].template head<3>()).norm(), 1e-6);
+    EXPECT_LT((points_gpu[i].template cast<double>() -
+               frame->points[i].template head<3>())
+                      .norm(),
+              1e-6);
   }
 
   frame_gpu->download_points();
@@ -154,9 +167,11 @@ void creation_test_gpu() {
   frame->add_intensities(intensities);
   frame_gpu->add_intensities_gpu(intensities);
   ASSERT_FALSE(frame_gpu->has_intensities());
-  ASSERT_TRUE(frame_gpu->has_intensities_gpu() && frame_gpu->check_intensities_gpu());
+  ASSERT_TRUE(frame_gpu->has_intensities_gpu() &&
+              frame_gpu->check_intensities_gpu());
 
-  const auto intensities_gpu = gtsam_points::download_intensities_gpu(*frame_gpu);
+  const auto intensities_gpu =
+          gtsam_points::download_intensities_gpu(*frame_gpu);
   ASSERT_EQ(intensities_gpu.size(), num_points);
   for (int i = 0; i < num_points; i++) {
     EXPECT_LT(std::abs(intensities_gpu[i] - frame->intensities[i]), 1e-6);
@@ -176,7 +191,10 @@ void creation_test_gpu() {
   const auto normals_gpu = gtsam_points::download_normals_gpu(*frame_gpu);
   ASSERT_EQ(normals_gpu.size(), num_points);
   for (int i = 0; i < num_points; i++) {
-    EXPECT_LT((normals_gpu[i].template cast<double>() - frame->normals[i].template head<3>()).norm(), 1e-6);
+    EXPECT_LT((normals_gpu[i].template cast<double>() -
+               frame->normals[i].template head<3>())
+                      .norm(),
+              1e-6);
   }
 
   frame_gpu->add_normals(normals);
@@ -193,7 +211,10 @@ void creation_test_gpu() {
   const auto covs_gpu = gtsam_points::download_covs_gpu(*frame_gpu);
   ASSERT_EQ(covs_gpu.size(), num_points);
   for (int i = 0; i < num_points; i++) {
-    EXPECT_LT((covs_gpu[i].template cast<double>() - frame->covs[i].template block<3, 3>(0, 0)).norm(), 1e-6);
+    EXPECT_LT((covs_gpu[i].template cast<double>() -
+               frame->covs[i].template block<3, 3>(0, 0))
+                      .norm(),
+              1e-6);
   }
 
   frame_gpu->add_covs(covs);
@@ -263,30 +284,46 @@ TEST(TestTypes, TestPointCloudCPUFuncs) {
   validate_all_propaties(sampled);
 
   // Test for filter
-  auto filtered1 = gtsam_points::filter(frame, [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; });
-  auto filtered2 = gtsam_points::filter(frame, [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; });
+  auto filtered1 = gtsam_points::filter(
+          frame, [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; });
+  auto filtered2 = gtsam_points::filter(
+          frame, [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; });
 
   validate_all_propaties(filtered1);
   validate_all_propaties(filtered2);
   EXPECT_EQ(filtered1->size() + filtered2->size(), frame->size());
-  EXPECT_TRUE(std::all_of(filtered1->points, filtered1->points + filtered1->size(), [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; }));
-  EXPECT_TRUE(std::all_of(filtered2->points, filtered2->points + filtered2->size(), [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; }));
+  EXPECT_TRUE(
+          std::all_of(filtered1->points, filtered1->points + filtered1->size(),
+                      [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; }));
+  EXPECT_TRUE(
+          std::all_of(filtered2->points, filtered2->points + filtered2->size(),
+                      [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; }));
 
   // Test for filter_by_index
-  filtered1 = gtsam_points::filter_by_index(frame, [&](int i) { return frame->points[i].x() < 0.0; });
-  filtered2 = gtsam_points::filter_by_index(frame, [&](int i) { return frame->points[i].x() >= 0.0; });
+  filtered1 = gtsam_points::filter_by_index(
+          frame, [&](int i) { return frame->points[i].x() < 0.0; });
+  filtered2 = gtsam_points::filter_by_index(
+          frame, [&](int i) { return frame->points[i].x() >= 0.0; });
 
   validate_all_propaties(filtered1);
   validate_all_propaties(filtered2);
   EXPECT_EQ(filtered1->size() + filtered2->size(), frame->size());
-  EXPECT_TRUE(std::all_of(filtered1->points, filtered1->points + filtered1->size(), [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; }));
-  EXPECT_TRUE(std::all_of(filtered2->points, filtered2->points + filtered2->size(), [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; }));
+  EXPECT_TRUE(
+          std::all_of(filtered1->points, filtered1->points + filtered1->size(),
+                      [](const Eigen::Vector4d& pt) { return pt.x() < 0.0; }));
+  EXPECT_TRUE(
+          std::all_of(filtered2->points, filtered2->points + filtered2->size(),
+                      [](const Eigen::Vector4d& pt) { return pt.x() >= 0.0; }));
 
   // Test for sort
-  auto sorted = gtsam_points::sort(frame, [&](int lhs, int rhs) { return frame->points[lhs].x() < frame->points[rhs].x(); });
+  auto sorted = gtsam_points::sort(frame, [&](int lhs, int rhs) {
+    return frame->points[lhs].x() < frame->points[rhs].x();
+  });
   validate_all_propaties(sorted);
   EXPECT_EQ(sorted->size(), frame->size());
-  EXPECT_TRUE(std::is_sorted(sorted->points, sorted->points + sorted->size(), [](const auto& lhs, const auto& rhs) { return lhs.x() < rhs.x(); }));
+  EXPECT_TRUE(std::is_sorted(
+          sorted->points, sorted->points + sorted->size(),
+          [](const auto& lhs, const auto& rhs) { return lhs.x() < rhs.x(); }));
 
   // Test for sort_by_time
   sorted = gtsam_points::sort_by_time(frame);
@@ -296,7 +333,8 @@ TEST(TestTypes, TestPointCloudCPUFuncs) {
 
   // Test for transform
   Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
-  T.linear() = Eigen::AngleAxisd(0.5, Eigen::Vector3d::Random().normalized()).toRotationMatrix();
+  T.linear() = Eigen::AngleAxisd(0.5, Eigen::Vector3d::Random().normalized())
+                       .toRotationMatrix();
   T.translation() = Eigen::Vector3d::Random();
 
   auto transformed = gtsam_points::transform(frame, T);
@@ -304,8 +342,15 @@ TEST(TestTypes, TestPointCloudCPUFuncs) {
   ASSERT_EQ(transformed->size(), frame->size());
   for (int i = 0; i < frame->size(); i++) {
     EXPECT_LT((T * frame->points[i] - transformed->points[i]).norm(), 1e-6);
-    EXPECT_LT((T.linear() * frame->normals[i].head<3>() - transformed->normals[i].head<3>()).norm(), 1e-6);
-    EXPECT_LT((T.linear() * frame->covs[i].topLeftCorner<3, 3>() * T.linear().transpose() - transformed->covs[i].topLeftCorner<3, 3>()).norm(), 1e-6);
+    EXPECT_LT((T.linear() * frame->normals[i].head<3>() -
+               transformed->normals[i].head<3>())
+                      .norm(),
+              1e-6);
+    EXPECT_LT((T.linear() * frame->covs[i].topLeftCorner<3, 3>() *
+                       T.linear().transpose() -
+               transformed->covs[i].topLeftCorner<3, 3>())
+                      .norm(),
+              1e-6);
   }
 
   auto transformed2 = gtsam_points::transform(frame, T.cast<float>());

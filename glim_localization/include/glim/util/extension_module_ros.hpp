@@ -1,17 +1,19 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
 #include <ros/ros.h>
 #include <rosbag/message_instance.h>
+#include <spdlog/spdlog.h>
+
 #include <glim/util/extension_module.hpp>
 
 namespace glim {
 
 /**
- * @brief Generic topic subscription that allows transparently subscribes to a topic through glim_rosnode and glim_rosbag
+ * @brief Generic topic subscription that allows transparently subscribes to a
+ * topic through glim_rosnode and glim_rosbag
  */
 class GenericTopicSubscription {
-public:
+  public:
   using Ptr = std::shared_ptr<GenericTopicSubscription>;
 
   /**
@@ -41,18 +43,21 @@ public:
  */
 template <typename Msg>
 class TopicSubscription : public GenericTopicSubscription {
-public:
+  public:
   /**
    * @brief topic    Topic name
    * @brief callback Message callback
    */
   template <typename Callback>
-  TopicSubscription(const std::string& topic, const Callback& callback) : GenericTopicSubscription(topic),
-                                                                          callback(callback) {}
+  TopicSubscription(const std::string& topic, const Callback& callback)
+      : GenericTopicSubscription(topic), callback(callback) {}
 
-  virtual void create_subscriber(ros::NodeHandle& nh) override { sub = nh.subscribe<Msg>(topic, 10, callback); }
+  virtual void create_subscriber(ros::NodeHandle& nh) override {
+    sub = nh.subscribe<Msg>(topic, 10, callback);
+  }
 
-  virtual void insert_message_instance(const rosbag::MessageInstance& m) override {
+  virtual void insert_message_instance(
+          const rosbag::MessageInstance& m) override {
     const auto msg = m.instantiate<Msg>();
     if (msg == nullptr) {
       spdlog::warn("failed to instantiate message on {}", topic);
@@ -70,7 +75,7 @@ public:
  * @brief Extension module with ROS1 topic subscription
  */
 class ExtensionModuleROS : public ExtensionModule {
-public:
+  public:
   ExtensionModuleROS() {}
   virtual ~ExtensionModuleROS() {}
 

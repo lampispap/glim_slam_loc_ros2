@@ -1,12 +1,14 @@
-#include <glim/util/extension_module.hpp>
-
 #include <spdlog/spdlog.h>
+
+#include <glim/util/extension_module.hpp>
 #include <glim/util/load_module.hpp>
 
 namespace glim {
 
-std::shared_ptr<ExtensionModule> ExtensionModule::load_module(const std::string& so_name) {
-  return load_module_from_so<ExtensionModule>(so_name, "create_extension_module");
+std::shared_ptr<ExtensionModule> ExtensionModule::load_module(
+        const std::string& so_name) {
+  return load_module_from_so<ExtensionModule>(so_name,
+                                              "create_extension_module");
 }
 
 }  // namespace glim

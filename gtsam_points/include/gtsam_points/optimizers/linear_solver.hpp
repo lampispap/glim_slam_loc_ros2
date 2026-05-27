@@ -9,17 +9,20 @@
 namespace gtsam_points {
 
 class DenseLinearSolver {
-public:
+  public:
   virtual ~DenseLinearSolver() {}
 
-  virtual Eigen::VectorXd solve(const Eigen::MatrixXd& A, const Eigen::VectorXd& b) = 0;
+  virtual Eigen::VectorXd solve(const Eigen::MatrixXd& A,
+                                const Eigen::VectorXd& b) = 0;
 };
 
 class SparseLinearSolver {
-public:
+  public:
   virtual ~SparseLinearSolver() {}
 
-  virtual Eigen::VectorXd solve(const Eigen::SparseMatrix<double, Eigen::RowMajor>& A, const Eigen::VectorXd& b) = 0;
+  virtual Eigen::VectorXd solve(
+          const Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
+          const Eigen::VectorXd& b) = 0;
 };
 
 }  // namespace gtsam_points

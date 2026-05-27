@@ -1,7 +1,7 @@
 #pragma once
 
-#include <deque>
 #include <algorithm>
+#include <deque>
 
 namespace glim {
 
@@ -18,15 +18,18 @@ enum class InterpolationHelperSearchMode {
   BINARY   ///< Binary search
 };
 
-/// @brief A helper class to find the values that cover a given timestamp from a data stream.
+/// @brief A helper class to find the values that cover a given timestamp from a
+/// data stream.
 template <typename Value>
 class InterpolationHelper {
-public:
+  public:
   using StampedValue = std::pair<double, Value>;
 
   /// @brief Constructor.
   /// @param search_mode  Search mode
-  InterpolationHelper(InterpolationHelperSearchMode search_mode = InterpolationHelperSearchMode::LINEAR) : search_mode(search_mode) {}
+  InterpolationHelper(InterpolationHelperSearchMode search_mode =
+                              InterpolationHelperSearchMode::LINEAR)
+      : search_mode(search_mode) {}
   ~InterpolationHelper() {}
 
   /// @brief Check if it's emptry.
@@ -36,10 +39,14 @@ public:
   int size() const { return values.size(); }
 
   /// @brief Oldest timestamp in the queue
-  double leftmost_time() const { return values.empty() ? 0.0 : values.front().first; }
+  double leftmost_time() const {
+    return values.empty() ? 0.0 : values.front().first;
+  }
 
   /// @brief Newest timestamp in the queue
-  double rightmost_time() const { return values.empty() ? 0.0 : values.back().first; }
+  double rightmost_time() const {
+    return values.empty() ? 0.0 : values.back().first;
+  }
 
   /// @brief Add a new value.
   /// @param stamp  Timestamp
@@ -59,11 +66,17 @@ public:
 
   /// @brief Find the values that cover the target timestamp.
   /// @param stamp                Target timestamp
-  /// @param left_ptr             [out] The closest value that is older than the target timestamp (nullptr if not needed)
-  /// @param right_ptr            [out] The closest value that is newer than the target timestamp (nullptr if not needed)
-  /// @param remove_cursor_ptr    [out] The index of the value that is older than the left_ptr    (nullptr if not needed)
+  /// @param left_ptr             [out] The closest value that is older than the
+  /// target timestamp (nullptr if not needed)
+  /// @param right_ptr            [out] The closest value that is newer than the
+  /// target timestamp (nullptr if not needed)
+  /// @param remove_cursor_ptr    [out] The index of the value that is older
+  /// than the left_ptr    (nullptr if not needed)
   /// @return                     Seach result status
-  InterpolationHelperResult find(const double stamp, StampedValue* left_ptr, StampedValue* right_ptr, int* remove_cursor_ptr) const {
+  InterpolationHelperResult find(const double stamp,
+                                 StampedValue* left_ptr,
+                                 StampedValue* right_ptr,
+                                 int* remove_cursor_ptr) const {
     if (values.empty() || values.back().first < stamp) {
       return InterpolationHelperResult::WAITING;
     }
@@ -80,14 +93,19 @@ public:
         }
         break;
       case InterpolationHelperSearchMode::BINARY:
-        const auto found = std::lower_bound(values.begin(), values.end(), stamp, [](const auto& value, double stamp) { return value.first < stamp; });
+        const auto found =
+                std::lower_bound(values.begin(), values.end(), stamp,
+                                 [](const auto& value, double stamp) {
+                                   return value.first < stamp;
+                                 });
         right = std::distance(values.begin(), found);
         break;
     }
 
     int left = right - 1;
 
-    if (values[left].first > stamp || values[right].first < stamp || right >= values.size()) {
+    if (values[left].first > stamp || values[right].first < stamp ||
+        right >= values.size()) {
       std::cerr << "error: invalid condition!!" << std::endl;
       abort();
     }
@@ -114,7 +132,7 @@ public:
     values.erase(values.begin(), values.begin() + remove_cursor);
   }
 
-private:
+  private:
   InterpolationHelperSearchMode search_mode;
   std::deque<StampedValue> values;
 };

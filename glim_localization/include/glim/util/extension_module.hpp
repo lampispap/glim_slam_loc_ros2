@@ -8,7 +8,7 @@ namespace glim {
  * @brief Extension module to be dynamically loaded via dynamic linking
  */
 class ExtensionModule {
-public:
+  public:
   ExtensionModule() {}
   virtual ~ExtensionModule() {}
 
@@ -18,7 +18,8 @@ public:
   virtual bool needs_wait() const { return false; }
 
   /**
-   * @brief Check if the module is alive. (If it returns false, the system will be shutdown)
+   * @brief Check if the module is alive. (If it returns false, the system will
+   * be shutdown)
    */
   virtual bool ok() const { return true; }
 
@@ -27,7 +28,8 @@ public:
    * @param so_name  Dynamic library name
    * @return         Loaded extension module
    */
-  static std::shared_ptr<ExtensionModule> load_module(const std::string& so_name);
+  static std::shared_ptr<ExtensionModule> load_module(
+          const std::string& so_name);
 };
 
 }  // namespace glim

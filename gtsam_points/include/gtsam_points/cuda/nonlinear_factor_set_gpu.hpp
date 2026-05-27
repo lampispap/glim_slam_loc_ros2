@@ -3,22 +3,23 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
+
 #include <gtsam_points/factors/nonlinear_factor_gpu.hpp>
 #include <gtsam_points/optimizers/linearization_hook.hpp>
+#include <memory>
+#include <vector>
 
 struct CUstream_st;
 
 namespace gtsam_points {
 
 /**
- * @brief This class holds a set of GPU-based NonlinearFactors and manages their linearization and cost evaluation tasks
+ * @brief This class holds a set of GPU-based NonlinearFactors and manages their
+ * linearization and cost evaluation tasks
  */
 class NonlinearFactorSetGPU : public NonlinearFactorSet {
-public:
+  public:
   NonlinearFactorSetGPU();
   ~NonlinearFactorSetGPU();
 
@@ -80,9 +81,10 @@ public:
    * @param linearization_point   Current estimated
    * @return Linearized factors
    */
-  std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(const gtsam::Values& linearization_point) override;
+  std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(
+          const gtsam::Values& linearization_point) override;
 
-private:
+  private:
   /// @brief Simple buffer class for device memory
   struct DeviceBuffer {
     DeviceBuffer();
@@ -99,7 +101,7 @@ private:
     unsigned char* buffer;
   };
 
-private:
+  private:
   CUstream_st* stream;
 
   int num_linearizations;
@@ -107,13 +109,17 @@ private:
 
   std::vector<boost::shared_ptr<NonlinearFactorGPU>> factors;
 
-  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>> linearization_input_buffer_cpu;
-  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>> linearization_output_buffer_cpu;
+  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>>
+          linearization_input_buffer_cpu;
+  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>>
+          linearization_output_buffer_cpu;
   std::unique_ptr<DeviceBuffer> linearization_input_buffer_gpu;
   std::unique_ptr<DeviceBuffer> linearization_output_buffer_gpu;
 
-  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>> evaluation_input_buffer_cpu;
-  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>> evaluation_output_buffer_cpu;
+  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>>
+          evaluation_input_buffer_cpu;
+  std::vector<unsigned char, Eigen::aligned_allocator<unsigned char>>
+          evaluation_output_buffer_cpu;
   std::unique_ptr<DeviceBuffer> evaluation_input_buffer_gpu;
   std::unique_ptr<DeviceBuffer> evaluation_output_buffer_gpu;
 };

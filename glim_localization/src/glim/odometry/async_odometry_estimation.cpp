@@ -1,13 +1,15 @@
-#include <glim/odometry/async_odometry_estimation.hpp>
-
 #include <spdlog/spdlog.h>
+
+#include <glim/odometry/async_odometry_estimation.hpp>
 #include <glim/util/logging.hpp>
 
 namespace glim {
 
-AsyncOdometryEstimation::AsyncOdometryEstimation(const std::shared_ptr<OdometryEstimationBase>& odometry_estimation, bool enable_imu)
-: odometry_estimation(odometry_estimation),
-  logger(create_module_logger("odom")) {
+AsyncOdometryEstimation::AsyncOdometryEstimation(
+        const std::shared_ptr<OdometryEstimationBase>& odometry_estimation,
+        bool enable_imu)
+    : odometry_estimation(odometry_estimation),
+      logger(create_module_logger("odom")) {
   this->enable_imu = enable_imu;
   kill_switch = false;
   end_of_sequence = false;
@@ -20,29 +22,39 @@ AsyncOdometryEstimation::~AsyncOdometryEstimation() {
   join();
 }
 
-void AsyncOdometryEstimation::insert_image(const double stamp, const cv::Mat& image) {
+void AsyncOdometryEstimation::insert_image(const double stamp,
+                                           const cv::Mat& image) {
   input_image_queue.push_back(std::make_pair(stamp, image));
 }
 
-void AsyncOdometryEstimation::insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) {
+void AsyncOdometryEstimation::insert_imu(const double stamp,
+                                         const Eigen::Vector3d& linear_acc,
+                                         const Eigen::Vector3d& angular_vel) {
   Eigen::Matrix<double, 7, 1> imu_data;
   imu_data << stamp, linear_acc, angular_vel;
   input_imu_queue.push_back(imu_data);
 }
 
-void AsyncOdometryEstimation::insert_raw_odom(const double stamp, const double left_angular_vel, const double right_angular_vel) {
+void AsyncOdometryEstimation::insert_raw_odom(const double stamp,
+                                              const double left_angular_vel,
+                                              const double right_angular_vel) {
   Eigen::Matrix<double, 3, 1> odom_data;
   odom_data << stamp, left_angular_vel, right_angular_vel;
   input_raw_odom_queue.push_back(odom_data);
 }
 
-void AsyncOdometryEstimation::insert_gps(const double stamp, const double lat, const double lon, const double alt, const double hdop) {
+void AsyncOdometryEstimation::insert_gps(const double stamp,
+                                         const double lat,
+                                         const double lon,
+                                         const double alt,
+                                         const double hdop) {
   Eigen::Matrix<double, 5, 1> gps_data;
   gps_data << stamp, lat, lon, alt, hdop;
   input_gps_queue.push_back(gps_data);
 }
 
-void AsyncOdometryEstimation::insert_frame(const PreprocessedFrame::Ptr& frame) {
+void AsyncOdometryEstimation::insert_frame(
+        const PreprocessedFrame::Ptr& frame) {
   input_frame_queue.push_back(frame);
 }
 
@@ -57,7 +69,9 @@ int AsyncOdometryEstimation::workload() const {
   return input_frame_queue.size() + internal_frame_queue_size;
 }
 
-void AsyncOdometryEstimation::get_results(std::vector<EstimationFrame::ConstPtr>& estimation_results, std::vector<EstimationFrame::ConstPtr>& marginalized_frames) {
+void AsyncOdometryEstimation::get_results(
+        std::vector<EstimationFrame::ConstPtr>& estimation_results,
+        std::vector<EstimationFrame::ConstPtr>& marginalized_frames) {
   estimation_results = output_estimation_results.get_all_and_clear();
   marginalized_frames = output_marginalized_frames.get_all_and_clear();
 }
@@ -79,7 +93,8 @@ void AsyncOdometryEstimation::run() {
     auto gps_msgs = input_gps_queue.get_all_and_clear();
 
     images.insert(images.end(), new_images.begin(), new_images.end());
-    raw_frames.insert(raw_frames.end(), new_raw_frames.begin(), new_raw_frames.end());
+    raw_frames.insert(raw_frames.end(), new_raw_frames.begin(),
+                      new_raw_frames.end());
     internal_frame_queue_size = raw_frames.size();
 
     if (images.empty() && imu_frames.empty() && raw_frames.empty()) {
@@ -100,22 +115,27 @@ void AsyncOdometryEstimation::run() {
       last_imu_time = stamp;
     }
 
-    for (const auto& odom: odom_frames) {
+    for (const auto& odom : odom_frames) {
       const double stamp = odom[0];
       const double left_angular_vel = odom[1];
       const double right_angular_vel = odom[2];
-      odometry_estimation->insert_raw_odom(stamp, left_angular_vel, right_angular_vel);
+      odometry_estimation->insert_raw_odom(stamp, left_angular_vel,
+                                           right_angular_vel);
     }
 
-    for (const auto& gps: gps_msgs) {
+    for (const auto& gps : gps_msgs) {
       const double stamp = gps[0];
 
-      odometry_estimation->insert_gps(stamp, Eigen::Vector4d(gps[1], gps[2], gps[3], gps[4]));
+      odometry_estimation->insert_gps(
+              stamp, Eigen::Vector4d(gps[1], gps[2], gps[3], gps[4]));
     }
 
     while (!images.empty()) {
       if (!end_of_sequence && images.front().first > last_imu_time) {
-        logger->debug("waiting for IMU data (image_time={:.6f}, last_imu_time={:.6f})", images.front().first, last_imu_time);
+        logger->debug(
+                "waiting for IMU data (image_time={:.6f}, "
+                "last_imu_time={:.6f})",
+                images.front().first, last_imu_time);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         break;
       }
@@ -126,8 +146,12 @@ void AsyncOdometryEstimation::run() {
     }
 
     while (!raw_frames.empty()) {
-      if (!end_of_sequence && raw_frames.front()->scan_end_time > last_imu_time) {
-        logger->debug("waiting for IMU data (scan_end_time={:.6f}, last_imu_time={:.6f})", raw_frames.front()->scan_end_time, last_imu_time);
+      if (!end_of_sequence &&
+          raw_frames.front()->scan_end_time > last_imu_time) {
+        logger->debug(
+                "waiting for IMU data (scan_end_time={:.6f}, "
+                "last_imu_time={:.6f})",
+                raw_frames.front()->scan_end_time, last_imu_time);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         break;
       }

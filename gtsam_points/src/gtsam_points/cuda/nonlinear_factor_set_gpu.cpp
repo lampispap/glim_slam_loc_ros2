@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/cuda/nonlinear_factor_set_gpu.hpp>
-
 #include <cuda_runtime.h>
+
 #include <gtsam_points/cuda/check_error.cuh>
+#include <gtsam_points/cuda/nonlinear_factor_set_gpu.hpp>
 
 namespace gtsam_points {
 
-NonlinearFactorSetGPU::DeviceBuffer::DeviceBuffer() : size(0), buffer(nullptr) {}
+NonlinearFactorSetGPU::DeviceBuffer::DeviceBuffer()
+    : size(0), buffer(nullptr) {}
 
 NonlinearFactorSetGPU::DeviceBuffer::~DeviceBuffer() {
   if (buffer) {
@@ -16,7 +17,8 @@ NonlinearFactorSetGPU::DeviceBuffer::~DeviceBuffer() {
   }
 }
 
-void NonlinearFactorSetGPU::DeviceBuffer::resize(size_t size, CUstream_st* stream) {
+void NonlinearFactorSetGPU::DeviceBuffer::resize(size_t size,
+                                                 CUstream_st* stream) {
   if (this->size < size) {
     if (buffer) {
       check_error << cudaFreeAsync(buffer, stream);
@@ -44,7 +46,8 @@ void NonlinearFactorSetGPU::clear_counts() {
   num_evaluations = 0;
 }
 
-bool NonlinearFactorSetGPU::add(boost::shared_ptr<gtsam::NonlinearFactor> factor) {
+bool NonlinearFactorSetGPU::add(
+        boost::shared_ptr<gtsam::NonlinearFactor> factor) {
   auto gpu_factor = boost::dynamic_pointer_cast<NonlinearFactorGPU>(factor);
   if (gpu_factor) {
     factors.push_back(gpu_factor);
@@ -60,7 +63,8 @@ void NonlinearFactorSetGPU::add(const gtsam::NonlinearFactorGraph& factors) {
   }
 }
 
-void NonlinearFactorSetGPU::linearize(const gtsam::Values& linearization_point) {
+void NonlinearFactorSetGPU::linearize(
+        const gtsam::Values& linearization_point) {
   if (factors.empty()) {
     return;
   }
@@ -88,12 +92,10 @@ void NonlinearFactorSetGPU::linearize(const gtsam::Values& linearization_point) 
   }
 
   // copy input buffer from cpu to gpu
-  check_error << cudaMemcpyAsync(
-    linearization_input_buffer_gpu->data(),
-    linearization_input_buffer_cpu.data(),
-    input_buffer_size,
-    cudaMemcpyHostToDevice,
-    stream);
+  check_error << cudaMemcpyAsync(linearization_input_buffer_gpu->data(),
+                                 linearization_input_buffer_cpu.data(),
+                                 input_buffer_size, cudaMemcpyHostToDevice,
+                                 stream);
   check_error << cudaStreamSynchronize(stream);
 
   // issue linearization tasks
@@ -114,12 +116,10 @@ void NonlinearFactorSetGPU::linearize(const gtsam::Values& linearization_point) 
   }
 
   // copy output buffer from gpu to cpu
-  check_error << cudaMemcpyAsync(
-    linearization_output_buffer_cpu.data(),
-    linearization_output_buffer_gpu->data(),
-    output_buffer_size,
-    cudaMemcpyDeviceToHost,
-    stream);
+  check_error << cudaMemcpyAsync(linearization_output_buffer_cpu.data(),
+                                 linearization_output_buffer_gpu->data(),
+                                 output_buffer_size, cudaMemcpyDeviceToHost,
+                                 stream);
   check_error << cudaStreamSynchronize(stream);
 
   // store calculated results
@@ -162,8 +162,10 @@ void NonlinearFactorSetGPU::error(const gtsam::Values& values) {
   }
 
   // copy input buffer from cpu to gpu
-  check_error
-    << cudaMemcpyAsync(evaluation_input_buffer_gpu->data(), evaluation_input_buffer_cpu.data(), input_buffer_size, cudaMemcpyHostToDevice, stream);
+  check_error << cudaMemcpyAsync(evaluation_input_buffer_gpu->data(),
+                                 evaluation_input_buffer_cpu.data(),
+                                 input_buffer_size, cudaMemcpyHostToDevice,
+                                 stream);
   check_error << cudaStreamSynchronize(stream);
 
   // issue error computation
@@ -171,13 +173,19 @@ void NonlinearFactorSetGPU::error(const gtsam::Values& values) {
   eval_input_cursor = 0;
   eval_output_cursor = 0;
   for (auto& factor : factors) {
-    auto lin_input_cpu = linearization_input_buffer_cpu.data() + lin_input_cursor;
-    auto lin_input_gpu = linearization_input_buffer_gpu->data() + lin_input_cursor;
-    auto eval_input_cpu = evaluation_input_buffer_cpu.data() + eval_input_cursor;
-    auto eval_input_gpu = evaluation_input_buffer_gpu->data() + eval_input_cursor;
-    auto eval_output_gpu = evaluation_output_buffer_gpu->data() + eval_output_cursor;
+    auto lin_input_cpu =
+            linearization_input_buffer_cpu.data() + lin_input_cursor;
+    auto lin_input_gpu =
+            linearization_input_buffer_gpu->data() + lin_input_cursor;
+    auto eval_input_cpu =
+            evaluation_input_buffer_cpu.data() + eval_input_cursor;
+    auto eval_input_gpu =
+            evaluation_input_buffer_gpu->data() + eval_input_cursor;
+    auto eval_output_gpu =
+            evaluation_output_buffer_gpu->data() + eval_output_cursor;
 
-    factor->issue_compute_error(lin_input_cpu, eval_input_cpu, lin_input_gpu, eval_input_gpu, eval_output_gpu);
+    factor->issue_compute_error(lin_input_cpu, eval_input_cpu, lin_input_gpu,
+                                eval_input_gpu, eval_output_gpu);
 
     lin_input_cursor += factor->linearization_input_size();
     eval_input_cursor += factor->evaluation_input_size();
@@ -190,8 +198,10 @@ void NonlinearFactorSetGPU::error(const gtsam::Values& values) {
   }
 
   // copy output buffer from gpu to cpu
-  check_error
-    << cudaMemcpyAsync(evaluation_output_buffer_cpu.data(), evaluation_output_buffer_gpu->data(), output_buffer_size, cudaMemcpyDeviceToHost, stream);
+  check_error << cudaMemcpyAsync(evaluation_output_buffer_cpu.data(),
+                                 evaluation_output_buffer_gpu->data(),
+                                 output_buffer_size, cudaMemcpyDeviceToHost,
+                                 stream);
   check_error << cudaStreamSynchronize(stream);
 
   // store computed results
@@ -206,7 +216,9 @@ void NonlinearFactorSetGPU::error(const gtsam::Values& values) {
   }
 }
 
-std::vector<gtsam::GaussianFactor::shared_ptr> NonlinearFactorSetGPU::calc_linear_factors(const gtsam::Values& linearization_point) {
+std::vector<gtsam::GaussianFactor::shared_ptr>
+NonlinearFactorSetGPU::calc_linear_factors(
+        const gtsam::Values& linearization_point) {
   linearize(linearization_point);
   std::vector<gtsam::GaussianFactor::shared_ptr> linear_factors(factors.size());
   for (int i = 0; i < factors.size(); i++) {

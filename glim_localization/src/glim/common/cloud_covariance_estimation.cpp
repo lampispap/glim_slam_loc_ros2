@@ -1,24 +1,24 @@
-#include <glim/common/cloud_covariance_estimation.hpp>
-
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 #include <Eigen/Eigen>
-
-#include <spdlog/spdlog.h>
+#include <Eigen/Geometry>
+#include <glim/common/cloud_covariance_estimation.hpp>
+#include <iostream>
 
 namespace glim {
 
-CloudCovarianceEstimation::CloudCovarianceEstimation(const int num_threads) : regularization_method(RegularizationMethod::PLANE), num_threads(num_threads) {}
+CloudCovarianceEstimation::CloudCovarianceEstimation(const int num_threads)
+    : regularization_method(RegularizationMethod::PLANE),
+      num_threads(num_threads) {}
 
 CloudCovarianceEstimation::~CloudCovarianceEstimation() {}
 
 void CloudCovarianceEstimation::estimate(
-  const std::vector<Eigen::Vector4d>& points,
-  const std::vector<int>& neighbors,
-  std::vector<Eigen::Vector4d>& normals,
-  std::vector<Eigen::Matrix4d>& covs) const {
+        const std::vector<Eigen::Vector4d>& points,
+        const std::vector<int>& neighbors,
+        std::vector<Eigen::Vector4d>& normals,
+        std::vector<Eigen::Matrix4d>& covs) const {
   //
   if (points.empty()) {
     return;
@@ -34,11 +34,11 @@ void CloudCovarianceEstimation::estimate(
 }
 
 void CloudCovarianceEstimation::estimate(
-  const std::vector<Eigen::Vector4d>& points,
-  const std::vector<int>& neighbors,
-  const int k_neighbors,
-  std::vector<Eigen::Vector4d>& normals,
-  std::vector<Eigen::Matrix4d>& covs) const {
+        const std::vector<Eigen::Vector4d>& points,
+        const std::vector<int>& neighbors,
+        const int k_neighbors,
+        std::vector<Eigen::Vector4d>& normals,
+        std::vector<Eigen::Matrix4d>& covs) const {
   if (points.empty()) {
     return;
   }
@@ -70,7 +70,8 @@ void CloudCovarianceEstimation::estimate(
     }
 
     const Eigen::Vector4d mean = sum_points / k_neighbors;
-    const Eigen::Matrix4d cov = (sum_cross - mean * sum_points.transpose()) / k_neighbors;
+    const Eigen::Matrix4d cov =
+            (sum_cross - mean * sum_points.transpose()) / k_neighbors;
 
     Eigen::Matrix3d eigenvectors;
     covs[i] = regularize(cov, nullptr, &eigenvectors);
@@ -83,7 +84,10 @@ void CloudCovarianceEstimation::estimate(
   }
 }
 
-std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(const std::vector<Eigen::Vector4d>& points, const std::vector<int>& neighbors, const int k_neighbors) const {
+std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(
+        const std::vector<Eigen::Vector4d>& points,
+        const std::vector<int>& neighbors,
+        const int k_neighbors) const {
   if (points.empty()) {
     return std::vector<Eigen::Matrix4d>();
   }
@@ -112,7 +116,8 @@ std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(const std::vect
     }
 
     const Eigen::Vector4d mean = sum_points / k_neighbors;
-    const Eigen::Matrix4d cov = (sum_cross - mean * sum_points.transpose()) / (k_neighbors - 1);
+    const Eigen::Matrix4d cov =
+            (sum_cross - mean * sum_points.transpose()) / (k_neighbors - 1);
     covs[i] = regularize(cov);
     covs[i](3, 3) = 0.0;
   }
@@ -120,7 +125,9 @@ std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(const std::vect
   return covs;
 }
 
-std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(const std::vector<Eigen::Vector4d>& points, const std::vector<int>& neighbors) const {
+std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(
+        const std::vector<Eigen::Vector4d>& points,
+        const std::vector<int>& neighbors) const {
   if (points.empty()) {
     return std::vector<Eigen::Matrix4d>();
   }
@@ -134,7 +141,10 @@ std::vector<Eigen::Matrix4d> CloudCovarianceEstimation::estimate(const std::vect
   return estimate(points, neighbors, k);
 }
 
-Eigen::Matrix4d CloudCovarianceEstimation::regularize(const Eigen::Matrix4d& cov, Eigen::Vector3d* eigenvalues, Eigen::Matrix3d* eigenvectors) const {
+Eigen::Matrix4d CloudCovarianceEstimation::regularize(
+        const Eigen::Matrix4d& cov,
+        Eigen::Vector3d* eigenvalues,
+        Eigen::Matrix3d* eigenvectors) const {
   switch (regularization_method) {
     default:
     case RegularizationMethod::NONE:
@@ -153,7 +163,8 @@ Eigen::Matrix4d CloudCovarianceEstimation::regularize(const Eigen::Matrix4d& cov
 
       Eigen::Vector3d values(1e-3, 1.0, 1.0);
       Eigen::Matrix4d c = Eigen::Matrix4d::Zero();
-      c.block<3, 3>(0, 0) = eig.eigenvectors() * values.asDiagonal() * eig.eigenvectors().transpose();
+      c.block<3, 3>(0, 0) = eig.eigenvectors() * values.asDiagonal() *
+                            eig.eigenvectors().transpose();
       return c;
     }
 
@@ -172,13 +183,15 @@ Eigen::Matrix4d CloudCovarianceEstimation::regularize(const Eigen::Matrix4d& cov
       values = values.array().max(1e-3);
 
       Eigen::Matrix4d c = Eigen::Matrix4d::Zero();
-      c.block<3, 3>(0, 0) = eig.eigenvectors() * values.asDiagonal() * eig.eigenvectors().transpose();
+      c.block<3, 3>(0, 0) = eig.eigenvectors() * values.asDiagonal() *
+                            eig.eigenvectors().transpose();
       return c;
     }
 
     case RegularizationMethod::FROBENIUS: {
       const double lambda = 1e-3;
-      Eigen::Matrix3d C = cov.block<3, 3>(0, 0) + lambda * Eigen::Matrix3d::Identity();
+      Eigen::Matrix3d C =
+              cov.block<3, 3>(0, 0) + lambda * Eigen::Matrix3d::Identity();
       Eigen::Matrix3d C_inv = C.inverse();
       Eigen::Matrix4d C_ = Eigen::Matrix4d::Zero();
       C_.block<3, 3>(0, 0) = (C_inv / C_inv.norm()).inverse();

@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <memory>
 #include <gtsam/linear/GaussianFactorGraph.h>
+
+#include <memory>
 
 namespace gtsam_points {
 
@@ -12,41 +13,47 @@ class DenseLinearSolver;
 class SparseLinearSolver;
 
 class GaussianFactorGraphSolver {
-public:
+  public:
   GaussianFactorGraphSolver() {}
   virtual ~GaussianFactorGraphSolver() {}
 
-  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering) = 0;
+  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg,
+                                    const gtsam::Ordering& ordering) = 0;
 };
 
 class DenseGaussianFactorGraphSolver : public GaussianFactorGraphSolver {
-public:
-  DenseGaussianFactorGraphSolver(const std::shared_ptr<DenseLinearSolver>& solver);
+  public:
+  DenseGaussianFactorGraphSolver(
+          const std::shared_ptr<DenseLinearSolver>& solver);
   virtual ~DenseGaussianFactorGraphSolver() override;
 
-  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering) override;
+  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg,
+                                    const gtsam::Ordering& ordering) override;
 
-private:
+  private:
   std::shared_ptr<DenseLinearSolver> solver;
 };
 
 class SparseGaussianFactorGraphSolver : public GaussianFactorGraphSolver {
-public:
-  SparseGaussianFactorGraphSolver(const std::shared_ptr<SparseLinearSolver>& solver);
+  public:
+  SparseGaussianFactorGraphSolver(
+          const std::shared_ptr<SparseLinearSolver>& solver);
   virtual ~SparseGaussianFactorGraphSolver() override;
 
-  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering) override;
+  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg,
+                                    const gtsam::Ordering& ordering) override;
 
-private:
+  private:
   std::shared_ptr<SparseLinearSolver> solver;
 };
 
 class GTSAMGaussianFactorGraphSolver : public GaussianFactorGraphSolver {
-public:
+  public:
   GTSAMGaussianFactorGraphSolver();
   virtual ~GTSAMGaussianFactorGraphSolver() override;
 
-  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering) override;
+  virtual gtsam::VectorValues solve(const gtsam::GaussianFactorGraph& gfg,
+                                    const gtsam::Ordering& ordering) override;
 };
 
 }  // namespace gtsam_points

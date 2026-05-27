@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glim/mapping/global_mapping.hpp>
 #include <glim/mapping/async_global_mapping.hpp>
+#include <glim/mapping/global_mapping.hpp>
 #include <glim/viewer/interactive_viewer.hpp>
 
 namespace guik {
@@ -12,20 +12,21 @@ class ProgressInterface;
 namespace glim {
 
 class OfflineViewer : public InteractiveViewer {
-public:
+  public:
   OfflineViewer(const std::string& init_map_path = "");
   virtual ~OfflineViewer() override;
 
-private:
+  private:
   virtual void setup_ui() override;
 
   void main_menu();
 
-  std::shared_ptr<GlobalMapping> load_map(guik::ProgressInterface& progress, const std::string& path);
+  std::shared_ptr<GlobalMapping> load_map(guik::ProgressInterface& progress,
+                                          const std::string& path);
   bool save_map(guik::ProgressInterface& progress, const std::string& path);
   bool export_map(guik::ProgressInterface& progress, const std::string& path);
 
-private:
+  private:
   std::string init_map_path;
   std::unique_ptr<guik::ProgressModal> progress_modal;
 

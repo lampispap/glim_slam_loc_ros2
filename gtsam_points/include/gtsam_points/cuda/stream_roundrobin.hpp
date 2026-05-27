@@ -14,7 +14,7 @@ namespace gtsam_points {
  * @brief Roundrobin for CUDA streams
  */
 class StreamRoundRobin {
-public:
+  public:
   using cudaStream_t = CUstream_st*;
 
   StreamRoundRobin(int num_streams);
@@ -24,7 +24,7 @@ public:
 
   cudaStream_t get_stream();
 
-private:
+  private:
   std::atomic_int cursor;
   std::vector<cudaStream_t> streams;
 };

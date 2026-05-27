@@ -1,37 +1,39 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/integrated_gicp_factor.hpp>
-
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/linear/HessianFactor.h>
+
 #include <gtsam_points/ann/kdtree2.hpp>
+#include <gtsam_points/factors/integrated_gicp_factor.hpp>
 #include <gtsam_points/types/frame_traits.hpp>
 
 namespace gtsam_points {
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
-  num_threads(1),
-  max_correspondence_distance_sq(1.0),
-  correspondence_update_tolerance_rot(0.0),
-  correspondence_update_tolerance_trans(0.0),
-  target(target),
-  source(source) {
+        gtsam::Key target_key,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source,
+        const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : gtsam_points::IntegratedMatchingCostFactor(target_key, source_key),
+      num_threads(1),
+      max_correspondence_distance_sq(1.0),
+      correspondence_update_tolerance_rot(0.0),
+      correspondence_update_tolerance_trans(0.0),
+      target(target),
+      source(source) {
   //
   if (!frame::has_points(*target) || !frame::has_covs(*target)) {
-    std::cerr << "error: target frame doesn't have required attributes for gicp" << std::endl;
+    std::cerr << "error: target frame doesn't have required attributes for gicp"
+              << std::endl;
     abort();
   }
 
   if (!frame::has_points(*source) || !frame::has_covs(*source)) {
-    std::cerr << "error: source frame doesn't have required attributes for gicp" << std::endl;
+    std::cerr << "error: source frame doesn't have required attributes for gicp"
+              << std::endl;
     abort();
   }
 
@@ -44,34 +46,36 @@ IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
-  gtsam::Key target_key,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: IntegratedGICPFactor_(target_key, source_key, target, source, nullptr) {}
+        gtsam::Key target_key,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source)
+    : IntegratedGICPFactor_(target_key, source_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
-  const gtsam::Pose3& fixed_target_pose,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: gtsam_points::IntegratedMatchingCostFactor(fixed_target_pose, source_key),
-  num_threads(1),
-  max_correspondence_distance_sq(1.0),
-  correspondence_update_tolerance_rot(0.0),
-  correspondence_update_tolerance_trans(0.0),
-  target(target),
-  source(source) {
+        const gtsam::Pose3& fixed_target_pose,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source,
+        const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : gtsam_points::IntegratedMatchingCostFactor(fixed_target_pose, source_key),
+      num_threads(1),
+      max_correspondence_distance_sq(1.0),
+      correspondence_update_tolerance_rot(0.0),
+      correspondence_update_tolerance_trans(0.0),
+      target(target),
+      source(source) {
   //
   if (!frame::has_points(*target) || !frame::has_covs(*target)) {
-    std::cerr << "error: target frame doesn't have required attributes for gicp" << std::endl;
+    std::cerr << "error: target frame doesn't have required attributes for gicp"
+              << std::endl;
     abort();
   }
 
   if (!frame::has_points(*source) || !frame::has_covs(*source)) {
-    std::cerr << "error: source frame doesn't have required attributes for gicp" << std::endl;
+    std::cerr << "error: source frame doesn't have required attributes for gicp"
+              << std::endl;
     abort();
   }
 
@@ -84,23 +88,28 @@ IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedGICPFactor_<TargetFrame, SourceFrame>::IntegratedGICPFactor_(
-  const gtsam::Pose3& fixed_target_pose,
-  gtsam::Key source_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: IntegratedGICPFactor_(fixed_target_pose, source_key, target, source, nullptr) {}
+        const gtsam::Pose3& fixed_target_pose,
+        gtsam::Key source_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source)
+    : IntegratedGICPFactor_(
+              fixed_target_pose, source_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedGICPFactor_<TargetFrame, SourceFrame>::~IntegratedGICPFactor_() {}
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedGICPFactor_<TargetFrame, SourceFrame>::update_correspondences(const Eigen::Isometry3d& delta) const {
+void IntegratedGICPFactor_<TargetFrame, SourceFrame>::update_correspondences(
+        const Eigen::Isometry3d& delta) const {
   bool do_update = true;
-  if (correspondences.size() == frame::size(*source) && (correspondence_update_tolerance_trans > 0.0 || correspondence_update_tolerance_rot > 0.0)) {
+  if (correspondences.size() == frame::size(*source) &&
+      (correspondence_update_tolerance_trans > 0.0 ||
+       correspondence_update_tolerance_rot > 0.0)) {
     Eigen::Isometry3d diff = delta.inverse() * last_correspondence_point;
     double diff_rot = Eigen::AngleAxisd(diff.linear()).angle();
     double diff_trans = diff.translation().norm();
-    if (diff_rot < correspondence_update_tolerance_rot && diff_trans < correspondence_update_tolerance_trans) {
+    if (diff_rot < correspondence_update_tolerance_rot &&
+        diff_trans < correspondence_update_tolerance_trans) {
       do_update = false;
     }
   }
@@ -119,15 +128,22 @@ void IntegratedGICPFactor_<TargetFrame, SourceFrame>::update_correspondences(con
 
       size_t k_index = -1;
       double k_sq_dist = -1;
-      size_t num_found = target_tree->knn_search(pt.data(), 1, &k_index, &k_sq_dist, max_correspondence_distance_sq);
-      correspondences[i] = (num_found && k_sq_dist < max_correspondence_distance_sq) ? k_index : -1;
+      size_t num_found =
+              target_tree->knn_search(pt.data(), 1, &k_index, &k_sq_dist,
+                                      max_correspondence_distance_sq);
+      correspondences[i] =
+              (num_found && k_sq_dist < max_correspondence_distance_sq)
+                      ? k_index
+                      : -1;
     }
 
     if (correspondences[i] < 0) {
       mahalanobis[i].setZero();
     } else {
       const auto& target_cov = frame::cov(*target, correspondences[i]);
-      Eigen::Matrix4d RCR = (target_cov + delta.matrix() * frame::cov(*source, i) * delta.matrix().transpose());
+      Eigen::Matrix4d RCR =
+              (target_cov + delta.matrix() * frame::cov(*source, i) *
+                                    delta.matrix().transpose());
 
       RCR(3, 3) = 1.0;
       mahalanobis[i] = RCR.inverse();
@@ -138,12 +154,12 @@ void IntegratedGICPFactor_<TargetFrame, SourceFrame>::update_correspondences(con
 
 template <typename TargetFrame, typename SourceFrame>
 double IntegratedGICPFactor_<TargetFrame, SourceFrame>::evaluate(
-  const Eigen::Isometry3d& delta,
-  Eigen::Matrix<double, 6, 6>* H_target,
-  Eigen::Matrix<double, 6, 6>* H_source,
-  Eigen::Matrix<double, 6, 6>* H_target_source,
-  Eigen::Matrix<double, 6, 1>* b_target,
-  Eigen::Matrix<double, 6, 1>* b_source) const {
+        const Eigen::Isometry3d& delta,
+        Eigen::Matrix<double, 6, 6>* H_target,
+        Eigen::Matrix<double, 6, 6>* H_source,
+        Eigen::Matrix<double, 6, 6>* H_target_source,
+        Eigen::Matrix<double, 6, 1>* b_target,
+        Eigen::Matrix<double, 6, 1>* b_source) const {
   //
   if (correspondences.size() != frame::size(*source)) {
     update_correspondences(delta);
@@ -166,7 +182,8 @@ double IntegratedGICPFactor_<TargetFrame, SourceFrame>::evaluate(
     bs_source.resize(num_threads, Eigen::Matrix<double, 6, 1>::Zero());
   }
 
-#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) schedule(guided, 8)
+#pragma omp parallel for num_threads(num_threads) reduction(+ : sum_errors) \
+        schedule(guided, 8)
   for (int i = 0; i < frame::size(*source); i++) {
     const long target_index = correspondences[i];
     if (target_index < 0) {
@@ -193,7 +210,8 @@ double IntegratedGICPFactor_<TargetFrame, SourceFrame>::evaluate(
     J_target.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
 
     Eigen::Matrix<double, 4, 6> J_source = Eigen::Matrix<double, 4, 6>::Zero();
-    J_source.block<3, 3>(0, 0) = delta.linear() * gtsam::SO3::Hat(mean_A.template head<3>());
+    J_source.block<3, 3>(0, 0) =
+            delta.linear() * gtsam::SO3::Hat(mean_A.template head<3>());
     J_source.block<3, 3>(0, 3) = -delta.linear();
 
     int thread_num = 0;
@@ -201,8 +219,10 @@ double IntegratedGICPFactor_<TargetFrame, SourceFrame>::evaluate(
     thread_num = omp_get_thread_num();
 #endif
 
-    Eigen::Matrix<double, 6, 4> J_target_mahalanobis = J_target.transpose() * mahalanobis[i];
-    Eigen::Matrix<double, 6, 4> J_source_mahalanobis = J_source.transpose() * mahalanobis[i];
+    Eigen::Matrix<double, 6, 4> J_target_mahalanobis =
+            J_target.transpose() * mahalanobis[i];
+    Eigen::Matrix<double, 6, 4> J_source_mahalanobis =
+            J_source.transpose() * mahalanobis[i];
 
     Hs_target[thread_num] += J_target_mahalanobis * J_target;
     Hs_source[thread_num] += J_source_mahalanobis * J_source;

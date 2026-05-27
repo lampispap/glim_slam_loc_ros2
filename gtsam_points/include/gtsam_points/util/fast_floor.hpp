@@ -6,7 +6,8 @@
 
 namespace gtsam_points {
 
-/// @brief Fast floor (https://stackoverflow.com/questions/824118/why-is-floor-so-slow).
+/// @brief Fast floor
+/// (https://stackoverflow.com/questions/824118/why-is-floor-so-slow).
 /// @param pt  Double vector
 /// @return    Floored int vector
 inline Eigen::Array4i fast_floor(const Eigen::Array4d& pt) {

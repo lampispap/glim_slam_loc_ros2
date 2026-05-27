@@ -10,7 +10,7 @@ struct cudaGraphicsResource;
 namespace gtsam_points {
 
 class GLBufferMap {
-public:
+  public:
   enum BufferMode { NONE, READ_ONLY, WRITE_ONLY };
 
   GLBufferMap(size_t gl_id, BufferMode mode = NONE);
@@ -19,7 +19,7 @@ public:
   size_t size() const { return buffer_size; }
   void* data() { return d_buffer; }
 
-private:
+  private:
   cudaGraphicsResource* gl_resource;
 
   size_t buffer_size;

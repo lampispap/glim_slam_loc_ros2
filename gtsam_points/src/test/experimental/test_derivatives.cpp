@@ -1,14 +1,15 @@
-#include <iostream>
-
-#include <gtsam/slam/expressions.h>
 #include <gtsam/nonlinear/Values.h>
+#include <gtsam/slam/expressions.h>
+
+#include <iostream>
 
 void expr(const gtsam::Values& values, const Eigen::Vector3d& point) {
   gtsam::Pose3_ pose0(0);
   gtsam::Pose3_ pose1(1);
 
   gtsam::Point3_ pt(point);
-  gtsam::Point3_ transed = gtsam::transformFrom(gtsam::between(pose0, pose1), pt);
+  gtsam::Point3_ transed =
+          gtsam::transformFrom(gtsam::between(pose0, pose1), pt);
 
   std::vector<gtsam::Matrix> Hs(transed.keys().size());
   auto val = transed.value(values, Hs);

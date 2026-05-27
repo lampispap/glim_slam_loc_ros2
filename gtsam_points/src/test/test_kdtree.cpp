@@ -1,15 +1,16 @@
-#include <random>
-#include <vector>
-#include <iostream>
+#include <gtest/gtest.h>
+
 #include <Eigen/Core>
 #include <boost/filesystem.hpp>
-
-#include <gtest/gtest.h>
 #include <gtsam_points/ann/kdtree.hpp>
 #include <gtsam_points/ann/kdtree2.hpp>
 #include <gtsam_points/types/point_cloud_cpu.hpp>
+#include <iostream>
+#include <random>
+#include <vector>
 
-class KdTreeTest : public testing::Test, public testing::WithParamInterface<std::string> {
+class KdTreeTest : public testing::Test,
+                   public testing::WithParamInterface<std::string> {
   virtual void SetUp() {
     const int num_points = 1000;
     const int num_queries = 100;
@@ -24,10 +25,12 @@ class KdTreeTest : public testing::Test, public testing::WithParamInterface<std:
 
     queries.resize(num_queries);
     for (int i = 0; i < num_queries / 2; i++) {
-      queries[i] << 100.0 * udist(mt), 100.0 * udist(mt), 100.0 * udist(mt), 1.0;
+      queries[i] << 100.0 * udist(mt), 100.0 * udist(mt), 100.0 * udist(mt),
+              1.0;
     }
     for (int i = num_queries / 2; i < num_queries; i++) {
-      queries[i] << 200.0 * udist(mt), 200.0 * udist(mt), 200.0 * udist(mt), 1.0;
+      queries[i] << 200.0 * udist(mt), 200.0 * udist(mt), 200.0 * udist(mt),
+              1.0;
     }
 
     constexpr int max_k = 20;
@@ -40,7 +43,9 @@ class KdTreeTest : public testing::Test, public testing::WithParamInterface<std:
         dists[j] = {j, (points[j] - queries[i]).squaredNorm()};
       }
 
-      std::sort(dists.begin(), dists.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
+      std::sort(dists.begin(), dists.end(), [](const auto& a, const auto& b) {
+        return a.second < b.second;
+      });
 
       gt_indices[i].resize(max_k);
       gt_sq_dists[i].resize(max_k);
@@ -51,7 +56,7 @@ class KdTreeTest : public testing::Test, public testing::WithParamInterface<std:
     }
   }
 
-public:
+  public:
   std::vector<Eigen::Vector4d> points;
   std::vector<Eigen::Vector4d> queries;
   std::vector<std::vector<size_t>> gt_indices;
@@ -65,23 +70,29 @@ TEST_F(KdTreeTest, LoadCheck) {
   ASSERT_EQ(gt_sq_dists.size(), queries.size());
 }
 
-INSTANTIATE_TEST_SUITE_P(gtsam_points, KdTreeTest, testing::Values("KdTree", "KdTreeMT", "KdTree2", "KdTree2MT"), [](const auto& info) {
-  return info.param;
-});
+INSTANTIATE_TEST_SUITE_P(
+        gtsam_points,
+        KdTreeTest,
+        testing::Values("KdTree", "KdTreeMT", "KdTree2", "KdTree2MT"),
+        [](const auto& info) { return info.param; });
 
 TEST_P(KdTreeTest, KdTreeTest) {
   gtsam_points::NearestNeighborSearch::ConstPtr kdtree;
 
   if (GetParam() == "KdTree") {
-    kdtree = std::make_shared<gtsam_points::KdTree>(points.data(), points.size());
+    kdtree = std::make_shared<gtsam_points::KdTree>(points.data(),
+                                                    points.size());
   } else if (GetParam() == "KdTreeMT") {
-    kdtree = std::make_shared<gtsam_points::KdTree>(points.data(), points.size(), 2);
+    kdtree = std::make_shared<gtsam_points::KdTree>(points.data(),
+                                                    points.size(), 2);
   } else if (GetParam() == "KdTree2") {
     auto pts = std::make_shared<gtsam_points::PointCloudCPU>(points);
-    kdtree = std::make_shared<gtsam_points::KdTree2<gtsam_points::PointCloud>>(pts);
+    kdtree = std::make_shared<gtsam_points::KdTree2<gtsam_points::PointCloud>>(
+            pts);
   } else if (GetParam() == "KdTree2MT") {
     auto pts = std::make_shared<gtsam_points::PointCloudCPU>(points);
-    kdtree = std::make_shared<gtsam_points::KdTree2<gtsam_points::PointCloud>>(pts, 2);
+    kdtree = std::make_shared<gtsam_points::KdTree2<gtsam_points::PointCloud>>(
+            pts, 2);
   } else {
     FAIL() << "Unknown KdTree type: " << GetParam();
   }
@@ -96,7 +107,8 @@ TEST_P(KdTreeTest, KdTreeTest) {
       std::vector<size_t> k_indices(k);
       std::vector<double> k_sq_dists(k);
 
-      const auto num_found = kdtree->knn_search(query.data(), k, k_indices.data(), k_sq_dists.data());
+      const auto num_found = kdtree->knn_search(
+              query.data(), k, k_indices.data(), k_sq_dists.data());
       EXPECT_EQ(num_found, k);
 
       for (int j = 0; j < k; j++) {
@@ -112,7 +124,9 @@ TEST_P(KdTreeTest, KdTreeTest) {
       std::vector<size_t> k_indices(k);
       std::vector<double> k_sq_dists(k);
 
-      const auto num_found = kdtree->knn_search(query.data(), k, k_indices.data(), k_sq_dists.data(), max_sq_dist);
+      const auto num_found =
+              kdtree->knn_search(query.data(), k, k_indices.data(),
+                                 k_sq_dists.data(), max_sq_dist);
       EXPECT_LE(num_found, k);
 
       for (int j = 0; j < num_found; j++) {

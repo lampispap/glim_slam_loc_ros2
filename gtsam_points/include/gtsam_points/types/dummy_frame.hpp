@@ -21,12 +21,20 @@ struct traits<DummyFrame> {
   static bool has_intensities(const DummyFrame& frame) { return false; }
 
   static double time(const DummyFrame& frame, int i) { return 0.0; }
-  static const Eigen::Vector4d point(const DummyFrame& frame, int i) { return Eigen::Vector4d(0, 0, 0, 1); }
-  static const Eigen::Vector4d normal(const DummyFrame& frame, int i) { return Eigen::Vector4d(0, 0, 0, 0); }
-  static const Eigen::Matrix4d cov(const DummyFrame& frame, int i) { return Eigen::Matrix4d::Zero(); }
+  static const Eigen::Vector4d point(const DummyFrame& frame, int i) {
+    return Eigen::Vector4d(0, 0, 0, 1);
+  }
+  static const Eigen::Vector4d normal(const DummyFrame& frame, int i) {
+    return Eigen::Vector4d(0, 0, 0, 0);
+  }
+  static const Eigen::Matrix4d cov(const DummyFrame& frame, int i) {
+    return Eigen::Matrix4d::Zero();
+  }
   static double intensity(const DummyFrame& frame, int i) { return 0.0; }
 
-  static const Eigen::Vector4d* points_ptr(const DummyFrame& frame) { return nullptr; }
+  static const Eigen::Vector4d* points_ptr(const DummyFrame& frame) {
+    return nullptr;
+  }
 };
 }  // namespace frame
 }  // namespace gtsam_points

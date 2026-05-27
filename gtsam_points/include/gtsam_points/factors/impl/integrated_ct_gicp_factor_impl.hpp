@@ -1,53 +1,62 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/factors/integrated_ct_gicp_factor.hpp>
-
 #include <gtsam/linear/HessianFactor.h>
+
 #include <gtsam_points/ann/nearest_neighbor_search.hpp>
+#include <gtsam_points/factors/integrated_ct_gicp_factor.hpp>
 
 namespace gtsam_points {
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::IntegratedCT_GICPFactor_(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source,
-  const std::shared_ptr<NearestNeighborSearch>& target_tree)
-: IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>(source_t0_key, source_t1_key, target, source, target_tree) {
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source,
+        const std::shared_ptr<NearestNeighborSearch>& target_tree)
+    : IntegratedCT_ICPFactor_<TargetFrame, SourceFrame>(
+              source_t0_key, source_t1_key, target, source, target_tree) {
   //
   if (!frame::has_points(*target) || !frame::has_covs(*target)) {
-    std::cerr << "error: target frame doesn't have required attributes for ct_gicp" << std::endl;
+    std::cerr << "error: target frame doesn't have required attributes for "
+                 "ct_gicp"
+              << std::endl;
     abort();
   }
 
   if (!frame::has_points(*source) || !frame::has_covs(*source)) {
-    std::cerr << "error: source frame doesn't have required attributes for ct_gicp" << std::endl;
+    std::cerr << "error: source frame doesn't have required attributes for "
+                 "ct_gicp"
+              << std::endl;
     abort();
   }
 }
 
 template <typename TargetFrame, typename SourceFrame>
 IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::IntegratedCT_GICPFactor_(
-  gtsam::Key source_t0_key,
-  gtsam::Key source_t1_key,
-  const std::shared_ptr<const TargetFrame>& target,
-  const std::shared_ptr<const SourceFrame>& source)
-: IntegratedCT_GICPFactor_(source_t0_key, source_t1_key, target, source, nullptr) {}
+        gtsam::Key source_t0_key,
+        gtsam::Key source_t1_key,
+        const std::shared_ptr<const TargetFrame>& target,
+        const std::shared_ptr<const SourceFrame>& source)
+    : IntegratedCT_GICPFactor_(
+              source_t0_key, source_t1_key, target, source, nullptr) {}
 
 template <typename TargetFrame, typename SourceFrame>
-IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::~IntegratedCT_GICPFactor_() {}
+IntegratedCT_GICPFactor_<TargetFrame,
+                         SourceFrame>::~IntegratedCT_GICPFactor_() {}
 
 template <typename TargetFrame, typename SourceFrame>
-double IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::error(const gtsam::Values& values) const {
+double IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::error(
+        const gtsam::Values& values) const {
   this->update_poses(values);
   if (this->correspondences.size() != frame::size(*this->source)) {
     this->update_correspondences();
   }
 
   double sum_errors = 0.0;
-#pragma omp parallel for reduction(+ : sum_errors) schedule(guided, 8) num_threads(this->num_threads)
+#pragma omp parallel for reduction(+ : sum_errors) schedule(guided, 8) \
+        num_threads(this->num_threads)
   for (int i = 0; i < frame::size(*this->source); i++) {
     const long target_index = this->correspondences[i];
     if (target_index < 0) {
@@ -70,7 +79,9 @@ double IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::error(const gtsam::Va
 }
 
 template <typename TargetFrame, typename SourceFrame>
-std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::linearize(const gtsam::Values& values) const {
+std::shared_ptr<gtsam::GaussianFactor>
+IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::linearize(
+        const gtsam::Values& values) const {
   this->update_poses(values);
   this->update_correspondences();
 
@@ -87,7 +98,8 @@ std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_GICPFactor_<TargetFrame, Sou
   gtsam::Vector6 b_0 = gtsam::Vector6::Zero();
   gtsam::Vector6 b_1 = gtsam::Vector6::Zero();
 
-#pragma omp parallel for reduction(+ : sum_errors) schedule(guided, 8) num_threads(this->num_threads)
+#pragma omp parallel for reduction(+ : sum_errors) schedule(guided, 8) \
+        num_threads(this->num_threads)
   for (int i = 0; i < frame::size(*this->source); i++) {
     const long target_index = this->correspondences[i];
     if (target_index < 0) {
@@ -104,7 +116,8 @@ std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_GICPFactor_<TargetFrame, Sou
     const auto& target_pt = frame::point(*this->target, target_index);
 
     gtsam::Matrix46 H_transed_pose = gtsam::Matrix46::Zero();
-    H_transed_pose.block<3, 3>(0, 0) = pose.linear() * -gtsam::SO3::Hat(source_pt.template head<3>());
+    H_transed_pose.block<3, 3>(0, 0) =
+            pose.linear() * -gtsam::SO3::Hat(source_pt.template head<3>());
     H_transed_pose.block<3, 3>(0, 3) = pose.linear();
     const Eigen::Vector4d transed_source_pt = pose * source_pt;
 
@@ -139,13 +152,15 @@ std::shared_ptr<gtsam::GaussianFactor> IntegratedCT_GICPFactor_<TargetFrame, Sou
     bs_1[0] += bs_1[i];
   }
 
-  auto factor = gtsam::HessianFactor::shared_ptr(
-    new gtsam::HessianFactor(this->keys_[0], this->keys_[1], Hs_00[0], Hs_01[0], -bs_0[0], Hs_11[0], -bs_1[0], sum_errors));
+  auto factor = gtsam::HessianFactor::shared_ptr(new gtsam::HessianFactor(
+          this->keys_[0], this->keys_[1], Hs_00[0], Hs_01[0], -bs_0[0],
+          Hs_11[0], -bs_1[0], sum_errors));
   return factor;
 }
 
 template <typename TargetFrame, typename SourceFrame>
-void IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::update_correspondences() const {
+void IntegratedCT_GICPFactor_<TargetFrame,
+                              SourceFrame>::update_correspondences() const {
   this->correspondences.resize(frame::size(*this->source));
   this->mahalanobis.resize(frame::size(*this->source));
 
@@ -159,7 +174,9 @@ void IntegratedCT_GICPFactor_<TargetFrame, SourceFrame>::update_correspondences(
 
     size_t k_index = -1;
     double k_sq_dist = std::numeric_limits<double>::max();
-    size_t num_found = this->target_tree->knn_search(transed_pt.data(), 1, &k_index, &k_sq_dist, this->max_correspondence_distance_sq);
+    size_t num_found = this->target_tree->knn_search(
+            transed_pt.data(), 1, &k_index, &k_sq_dist,
+            this->max_correspondence_distance_sq);
 
     if (num_found == 0 || k_sq_dist > this->max_correspondence_distance_sq) {
       this->correspondences[i] = -1;

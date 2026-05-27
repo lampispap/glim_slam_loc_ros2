@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <gtsam/nonlinear/NonlinearOptimizer.h>
 #include <gtsam/nonlinear/DoglegOptimizer.h>
+#include <gtsam/nonlinear/NonlinearOptimizer.h>
 
 namespace gtsam_points {
 
@@ -27,10 +27,10 @@ namespace gtsam_points {
  * This class performs Dogleg nonlinear optimization
  */
 class GTSAM_EXPORT DoglegOptimizerExt : public gtsam::NonlinearOptimizer {
-protected:
+  protected:
   gtsam::DoglegParams params_;
 
-public:
+  public:
   typedef boost::shared_ptr<DoglegOptimizerExt> shared_ptr;
 
   /// @name Standard interface
@@ -44,10 +44,9 @@ public:
    * @param initialValues The initial variable assignments
    * @param params The optimization parameters
    */
-  DoglegOptimizerExt(
-    const gtsam::NonlinearFactorGraph& graph,
-    const gtsam::Values& initialValues,
-    const gtsam::DoglegParams& params = gtsam::DoglegParams());
+  DoglegOptimizerExt(const gtsam::NonlinearFactorGraph& graph,
+                     const gtsam::Values& initialValues,
+                     const gtsam::DoglegParams& params = gtsam::DoglegParams());
 
   /** Standard constructor, requires a nonlinear factor graph, initial
    * variable assignments, and optimization parameters.  For convenience this
@@ -56,7 +55,9 @@ public:
    * @param graph The nonlinear factor graph to optimize
    * @param initialValues The initial variable assignments
    */
-  DoglegOptimizerExt(const gtsam::NonlinearFactorGraph& graph, const gtsam::Values& initialValues, const gtsam::Ordering& ordering);
+  DoglegOptimizerExt(const gtsam::NonlinearFactorGraph& graph,
+                     const gtsam::Values& initialValues,
+                     const gtsam::Ordering& ordering);
 
   /// @}
 
@@ -80,12 +81,17 @@ public:
 
   /// @}
 
-protected:
+  protected:
   /** Access the parameters (base class version) */
-  const gtsam::NonlinearOptimizerParams& _params() const override { return params_; }
+  const gtsam::NonlinearOptimizerParams& _params() const override {
+    return params_;
+  }
 
-  /** Internal function for computing a COLAMD ordering if no ordering is specified */
-  gtsam::DoglegParams ensureHasOrdering(gtsam::DoglegParams params, const gtsam::NonlinearFactorGraph& graph) const;
+  /** Internal function for computing a COLAMD ordering if no ordering is
+   * specified */
+  gtsam::DoglegParams ensureHasOrdering(
+          gtsam::DoglegParams params,
+          const gtsam::NonlinearFactorGraph& graph) const;
 };
 
 }  // namespace gtsam_points

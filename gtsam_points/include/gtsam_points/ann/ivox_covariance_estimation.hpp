@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <gtsam_points/ann/ivox.hpp>
 #include <gtsam_points/ann/incremental_covariance_voxelmap.hpp>
+#include <gtsam_points/ann/ivox.hpp>
 
 namespace gtsam_points {
 

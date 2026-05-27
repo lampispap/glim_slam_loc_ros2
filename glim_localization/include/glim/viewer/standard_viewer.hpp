@@ -1,18 +1,16 @@
 #pragma once
 
-#include <mutex>
-#include <atomic>
-#include <thread>
-#include <memory>
-#include <vector>
-#include <unordered_map>
-#include <optional>
-#include <boost/weak_ptr.hpp>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
+#include <atomic>
+#include <boost/weak_ptr.hpp>
 #include <glim/util/extension_module.hpp>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 namespace spdlog {
 class logger;
@@ -28,7 +26,7 @@ class TrajectoryManager;
 struct EstimationFrame;
 
 class StandardViewer : public ExtensionModule {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   StandardViewer();
@@ -38,8 +36,9 @@ public:
 
   void invoke(const std::function<void()>& task);
 
-private:
-  Eigen::Isometry3f resolve_pose(const std::shared_ptr<const EstimationFrame>& frame);
+  private:
+  Eigen::Isometry3f resolve_pose(
+          const std::shared_ptr<const EstimationFrame>& frame);
 
   void set_callbacks();
   void viewer_loop();
@@ -47,7 +46,7 @@ private:
   bool drawable_filter(const std::string& name);
   void drawable_selection();
 
-private:
+  private:
   std::atomic_bool request_to_terminate;
   std::atomic_bool kill_switch;
   std::thread thread;
@@ -74,9 +73,15 @@ private:
   Eigen::Vector3d last_imu_vel;
   Eigen::Matrix<double, 6, 1> last_imu_bias;
 
-  using FactorLine = std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector4f, Eigen::Vector4f>;
-  using FactorLineGetter = std::function<std::optional<FactorLine>(const gtsam::NonlinearFactor*)>;
-  std::vector<std::pair<std::weak_ptr<gtsam::NonlinearFactor>, FactorLineGetter>> odometry_factor_lines;
+  using FactorLine = std::tuple<Eigen::Vector3f,
+                                Eigen::Vector3f,
+                                Eigen::Vector4f,
+                                Eigen::Vector4f>;
+  using FactorLineGetter = std::function<std::optional<FactorLine>(
+          const gtsam::NonlinearFactor*)>;
+  std::vector<
+          std::pair<std::weak_ptr<gtsam::NonlinearFactor>, FactorLineGetter>>
+          odometry_factor_lines;
   std::unordered_map<std::uint64_t, Eigen::Isometry3f> odometry_poses;
 
   Eigen::Vector2f z_range;
@@ -93,6 +98,6 @@ private:
   // Logging
   std::shared_ptr<spdlog::logger> logger;
 
-  int gps_data_id {0};
+  int gps_data_id{0};
 };
 }  // namespace glim

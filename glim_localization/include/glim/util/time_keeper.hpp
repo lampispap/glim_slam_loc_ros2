@@ -1,37 +1,42 @@
 #pragma once
 
-#include <optional>
 #include <glim/util/raw_points.hpp>
+#include <optional>
 
 namespace glim {
 
 /// @brief Parameters for per-point timestamp management
 struct PerPointTimeSettings {
-public:
+  public:
   PerPointTimeSettings();
   ~PerPointTimeSettings();
 
   bool autoconf;       ///< If true, load parameters from config file
-  bool relative_time;  ///< If true, per-point timestamps are relative to the first point. Otherwise, absolute.
+  bool relative_time;  ///< If true, per-point timestamps are relative to the
+                       ///< first point. Otherwise, absolute.
   /// @brief If true, frame timestamp will never be overwritten by antyhing.
   ///        If false,
-  ///          when per-point timestamps are absolute, overwrite the frame timestamp with the first point timestamp.
-  ///          when per-point timestamps are relative and negative, add an offset to the frame timestamp to make per-point ones positive.
+  ///          when per-point timestamps are absolute, overwrite the frame
+  ///          timestamp with the first point timestamp. when per-point
+  ///          timestamps are relative and negative, add an offset to the frame
+  ///          timestamp to make per-point ones positive.
   bool prefer_frame_time;
-  double point_time_scale;  ///< Scale factor to convert per-point timestamps to seconds.
+  double point_time_scale;  ///< Scale factor to convert per-point timestamps to
+                            ///< seconds.
 };
 
 /**
  * @brief Utility class to unify timestamp convension
  */
 class TimeKeeper {
-public:
+  public:
   TimeKeeper();
   ~TimeKeeper();
 
   /**
    * @brief Replace frame and point timestamps
-   * @note  Frame timestamp must be the one at the moment when the first point is acquired
+   * @note  Frame timestamp must be the one at the moment when the first point
+   * is acquired
    * @note  Point timestamps must be relative with respect to the first point
    */
   void process(const glim::RawPoints::Ptr& points);
@@ -42,11 +47,11 @@ public:
    */
   bool validate_imu_stamp(const double imu_stamp);
 
-private:
+  private:
   void replace_points_stamp(const glim::RawPoints::Ptr& points);
   double estimate_scan_duration(const double stamp);
 
-private:
+  private:
   PerPointTimeSettings settings;
 
   double last_points_stamp;  ///< Timestamp of the last LiDAR frame

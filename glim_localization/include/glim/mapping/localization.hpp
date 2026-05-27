@@ -1,17 +1,16 @@
 #pragma once
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <any>
+#include <boost/shared_ptr.hpp>
+#include <glim/mapping/global_mapping.hpp>
+#include <glim/mapping/global_mapping_base.hpp>
+#include <glim/mapping/sub_map.hpp>
+#include <map>
 #include <memory>
 #include <random>
 #include <thread>
-#include <map>
-#include <boost/shared_ptr.hpp>
-#include <glim/mapping/global_mapping_base.hpp>
-#include <glim/mapping/global_mapping.hpp>
-#include <glim/mapping/sub_map.hpp>
-
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 
 namespace gtsam {
 class Values;
@@ -28,12 +27,12 @@ namespace glim {
 
 class IMUIntegration;
 
-struct LocalizationParams: public GlobalMappingParams {
-public:
+struct LocalizationParams : public GlobalMappingParams {
+  public:
   LocalizationParams();
   ~LocalizationParams();
 
-public:
+  public:
   double max_localization_distance;
   double min_localization_overlap;
   double linear_search_window;
@@ -44,15 +43,17 @@ public:
   int num_keep_submaps;
 };
 
-
 class Localization : public GlobalMappingBase {
-public:
+  public:
   Localization(const LocalizationParams& params = LocalizationParams());
   virtual ~Localization();
 
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
   virtual void insert_submap(const SubMap::Ptr& submap) override;
-  virtual void relocalize(EstimationFrame::ConstPtr latest, const Eigen::Isometry3d & initial_pose) override;
+  virtual void relocalize(EstimationFrame::ConstPtr latest,
+                          const Eigen::Isometry3d& initial_pose) override;
 
   // virtual void find_overlapping_submaps(double min_overlap) override;
   virtual void optimize() override;
@@ -67,32 +68,40 @@ public:
   // bool load_pose_graph(const std::string& path);
   virtual bool load(const std::string& path) override;
   bool load_ply(const std::string& path);
-protected:
 
-private:
-
+  protected:
+  private:
   void insert_submap(int current, const SubMap::Ptr& submap);
   void update_submaps();
 
-  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) ;
-  // std::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) ;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(
+          int current);
+  // std::shared_ptr<gtsam::NonlinearFactorGraph>
+  // create_matching_cost_factors(int current) ;
   std::shared_ptr<gtsam::NonlinearFactorGraph> create_map_matching_cost_factors(
-    int current, const Eigen::Isometry3d& current_T_world_submap);
+          int current, const Eigen::Isometry3d& current_T_world_submap);
   std::shared_ptr<gtsam::NonlinearFactorGraph> create_relocalization_factors(
-    int submap_id,
-    gtsam_points::PointCloud::ConstPtr cloud, const Eigen::Isometry3d& submap_pose,
-    const Eigen::Isometry3d& initial_pose);
+          int submap_id,
+          gtsam_points::PointCloud::ConstPtr cloud,
+          const Eigen::Isometry3d& submap_pose,
+          const Eigen::Isometry3d& initial_pose);
 
   Eigen::Isometry3d find_best_candidate(
-    const SubMap::Ptr& target_map, gtsam_points::PointCloud::ConstPtr cloud, const Eigen::Isometry3d& submap_pose,
-    double linear_search_window, double angular_search_window,
-    Eigen::Isometry3d initial_pose, double& overlap_score);
+          const SubMap::Ptr& target_map,
+          gtsam_points::PointCloud::ConstPtr cloud,
+          const Eigen::Isometry3d& submap_pose,
+          double linear_search_window,
+          double angular_search_window,
+          Eigen::Isometry3d initial_pose,
+          double& overlap_score);
 
-  gtsam_points::ISAM2ResultExt update_isam2(const gtsam::NonlinearFactorGraph& new_factors, const gtsam::Values& new_values);
+  gtsam_points::ISAM2ResultExt update_isam2(
+          const gtsam::NonlinearFactorGraph& new_factors,
+          const gtsam::Values& new_values);
 
   void trim_submap(int submap_index);
 
-private:
+  private:
   using Params = LocalizationParams;
   Params params;
 

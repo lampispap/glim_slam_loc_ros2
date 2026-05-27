@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
 #include <glim/odometry/estimation_frame.hpp>
 
 namespace spdlog {
@@ -16,7 +15,7 @@ namespace glim {
  *
  */
 class InitialStateEstimation {
-public:
+  public:
   InitialStateEstimation();
   virtual ~InitialStateEstimation() {}
 
@@ -26,7 +25,9 @@ public:
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  virtual void insert_imu(double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) {}
+  virtual void insert_imu(double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) {}
 
   /**
    * @brief Insert a point cloud
@@ -41,28 +42,33 @@ public:
    */
   virtual EstimationFrame::ConstPtr initial_pose() = 0;
 
-protected:
+  protected:
   // Logging
   std::shared_ptr<spdlog::logger> logger;
 };
 
 /**
- * @brief Naive initial state estimator that simply calculates a pose that aligns linear acc with the gravity direction
- *        Would not work well when the sensor is moving
+ * @brief Naive initial state estimator that simply calculates a pose that
+ * aligns linear acc with the gravity direction Would not work well when the
+ * sensor is moving
  */
 class NaiveInitialStateEstimation : public InitialStateEstimation {
-public:
+  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  NaiveInitialStateEstimation(const Eigen::Isometry3d& T_lidar_imu, const Eigen::Matrix<double, 6, 1>& imu_bias);
+  NaiveInitialStateEstimation(const Eigen::Isometry3d& T_lidar_imu,
+                              const Eigen::Matrix<double, 6, 1>& imu_bias);
   virtual ~NaiveInitialStateEstimation() override;
 
-  virtual void insert_imu(double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) override;
+  virtual void insert_imu(double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel) override;
   virtual EstimationFrame::ConstPtr initial_pose() override;
 
-  void set_init_state(const Eigen::Isometry3d& init_T_world_imu, const Eigen::Vector3d& init_v_world_imu);
+  void set_init_state(const Eigen::Isometry3d& init_T_world_imu,
+                      const Eigen::Vector3d& init_v_world_imu);
 
-private:
+  private:
   double window_size;
 
   bool ready;

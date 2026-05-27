@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <chrono>
 #include <gtsam/linear/GaussianBayesTree.h>
 #include <gtsam/nonlinear/ISAM2Clique.h>
 #include <gtsam/nonlinear/ISAM2Params.h>
@@ -28,8 +27,8 @@
 #include <gtsam/nonlinear/ISAM2UpdateParams.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 
+#include <chrono>
 #include <gtsam_points/optimizers/isam2_result_ext.hpp>
-
 #include <vector>
 
 namespace gtsam_points {
@@ -50,7 +49,7 @@ class LinearizationHook;
  *
  */
 class ISAM2Ext : public BayesTree<ISAM2Clique> {
-protected:
+  protected:
   /** The current linearization point */
   Values theta_;
 
@@ -69,8 +68,8 @@ protected:
 
   mutable VectorValues deltaNewton_;  // Only used when using Dogleg - stores
                                       // the Gauss-Newton update
-  mutable VectorValues RgProd_;       // Only used when using Dogleg - stores R*g and
-                                      // is updated incrementally
+  mutable VectorValues RgProd_;  // Only used when using Dogleg - stores R*g and
+                                 // is updated incrementally
 
   /** A cumulative mask for the variables that were replaced and have not yet
    * been updated in the linear solution delta_, this is only used internally,
@@ -103,7 +102,7 @@ protected:
   int update_count_;  ///< Counter incremented every update(), used to determine
                       ///< periodic relinearization
 
-public:
+  public:
   using This = ISAM2Ext;                    ///< This class
   using Base = BayesTree<ISAM2Clique>;      ///< The BayesTree base class
   using Clique = Base::Clique;              ///< A clique
@@ -155,14 +154,14 @@ public:
    * provided keys to be reordered.
    * @return An ISAM2Result struct containing information about the update
    */
-  virtual ISAM2ResultExt update(
-    const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
-    const Values& newTheta = Values(),
-    const FactorIndices& removeFactorIndices = FactorIndices(),
-    const std::optional<FastMap<Key, int> >& constrainedKeys = std::nullopt,
-    const std::optional<FastList<Key> >& noRelinKeys = std::nullopt,
-    const std::optional<FastList<Key> >& extraReelimKeys = std::nullopt,
-    bool force_relinearize = false);
+  virtual ISAM2ResultExt
+  update(const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
+         const Values& newTheta = Values(),
+         const FactorIndices& removeFactorIndices = FactorIndices(),
+         const std::optional<FastMap<Key, int>>& constrainedKeys = std::nullopt,
+         const std::optional<FastList<Key>>& noRelinKeys = std::nullopt,
+         const std::optional<FastList<Key>>& extraReelimKeys = std::nullopt,
+         bool force_relinearize = false);
 
   /**
    * Add new factors, updating the solution and relinearizing as needed.
@@ -182,7 +181,9 @@ public:
    * @return An ISAM2Result struct containing information about the update
    * @note No default parameters to avoid ambiguous call errors.
    */
-  virtual ISAM2ResultExt update(const NonlinearFactorGraph& newFactors, const Values& newTheta, const ISAM2UpdateParams& updateParams);
+  virtual ISAM2ResultExt update(const NonlinearFactorGraph& newFactors,
+                                const Values& newTheta,
+                                const ISAM2UpdateParams& updateParams);
 
   /** Marginalize out variables listed in leafKeys.  These keys must be leaves
    * in the BayesTree.  Throws MarginalizeNonleafException if non-leaves are
@@ -201,10 +202,9 @@ public:
    * graph indices of any factor that was removed during the 'marginalizeLeaves'
    * call
    */
-  void marginalizeLeaves(
-    const FastList<Key>& leafKeys,
-    FactorIndices* marginalFactorsIndices = nullptr,
-    FactorIndices* deletedFactorsIndices = nullptr);
+  void marginalizeLeaves(const FastList<Key>& leafKeys,
+                         FactorIndices* marginalFactorsIndices = nullptr,
+                         FactorIndices* deletedFactorsIndices = nullptr);
 
   /// Access the current linearization point
   const Values& getLinearizationPoint() const { return theta_; }
@@ -259,10 +259,14 @@ public:
   double error(const VectorValues& x) const;
 
   /** Access the set of nonlinear factors */
-  const NonlinearFactorGraph& getFactorsUnsafe() const { return nonlinearFactors_; }
+  const NonlinearFactorGraph& getFactorsUnsafe() const {
+    return nonlinearFactors_;
+  }
 
   /** Access the set of linear factors */
-  const GaussianFactorGraph& getLinearFactorsUnsafe() const { return linearFactors_; }
+  const GaussianFactorGraph& getLinearFactorsUnsafe() const {
+    return linearFactors_;
+  }
 
   /** Access the nonlinear variable index */
   const VariableIndex& getVariableIndex() const { return variableIndex_; }
@@ -286,31 +290,38 @@ public:
 
   /// @}
 
-protected:
+  protected:
   /// Remove marked top and either recalculate in batch or incrementally.
-  void recalculate(const ISAM2UpdateParams& updateParams, const KeySet& relinKeys, ISAM2Result* result);
+  void recalculate(const ISAM2UpdateParams& updateParams,
+                   const KeySet& relinKeys,
+                   ISAM2Result* result);
 
   // Do a batch step - reorder and relinearize all variables
-  void recalculateBatch(const ISAM2UpdateParams& updateParams, KeySet* affectedKeysSet, ISAM2Result* result);
+  void recalculateBatch(const ISAM2UpdateParams& updateParams,
+                        KeySet* affectedKeysSet,
+                        ISAM2Result* result);
 
   // retrieve all factors that ONLY contain the affected variables
   // (note that the remaining stuff is summarized in the cached factors)
-  GaussianFactorGraph relinearizeAffectedFactors(const ISAM2UpdateParams& updateParams, const FastList<Key>& affectedKeys, const KeySet& relinKeys);
+  GaussianFactorGraph relinearizeAffectedFactors(
+          const ISAM2UpdateParams& updateParams,
+          const FastList<Key>& affectedKeys,
+          const KeySet& relinKeys);
 
-  void recalculateIncremental(
-    const ISAM2UpdateParams& updateParams,
-    const KeySet& relinKeys,
-    const FastList<Key>& affectedKeys,
-    KeySet* affectedKeysSet,
-    Cliques* orphans,
-    ISAM2Result* result);
+  void recalculateIncremental(const ISAM2UpdateParams& updateParams,
+                              const KeySet& relinKeys,
+                              const FastList<Key>& affectedKeys,
+                              KeySet* affectedKeysSet,
+                              Cliques* orphans,
+                              ISAM2Result* result);
 
   /**
    * Add new variables to the ISAM2 system.
    * @param newTheta Initial values for new variables
    * @param variableStatus optional detailed result structure
    */
-  void addVariables(const Values& newTheta, ISAM2Result::DetailedResults* detail = 0);
+  void addVariables(const Values& newTheta,
+                    ISAM2Result::DetailedResults* detail = 0);
 
   /**
    * Remove variables from the ISAM2 system.

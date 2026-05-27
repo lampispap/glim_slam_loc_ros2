@@ -1,7 +1,7 @@
-#include <glim/util/load_module.hpp>
-
 #include <dlfcn.h>
 #include <spdlog/spdlog.h>
+
+#include <glim/util/load_module.hpp>
 
 namespace glim {
 

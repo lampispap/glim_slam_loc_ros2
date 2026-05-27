@@ -1,11 +1,11 @@
 #pragma once
 
 #include <deque>
-#include <random>
-#include <memory>
 #include <glim/mapping/sub_mapping_base.hpp>
 #include <gtsam_points/ann/flat_container.hpp>
 #include <gtsam_points/ann/incremental_voxelmap.hpp>
+#include <memory>
+#include <random>
 
 namespace glim {
 
@@ -17,11 +17,11 @@ using VoxelMap = gtsam_points::IncrementalVoxelMap<gtsam_points::FlatContainer>;
  * @brief SubMappingPassthrough parameters
  */
 struct SubMappingPassthroughParams {
-public:
+  public:
   SubMappingPassthroughParams();
   ~SubMappingPassthroughParams();
 
-public:
+  public:
   double keyframe_update_interval_rot;
   double keyframe_update_interval_trans;
 
@@ -36,23 +36,26 @@ public:
 };
 
 /**
- * @brief Sub mapping based on voxel-based simple frame merging. No optimization, no re-deskewing.
+ * @brief Sub mapping based on voxel-based simple frame merging. No
+ * optimization, no re-deskewing.
  */
 class SubMappingPassthrough : public SubMappingBase {
-public:
-  SubMappingPassthrough(const SubMappingPassthroughParams& params = SubMappingPassthroughParams());
+  public:
+  SubMappingPassthrough(const SubMappingPassthroughParams& params =
+                                SubMappingPassthroughParams());
   virtual ~SubMappingPassthrough() override;
 
-  virtual void insert_frame(const EstimationFrame::ConstPtr& odom_frame) override;
+  virtual void insert_frame(
+          const EstimationFrame::ConstPtr& odom_frame) override;
 
   virtual std::vector<SubMap::Ptr> get_submaps() override;
 
   virtual std::vector<SubMap::Ptr> submit_end_of_sequence() override;
 
-private:
+  private:
   SubMap::Ptr create_submap(bool force_create = false) const;
 
-private:
+  private:
   using Params = SubMappingPassthroughParams;
   Params params;
 

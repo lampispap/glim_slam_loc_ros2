@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <vector>
 #include <limits>
+#include <memory>
+#include <vector>
 
 namespace gtsam_points {
 
@@ -12,7 +13,7 @@ namespace gtsam_points {
  * @brief Nearest neighbor search interface
  */
 struct NearestNeighborSearch {
-public:
+  public:
   using Ptr = std::shared_ptr<NearestNeighborSearch>;
   using ConstPtr = std::shared_ptr<const NearestNeighborSearch>;
 
@@ -26,8 +27,12 @@ public:
    * @param k_indices   Indices of k-nearest neighbors
    * @param k_sq_dists  Squared distances to the neighbors
    */
-  virtual size_t
-  knn_search(const double* pt, size_t k, size_t* k_indices, double* k_sq_dists, double max_sq_dist = std::numeric_limits<double>::max()) const {
+  virtual size_t knn_search(
+          const double* pt,
+          size_t k,
+          size_t* k_indices,
+          double* k_sq_dists,
+          double max_sq_dist = std::numeric_limits<double>::max()) const {
     return 0;
   };
 };

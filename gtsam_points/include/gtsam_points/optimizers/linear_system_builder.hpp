@@ -3,23 +3,26 @@
 
 #pragma once
 
-#include <Eigen/Sparse>
 #include <gtsam/linear/GaussianFactorGraph.h>
+
+#include <Eigen/Sparse>
 #include <gtsam_points/optimizers/fast_scatter.hpp>
 
 namespace gtsam_points {
 
 /**
- * @brief A helper class to build a dense linear system from a Gaussian factor graph.
+ * @brief A helper class to build a dense linear system from a Gaussian factor
+ * graph.
  */
 class DenseLinearSystemBuilder {
-public:
+  public:
   /**
    * @brief Constructor
    * @param gfg       Gaussian factor graph representing a linear sytem
    * @param ordering  Ordering
    */
-  DenseLinearSystemBuilder(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering);
+  DenseLinearSystemBuilder(const gtsam::GaussianFactorGraph& gfg,
+                           const gtsam::Ordering& ordering);
   ~DenseLinearSystemBuilder();
 
   /**
@@ -27,7 +30,7 @@ public:
    */
   gtsam::VectorValues delta(const Eigen::VectorXd& x);
 
-public:
+  public:
   const gtsam_points::FastScatter scatter;
 
   Eigen::MatrixXd A;
@@ -36,16 +39,18 @@ public:
 };
 
 /**
- * @brief A helper class to build a sparse linear system from a Gaussian factor graph.
+ * @brief A helper class to build a sparse linear system from a Gaussian factor
+ * graph.
  */
 class SparseLinearSystemBuilderBase {
-public:
+  public:
   /**
    * @brief Constructor
    * @param gfg       Gaussian factor graph representing a linear sytem
    * @param ordering  Ordering
    */
-  SparseLinearSystemBuilderBase(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering);
+  SparseLinearSystemBuilderBase(const gtsam::GaussianFactorGraph& gfg,
+                                const gtsam::Ordering& ordering);
   virtual ~SparseLinearSystemBuilderBase();
 
   /**
@@ -53,7 +58,7 @@ public:
    */
   gtsam::VectorValues delta(const Eigen::VectorXd& x);
 
-public:
+  public:
   const gtsam_points::FastScatter scatter;
 
   Eigen::SparseMatrix<double, Eigen::RowMajor> A;  // Lower triangular
@@ -63,12 +68,14 @@ public:
 
 /**
  * @brief Sparse linear system builder with a block size option.
- * @note  If BLOCK_SIZE != -1, all variables in the Gaussian factor graph must have the dimension equals to BLOCK_SIZE.
+ * @note  If BLOCK_SIZE != -1, all variables in the Gaussian factor graph must
+ * have the dimension equals to BLOCK_SIZE.
  */
 template <int BLOCK_SIZE = -1>
 class SparseLinearSystemBuilder : public SparseLinearSystemBuilderBase {
-public:
-  SparseLinearSystemBuilder(const gtsam::GaussianFactorGraph& gfg, const gtsam::Ordering& ordering);
+  public:
+  SparseLinearSystemBuilder(const gtsam::GaussianFactorGraph& gfg,
+                            const gtsam::Ordering& ordering);
   virtual ~SparseLinearSystemBuilder() override {}
 };
 

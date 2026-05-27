@@ -1,6 +1,6 @@
-#include <glim/common/cloud_deskewing.hpp>
-
 #include <gtsam/geometry/Pose3.h>
+
+#include <glim/common/cloud_deskewing.hpp>
 
 namespace glim {
 
@@ -9,17 +9,18 @@ CloudDeskewing::CloudDeskewing() {}
 CloudDeskewing::~CloudDeskewing() {}
 
 std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
-  const Eigen::Isometry3d& T_imu_lidar,
-  const Eigen::Vector3d& linear_vel,
-  const Eigen::Vector3d& angular_vel,
-  const std::vector<double>& times,
-  const std::vector<Eigen::Vector4d>& points) {
+        const Eigen::Isometry3d& T_imu_lidar,
+        const Eigen::Vector3d& linear_vel,
+        const Eigen::Vector3d& angular_vel,
+        const std::vector<double>& times,
+        const std::vector<Eigen::Vector4d>& points) {
   if (times.empty()) {
     return std::vector<Eigen::Vector4d>();
   }
 
   const Eigen::Isometry3d T_lidar_imu = T_imu_lidar.inverse();
-  const gtsam::Vector6 vel = (gtsam::Vector6() << angular_vel, linear_vel).finished();
+  const gtsam::Vector6 vel =
+          (gtsam::Vector6() << angular_vel, linear_vel).finished();
 
   const double time_eps = 1e-4;  // 0.1msec
   std::vector<double> time_table;
@@ -39,7 +40,8 @@ std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
   for (int i = 0; i < time_table.size(); i++) {
     const double dt = time_table[i];
     // Maybe this is not correct. Need to check.
-    const Eigen::Isometry3d T_imu1_imu0(gtsam::Pose3::Expmap(dt * vel).matrix());
+    const Eigen::Isometry3d T_imu1_imu0(
+            gtsam::Pose3::Expmap(dt * vel).matrix());
     T_lidar0_lidar1[i] = T_lidar_imu * T_imu1_imu0.inverse() * T_imu_lidar;
   }
 
@@ -53,15 +55,16 @@ std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
 }
 
 std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
-  const Eigen::Isometry3d& T_imu_lidar,
-  const std::vector<double>& imu_times,
-  const std::vector<Eigen::Isometry3d>& imu_poses,
-  const double stamp,
-  const std::vector<double>& times,
-  const std::vector<Eigen::Vector4d>& points) {
+        const Eigen::Isometry3d& T_imu_lidar,
+        const std::vector<double>& imu_times,
+        const std::vector<Eigen::Isometry3d>& imu_poses,
+        const double stamp,
+        const std::vector<double>& times,
+        const std::vector<Eigen::Vector4d>& points) {
   //
   if (imu_poses.empty()) {
-    return deskew(T_imu_lidar, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), times, points);
+    return deskew(T_imu_lidar, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(),
+                  times, points);
   }
 
   const double time_eps = 1e-4;
@@ -88,7 +91,8 @@ std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
   for (int i = 0; i < time_table.size(); i++) {
     const double time = stamp + time_table[i];
 
-    while (imu_cursor < imu_times.size() - 1 && imu_times[imu_cursor + 1] < time) {
+    while (imu_cursor < imu_times.size() - 1 &&
+           imu_times[imu_cursor + 1] < time) {
       imu_cursor++;
     }
 
@@ -104,15 +108,18 @@ std::vector<Eigen::Vector4d> CloudDeskewing::deskew(
       const double imu_t0 = imu_times[imu_cursor];
       const double imu_t1 = imu_times[imu_cursor + 1];
 
-      const double p = std::max(0.0, std::min(1.0, (time - imu_t0) / (imu_t1 - imu_t0)));
+      const double p =
+              std::max(0.0, std::min(1.0, (time - imu_t0) / (imu_t1 - imu_t0)));
 
       const Eigen::Vector3d imu_trans_l = imu_poses[imu_cursor].translation();
-      const Eigen::Vector3d imu_trans_r = imu_poses[imu_cursor + 1].translation();
+      const Eigen::Vector3d imu_trans_r =
+              imu_poses[imu_cursor + 1].translation();
       const Eigen::Quaterniond imu_quat_l(imu_poses[imu_cursor].linear());
       const Eigen::Quaterniond imu_quat_r(imu_poses[imu_cursor + 1].linear());
 
       T_world_imu1.translation() = (1.0 - p) * imu_trans_l + p * imu_trans_r;
-      T_world_imu1.linear() = imu_quat_l.slerp(p, imu_quat_r).toRotationMatrix();
+      T_world_imu1.linear() =
+              imu_quat_l.slerp(p, imu_quat_r).toRotationMatrix();
     }
 
     const Eigen::Isometry3d T_imu0_imu1 = T_imu0_world * T_world_imu1;

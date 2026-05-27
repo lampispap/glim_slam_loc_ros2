@@ -11,21 +11,27 @@ namespace gtsam_points {
 /**
  * @brief Factor(xi, xj, Tij) that evaluates (xj_inv * xi) * Tij
  */
-class Pose3CalibFactor : public gtsam::NoiseModelFactor3<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3> {
-public:
-  Pose3CalibFactor(gtsam::Key xi, gtsam::Key xj, gtsam::Key Tij, const gtsam::SharedNoiseModel& noise_model)
-  : gtsam::NoiseModelFactor3<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3>(noise_model, xi, xj, Tij) {}
+class Pose3CalibFactor : public gtsam::NoiseModelFactor3<gtsam::Pose3,
+                                                         gtsam::Pose3,
+                                                         gtsam::Pose3> {
+  public:
+  Pose3CalibFactor(gtsam::Key xi,
+                   gtsam::Key xj,
+                   gtsam::Key Tij,
+                   const gtsam::SharedNoiseModel& noise_model)
+      : gtsam::NoiseModelFactor3<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3>(
+                noise_model, xi, xj, Tij) {}
 
   virtual ~Pose3CalibFactor() override {}
 
-public:
+  public:
   virtual gtsam::Vector evaluateError(
-    const gtsam::Pose3& xi,
-    const gtsam::Pose3& xj,
-    const gtsam::Pose3& Tij,
-    boost::optional<gtsam::Matrix&> H_xi = boost::none,
-    boost::optional<gtsam::Matrix&> H_xj = boost::none,
-    boost::optional<gtsam::Matrix&> H_Tij = boost::none) const override {
+          const gtsam::Pose3& xi,
+          const gtsam::Pose3& xj,
+          const gtsam::Pose3& Tij,
+          boost::optional<gtsam::Matrix&> H_xi = boost::none,
+          boost::optional<gtsam::Matrix&> H_xj = boost::none,
+          boost::optional<gtsam::Matrix&> H_Tij = boost::none) const override {
     //
     if (H_xi == boost::none && H_xj == boost::none && H_Tij == boost::none) {
       const gtsam::Pose3 delta = xi.between(xj);      // (xi^-1 * xj)

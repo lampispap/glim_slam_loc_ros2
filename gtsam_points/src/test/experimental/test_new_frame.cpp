@@ -1,6 +1,6 @@
-#include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <iostream>
 
 struct Frame {
   std::vector<double> stamps;
@@ -17,6 +17,4 @@ struct traits<Frame> {
   static bool has_times(const Frame& frame) { return true; }
 };
 
-int main(int argc, char** argv) {
-  return 0;
-}
+int main(int argc, char** argv) { return 0; }

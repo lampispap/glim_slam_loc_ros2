@@ -8,13 +8,15 @@ IncrementalCovarianceContainer::IncrementalCovarianceContainer() {
   points.reserve(10);
 }
 
-void IncrementalCovarianceContainer::add(const Setting& setting, const PointCloud& points, size_t i) {
-  if (
-    this->points.size() >= setting.max_num_points_in_cell ||  //
-    std::any_of(
-      this->points.begin(),
-      this->points.end(),
-      [&](const auto& pt) { return (pt - points.points[i]).squaredNorm() < setting.min_sq_dist_in_cell; })  //
+void IncrementalCovarianceContainer::add(const Setting& setting,
+                                         const PointCloud& points,
+                                         size_t i) {
+  if (this->points.size() >= setting.max_num_points_in_cell ||  //
+      std::any_of(this->points.begin(), this->points.end(),
+                  [&](const auto& pt) {
+                    return (pt - points.points[i]).squaredNorm() <
+                           setting.min_sq_dist_in_cell;
+                  })  //
   ) {
     return;
   }
@@ -25,7 +27,8 @@ void IncrementalCovarianceContainer::add(const Setting& setting, const PointClou
   this->covs.emplace_back(Eigen::Matrix4d::Zero());
 }
 
-size_t IncrementalCovarianceContainer::remove_old_invalid(int age_thresh, size_t lru) {
+size_t IncrementalCovarianceContainer::remove_old_invalid(int age_thresh,
+                                                          size_t lru) {
   int result = 0;
   for (int i = 0; i < points.size(); i++) {
     if (!valid(i) && age(i, lru) > age_thresh) {

@@ -3,11 +3,12 @@
 
 #pragma once
 
-#include <memory>
-#include <unordered_map>
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/nonlinear/NonlinearFactor.h>
+
 #include <gtsam_points/factors/bundle_adjustment_factor.hpp>
+#include <memory>
+#include <unordered_map>
 
 namespace gtsam_points {
 
@@ -20,10 +21,11 @@ struct BALMFeature;
  * @note  The computation cost grows as the number of points increases
  *        Consider averaging points in a same scan in advance (see [Liu 2021])
  *
- *        Liu and Zhang, "BALM: Bundle Adjustment for Lidar Mapping", IEEE RA-L, 2021
+ *        Liu and Zhang, "BALM: Bundle Adjustment for Lidar Mapping", IEEE RA-L,
+ * 2021
  */
 class EVMBundleAdjustmentFactorBase : public BundleAdjustmentFactorBase {
-public:
+  public:
   using shared_ptr = boost::shared_ptr<EVMBundleAdjustmentFactorBase>;
 
   EVMBundleAdjustmentFactorBase();
@@ -44,20 +46,26 @@ public:
   virtual int num_points() const override { return points.size(); }
 
   /**
-   * @brief  Set a constant error scaling factor to boost the weight of the factor
+   * @brief  Set a constant error scaling factor to boost the weight of the
+   * factor
    * @param  scale  Error scale
    */
   virtual void set_scale(double scale) override;
 
-protected:
+  protected:
   template <int k>
-  double calc_eigenvalue(const std::vector<Eigen::Vector3d>& transed_points, Eigen::MatrixXd* H = nullptr, Eigen::MatrixXd* J = nullptr) const;
+  double calc_eigenvalue(const std::vector<Eigen::Vector3d>& transed_points,
+                         Eigen::MatrixXd* H = nullptr,
+                         Eigen::MatrixXd* J = nullptr) const;
 
-  Eigen::MatrixXd calc_pose_derivatives(const std::vector<Eigen::Vector3d>& transed_points) const;
+  Eigen::MatrixXd calc_pose_derivatives(
+          const std::vector<Eigen::Vector3d>& transed_points) const;
 
-  gtsam::GaussianFactor::shared_ptr compose_factor(const Eigen::MatrixXd& H, const Eigen::MatrixXd& J, double error) const;
+  gtsam::GaussianFactor::shared_ptr compose_factor(const Eigen::MatrixXd& H,
+                                                   const Eigen::MatrixXd& J,
+                                                   double error) const;
 
-protected:
+  protected:
   double error_scale;
   std::vector<gtsam::Key> keys;
   std::vector<gtsam::Point3> points;
@@ -68,14 +76,15 @@ protected:
  * @brief Plane EVM factor that minimizes lambda_0
  */
 class PlaneEVMFactor : public EVMBundleAdjustmentFactorBase {
-public:
+  public:
   using shared_ptr = boost::shared_ptr<PlaneEVMFactor>;
 
   PlaneEVMFactor();
   virtual ~PlaneEVMFactor() override;
 
   virtual double error(const gtsam::Values& c) const override;
-  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(
+          const gtsam::Values& c) const override;
 
   // TODO: Add feature parameter extraction method
 };
@@ -84,13 +93,14 @@ public:
  * @brief Edge EVM factor that minimizes lambda_0 + lambda_1
  */
 class EdgeEVMFactor : public EVMBundleAdjustmentFactorBase {
-public:
+  public:
   using shared_ptr = boost::shared_ptr<EdgeEVMFactor>;
 
   EdgeEVMFactor();
   virtual ~EdgeEVMFactor() override;
 
   virtual double error(const gtsam::Values& c) const override;
-  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(
+          const gtsam::Values& c) const override;
 };
 }  // namespace gtsam_points

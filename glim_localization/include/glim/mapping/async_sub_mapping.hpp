@@ -1,18 +1,19 @@
 #pragma once
 
 #include <atomic>
-#include <thread>
 #include <glim/mapping/sub_mapping.hpp>
 #include <glim/util/concurrent_vector.hpp>
+#include <thread>
 
 namespace glim {
 
 /**
- * @brief SubMapping executor to wrap and asynchronously run a sub mapping object
+ * @brief SubMapping executor to wrap and asynchronously run a sub mapping
+ * object
  * @note  All the exposed public methods are thread-safe
  */
 class AsyncSubMapping {
-public:
+  public:
   /**
    * @brief Construct a new Async Sub Mapping object
    * @param sub_mapping sub mapping object
@@ -32,14 +33,17 @@ public:
    */
   void insert_image(const double stamp, const cv::Mat& image);
 
-    /**
+  /**
    * @brief Insert an Raw Differential Wheel angular velocity
    * @param stamp         Timestamp
    * @param left_angular_vel    Left wheel angular velocity rad/s
    * @param right_angular_vel   Right wheel angular velocity rad/s
    */
-  void insert_gps(const double stamp, const double lat, const double lon, const double alt, const double hdop);
-
+  void insert_gps(const double stamp,
+                  const double lat,
+                  const double lon,
+                  const double alt,
+                  const double hdop);
 
   /**
    * @brief Insert an IMU data
@@ -47,7 +51,9 @@ public:
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
+  void insert_imu(const double stamp,
+                  const Eigen::Vector3d& linear_acc,
+                  const Eigen::Vector3d& angular_vel);
 
   /**
    * @brief Insert an odometry estimation frame
@@ -75,19 +81,20 @@ public:
 
   SubMap::Ptr force_create_submap();
 
-private:
+  private:
   void run();
 
-private:
-  std::atomic_bool kill_switch;      // Flag to stop the thread immediately (Hard kill switch)
-  std::atomic_bool end_of_sequence;  // Flag to stop the thread when the input queues become empty (Soft kill switch)
+  private:
+  std::atomic_bool kill_switch;  // Flag to stop the thread immediately (Hard
+                                 // kill switch)
+  std::atomic_bool end_of_sequence;  // Flag to stop the thread when the input
+                                     // queues become empty (Soft kill switch)
   std::thread thread;
 
   ConcurrentVector<std::pair<double, cv::Mat>> input_image_queue;
   ConcurrentVector<Eigen::Matrix<double, 7, 1>> input_imu_queue;
   ConcurrentVector<EstimationFrame::ConstPtr> input_frame_queue;
   ConcurrentVector<Eigen::Matrix<double, 5, 1>> input_gps_queue;
-
 
   ConcurrentVector<SubMap::Ptr> output_submap_queue;
 

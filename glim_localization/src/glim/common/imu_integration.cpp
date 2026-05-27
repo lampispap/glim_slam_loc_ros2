@@ -1,16 +1,19 @@
 #include <glim/common/imu_integration.hpp>
-
 #include <glim/util/config.hpp>
 
 namespace glim {
 
 IMUIntegrationParams::IMUIntegrationParams(const bool upright) {
-  glim::Config config_sensors(glim::GlobalConfig::get_config_path("config_sensors"));
+  glim::Config config_sensors(
+          glim::GlobalConfig::get_config_path("config_sensors"));
 
   this->upright = upright;
-  this->acc_noise = config_sensors.param<double>("sensors", "imu_acc_noise", 0.01);
-  this->gyro_noise = config_sensors.param<double>("sensors", "imu_gyro_noise", 0.001);
-  this->int_noise = config_sensors.param<double>("sensors", "imu_int_noise", 0.001);
+  this->acc_noise =
+          config_sensors.param<double>("sensors", "imu_acc_noise", 0.01);
+  this->gyro_noise =
+          config_sensors.param<double>("sensors", "imu_gyro_noise", 0.001);
+  this->int_noise =
+          config_sensors.param<double>("sensors", "imu_int_noise", 0.001);
 }
 
 IMUIntegrationParams::~IMUIntegrationParams() {}
@@ -21,21 +24,29 @@ IMUIntegration::IMUIntegration(const IMUIntegrationParams& params) {
     imu_params = gtsam::PreintegrationParams::MakeSharedD();
   }
 
-  imu_params->accelerometerCovariance = gtsam::Matrix3::Identity() * std::pow(params.acc_noise, 2);
-  imu_params->gyroscopeCovariance = gtsam::Matrix3::Identity() * std::pow(params.gyro_noise, 2);
-  imu_params->integrationCovariance = gtsam::Matrix3::Identity() * pow(params.int_noise, 2);
+  imu_params->accelerometerCovariance =
+          gtsam::Matrix3::Identity() * std::pow(params.acc_noise, 2);
+  imu_params->gyroscopeCovariance =
+          gtsam::Matrix3::Identity() * std::pow(params.gyro_noise, 2);
+  imu_params->integrationCovariance =
+          gtsam::Matrix3::Identity() * pow(params.int_noise, 2);
   imu_measurements.reset(new gtsam::PreintegratedImuMeasurements(imu_params));
 }
 
 IMUIntegration::~IMUIntegration() {}
 
-void IMUIntegration::insert_imu(double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) {
+void IMUIntegration::insert_imu(double stamp,
+                                const Eigen::Vector3d& linear_acc,
+                                const Eigen::Vector3d& angular_vel) {
   Eigen::Matrix<double, 7, 1> imu;
   imu << stamp, linear_acc, angular_vel;
   imu_queue.push_back(imu);
 }
 
-int IMUIntegration::integrate_imu(double start_time, double end_time, const gtsam::imuBias::ConstantBias& bias, int* num_integrated) {
+int IMUIntegration::integrate_imu(double start_time,
+                                  double end_time,
+                                  const gtsam::imuBias::ConstantBias& bias,
+                                  int* num_integrated) {
   *num_integrated = 0;
   imu_measurements->resetIntegrationAndSetBias(bias);
 
@@ -66,7 +77,8 @@ int IMUIntegration::integrate_imu(double start_time, double end_time, const gtsa
 
   const double dt = end_time - last_stamp;
   if (dt > 0.0) {
-    Eigen::Matrix<double, 7, 1> last_imu_frame = imu_itr == imu_queue.end() ? *(imu_itr - 1) : *imu_itr;
+    Eigen::Matrix<double, 7, 1> last_imu_frame =
+            imu_itr == imu_queue.end() ? *(imu_itr - 1) : *imu_itr;
     const auto& a = last_imu_frame.block<3, 1>(1, 0);
     const auto& w = last_imu_frame.block<3, 1>(4, 0);
     imu_measurements->integrateMeasurement(a, w, dt);
@@ -75,13 +87,12 @@ int IMUIntegration::integrate_imu(double start_time, double end_time, const gtsa
   return cursor;
 }
 
-int IMUIntegration::integrate_imu(
-  double start_time,
-  double end_time,
-  const gtsam::NavState& state,
-  const gtsam::imuBias::ConstantBias& bias,
-  std::vector<double>& pred_times,
-  std::vector<Eigen::Isometry3d>& pred_poses) {
+int IMUIntegration::integrate_imu(double start_time,
+                                  double end_time,
+                                  const gtsam::NavState& state,
+                                  const gtsam::imuBias::ConstantBias& bias,
+                                  std::vector<double>& pred_times,
+                                  std::vector<Eigen::Isometry3d>& pred_poses) {
   //
   imu_measurements->resetIntegrationAndSetBias(bias);
 
@@ -115,7 +126,8 @@ int IMUIntegration::integrate_imu(
 
   const double dt = end_time - last_stamp;
   if (dt > 0.0) {
-    Eigen::Matrix<double, 7, 1> last_imu_frame = imu_itr == imu_queue.end() ? *(imu_itr - 1) : *imu_itr;
+    Eigen::Matrix<double, 7, 1> last_imu_frame =
+            imu_itr == imu_queue.end() ? *(imu_itr - 1) : *imu_itr;
     const auto& a = last_imu_frame.block<3, 1>(1, 0);
     const auto& w = last_imu_frame.block<3, 1>(4, 0);
     imu_measurements->integrateMeasurement(a, w, dt);
@@ -129,14 +141,14 @@ int IMUIntegration::integrate_imu(
 }
 
 int IMUIntegration::integrate_imu(
-  double start_time,
-  double end_time,
-  const gtsam::NavState& state,
-  const gtsam::imuBias::ConstantBias& bias,
-  std::vector<double>& pred_times,
-  std::vector<Eigen::Isometry3d>& pred_poses,
-  std::vector<Eigen::Vector3d>& pred_vels,
-  std::vector<Eigen::Matrix<double, 7, 1>>& measurements) {
+        double start_time,
+        double end_time,
+        const gtsam::NavState& state,
+        const gtsam::imuBias::ConstantBias& bias,
+        std::vector<double>& pred_times,
+        std::vector<Eigen::Isometry3d>& pred_poses,
+        std::vector<Eigen::Vector3d>& pred_vels,
+        std::vector<Eigen::Matrix<double, 7, 1>>& measurements) {
   //
   imu_measurements->resetIntegrationAndSetBias(bias);
 
@@ -174,11 +186,13 @@ void IMUIntegration::erase_imu_data(int last) {
   imu_queue.erase(imu_queue.begin(), imu_queue.begin() + last);
 }
 
-const gtsam::PreintegratedImuMeasurements& IMUIntegration::integrated_measurements() const {
+const gtsam::PreintegratedImuMeasurements&
+IMUIntegration::integrated_measurements() const {
   return *imu_measurements;
 }
 
-const std::deque<Eigen::Matrix<double, 7, 1>>& IMUIntegration::imu_data_in_queue() const {
+const std::deque<Eigen::Matrix<double, 7, 1>>&
+IMUIntegration::imu_data_in_queue() const {
   return imu_queue;
 }
 

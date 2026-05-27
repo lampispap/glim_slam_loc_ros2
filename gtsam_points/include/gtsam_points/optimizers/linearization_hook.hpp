@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/Values.h>
 
 namespace gtsam_points {
 
 class NonlinearFactorSet {
-public:
+  public:
   virtual ~NonlinearFactorSet() {}
 
   virtual int size() const = 0;
@@ -25,11 +25,12 @@ public:
   virtual void linearize(const gtsam::Values& values) = 0;
   virtual void error(const gtsam::Values& values) = 0;
 
-  virtual std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(const gtsam::Values& linearization_point) = 0;
+  virtual std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(
+          const gtsam::Values& linearization_point) = 0;
 };
 
 class LinearizationHook {
-public:
+  public:
   LinearizationHook();
   ~LinearizationHook();
 
@@ -41,17 +42,20 @@ public:
   int evaluation_count() const;
 
   bool add(std::shared_ptr<gtsam::NonlinearFactor> factor);
-  void add(const gtsam::NonlinearFactorGraph& factors) ;
+  void add(const gtsam::NonlinearFactorGraph& factors);
 
   void linearize(const gtsam::Values& values);
   void error(const gtsam::Values& values);
 
-  std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(const gtsam::Values& linearization_point);
+  std::vector<gtsam::GaussianFactor::shared_ptr> calc_linear_factors(
+          const gtsam::Values& linearization_point);
 
-  static void register_hook(const std::function<std::shared_ptr<NonlinearFactorSet>()>& hook);
+  static void register_hook(
+          const std::function<std::shared_ptr<NonlinearFactorSet>()>& hook);
 
-private:
-  static std::vector<std::function<std::shared_ptr<NonlinearFactorSet>()>> hook_constructors;
+  private:
+  static std::vector<std::function<std::shared_ptr<NonlinearFactorSet>()>>
+          hook_constructors;
 
   std::vector<std::shared_ptr<NonlinearFactorSet>> hooks;
 };

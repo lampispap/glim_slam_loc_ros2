@@ -1,14 +1,14 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <iostream>
 #include <spdlog/spdlog.h>
-#include <boost/format.hpp>
 
 #include <Eigen/Core>
-#include <gtsam_points/types/point_cloud.hpp>
+#include <boost/format.hpp>
 #include <glim/util/raw_points.hpp>
+#include <gtsam_points/types/point_cloud.hpp>
+#include <iostream>
+#include <memory>
+#include <vector>
 
 #ifdef GLIM_ROS2
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -58,10 +58,14 @@ namespace glim {
 
 template <typename T>
 Eigen::Vector4d get_vec4(const void* x, const void* y, const void* z) {
-  return Eigen::Vector4d(*reinterpret_cast<const T*>(x), *reinterpret_cast<const T*>(y), *reinterpret_cast<const T*>(z), 1.0);
+  return Eigen::Vector4d(*reinterpret_cast<const T*>(x),
+                         *reinterpret_cast<const T*>(y),
+                         *reinterpret_cast<const T*>(z), 1.0);
 }
 
-static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const std::string& intensity_channel = "intensity") {
+static RawPoints::Ptr extract_raw_points(
+        const PointCloud2& points_msg,
+        const std::string& intensity_channel = "intensity") {
   int num_points = points_msg.width * points_msg.height;
 
   int x_type = 0;
@@ -86,7 +90,8 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
   fields["time"] = std::make_pair(&time_type, &time_offset);
   fields["time_stamp"] = std::make_pair(&time_type, &time_offset);
   fields["timestamp"] = std::make_pair(&time_type, &time_offset);
-  fields[intensity_channel] = std::make_pair(&intensity_type, &intensity_offset);
+  fields[intensity_channel] =
+          std::make_pair(&intensity_type, &intensity_offset);
   fields["rgba"] = std::make_pair(&color_type, &color_offset);
 
   for (const auto& field : points_msg.fields) {
@@ -104,7 +109,8 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
     return nullptr;
   }
 
-  if ((x_type != PointField::FLOAT32 && x_type != PointField::FLOAT64) || x_type != y_type || x_type != y_type) {
+  if ((x_type != PointField::FLOAT32 && x_type != PointField::FLOAT64) ||
+      x_type != y_type || x_type != y_type) {
     spdlog::warn("unsupported points type");
     return nullptr;
   }
@@ -113,23 +119,36 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
 
   raw_points->points.resize(num_points);
 
-  if (x_type == PointField::FLOAT32 && y_offset == x_offset + sizeof(float) && z_offset == y_offset + sizeof(float)) {
+  if (x_type == PointField::FLOAT32 && y_offset == x_offset + sizeof(float) &&
+      z_offset == y_offset + sizeof(float)) {
     // Special case: contiguous 3 floats
     for (int i = 0; i < num_points; i++) {
-      const auto* x_ptr = &points_msg.data[points_msg.point_step * i + x_offset];
-      raw_points->points[i] << Eigen::Map<const Eigen::Vector3f>(reinterpret_cast<const float*>(x_ptr)).cast<double>(), 1.0;
+      const auto* x_ptr =
+              &points_msg.data[points_msg.point_step * i + x_offset];
+      raw_points->points[i] << Eigen::Map<const Eigen::Vector3f>(
+                                       reinterpret_cast<const float*>(x_ptr))
+                                       .cast<double>(),
+              1.0;
     }
-  } else if (x_type == PointField::FLOAT64 && y_offset == x_offset + sizeof(double) && z_offset == y_offset + sizeof(double)) {
+  } else if (x_type == PointField::FLOAT64 &&
+             y_offset == x_offset + sizeof(double) &&
+             z_offset == y_offset + sizeof(double)) {
     // Special case: contiguous 3 doubles
     for (int i = 0; i < num_points; i++) {
-      const auto* x_ptr = &points_msg.data[points_msg.point_step * i + x_offset];
-      raw_points->points[i] << Eigen::Map<const Eigen::Vector3d>(reinterpret_cast<const double*>(x_ptr)), 1.0;
+      const auto* x_ptr =
+              &points_msg.data[points_msg.point_step * i + x_offset];
+      raw_points->points[i] << Eigen::Map<const Eigen::Vector3d>(
+              reinterpret_cast<const double*>(x_ptr)),
+              1.0;
     }
   } else {
     for (int i = 0; i < num_points; i++) {
-      const auto* x_ptr = &points_msg.data[points_msg.point_step * i + x_offset];
-      const auto* y_ptr = &points_msg.data[points_msg.point_step * i + y_offset];
-      const auto* z_ptr = &points_msg.data[points_msg.point_step * i + z_offset];
+      const auto* x_ptr =
+              &points_msg.data[points_msg.point_step * i + x_offset];
+      const auto* y_ptr =
+              &points_msg.data[points_msg.point_step * i + y_offset];
+      const auto* z_ptr =
+              &points_msg.data[points_msg.point_step * i + z_offset];
 
       if (x_type == PointField::FLOAT32) {
         raw_points->points[i] = get_vec4<float>(x_ptr, y_ptr, z_ptr);
@@ -143,10 +162,12 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
     raw_points->times.resize(num_points);
 
     for (int i = 0; i < num_points; i++) {
-      const auto* time_ptr = &points_msg.data[points_msg.point_step * i + time_offset];
+      const auto* time_ptr =
+              &points_msg.data[points_msg.point_step * i + time_offset];
       switch (time_type) {
         case PointField::UINT32:
-          raw_points->times[i] = *reinterpret_cast<const uint32_t*>(time_ptr) / 1e9;
+          raw_points->times[i] =
+                  *reinterpret_cast<const uint32_t*>(time_ptr) / 1e9;
           break;
         case PointField::FLOAT32:
           raw_points->times[i] = *reinterpret_cast<const float*>(time_ptr);
@@ -165,22 +186,28 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
     raw_points->intensities.resize(num_points);
 
     for (int i = 0; i < num_points; i++) {
-      const auto* intensity_ptr = &points_msg.data[points_msg.point_step * i + intensity_offset];
+      const auto* intensity_ptr =
+              &points_msg.data[points_msg.point_step * i + intensity_offset];
       switch (intensity_type) {
         case PointField::UINT8:
-          raw_points->intensities[i] = *reinterpret_cast<const std::uint8_t*>(intensity_ptr);
+          raw_points->intensities[i] =
+                  *reinterpret_cast<const std::uint8_t*>(intensity_ptr);
           break;
         case PointField::UINT16:
-          raw_points->intensities[i] = *reinterpret_cast<const std::uint16_t*>(intensity_ptr);
+          raw_points->intensities[i] =
+                  *reinterpret_cast<const std::uint16_t*>(intensity_ptr);
           break;
         case PointField::UINT32:
-          raw_points->intensities[i] = *reinterpret_cast<const std::uint32_t*>(intensity_ptr);
+          raw_points->intensities[i] =
+                  *reinterpret_cast<const std::uint32_t*>(intensity_ptr);
           break;
         case PointField::FLOAT32:
-          raw_points->intensities[i] = *reinterpret_cast<const float*>(intensity_ptr);
+          raw_points->intensities[i] =
+                  *reinterpret_cast<const float*>(intensity_ptr);
           break;
         case PointField::FLOAT64:
-          raw_points->intensities[i] = *reinterpret_cast<const double*>(intensity_ptr);
+          raw_points->intensities[i] =
+                  *reinterpret_cast<const double*>(intensity_ptr);
           break;
         default:
           spdlog::warn("unsupported intensity type {}", intensity_type);
@@ -196,8 +223,13 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
       raw_points->colors.resize(num_points);
 
       for (int i = 0; i < num_points; i++) {
-        const auto* color_ptr = &points_msg.data[points_msg.point_step * i + color_offset];
-        raw_points->colors[i] = Eigen::Matrix<unsigned char, 4, 1>(reinterpret_cast<const std::uint8_t*>(color_ptr)).cast<double>() / 255.0;
+        const auto* color_ptr =
+                &points_msg.data[points_msg.point_step * i + color_offset];
+        raw_points->colors[i] =
+                Eigen::Matrix<unsigned char, 4, 1>(
+                        reinterpret_cast<const std::uint8_t*>(color_ptr))
+                        .cast<double>() /
+                255.0;
       }
     }
   }
@@ -206,11 +238,16 @@ static RawPoints::Ptr extract_raw_points(const PointCloud2& points_msg, const st
   return raw_points;
 }
 
-static RawPoints::Ptr extract_raw_points(const PointCloud2ConstPtr& points_msg, const std::string& intensity_channel = "intensity") {
+static RawPoints::Ptr extract_raw_points(
+        const PointCloud2ConstPtr& points_msg,
+        const std::string& intensity_channel = "intensity") {
   return extract_raw_points(*points_msg);
 }
 
-static PointCloud2ConstPtr frame_to_pointcloud2(const std::string& frame_id, const double stamp, const gtsam_points::PointCloud& frame) {
+static PointCloud2ConstPtr frame_to_pointcloud2(
+        const std::string& frame_id,
+        const double stamp,
+        const gtsam_points::PointCloud& frame) {
   PointCloud2Ptr msg(new PointCloud2);
   msg->header.frame_id = frame_id;
   msg->header.stamp = from_sec(stamp);
@@ -235,7 +272,8 @@ static PointCloud2ConstPtr frame_to_pointcloud2(const std::string& frame_id, con
 
   msg->data.resize(sizeof(float) * num_fields * frame.size());
   for (int i = 0; i < frame.size(); i++) {
-    float* point = reinterpret_cast<float*>(msg->data.data() + msg->point_step * i);
+    float* point =
+            reinterpret_cast<float*>(msg->data.data() + msg->point_step * i);
     for (int j = 0; j < 3; j++) {
       point[j] = frame.points[i][j];
     }

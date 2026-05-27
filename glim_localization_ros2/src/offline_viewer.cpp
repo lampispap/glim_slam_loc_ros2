@@ -1,15 +1,11 @@
-#include <iostream>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-
 #include <glim/util/config.hpp>
 #include <glim/viewer/offline_viewer.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <glim_ros/glim_editor.hpp>
-
-
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 int main(int argc, char** argv) {
-
   rclcpp::init(argc, argv);
   rclcpp::executors::SingleThreadedExecutor exec;
   rclcpp::NodeOptions options;
@@ -24,7 +20,8 @@ int main(int argc, char** argv) {
 
   // if (config_path[0] != '/') {
   //   // config_path is relative to the glim directory
-  //   config_path = ament_index_cpp::get_package_share_directory("glim") + "/" + config_path;
+  //   config_path = ament_index_cpp::get_package_share_directory("glim") + "/"
+  //   + config_path;
   // }
 
   // std::cout << "config_path: " << config_path << std::endl;
@@ -38,11 +35,7 @@ int main(int argc, char** argv) {
 
   glim::OfflineViewer viewer(init_map_path);
 
-  std::thread viewer_thread([&](){
-    viewer.wait();
-  });
-
-
+  std::thread viewer_thread([&]() { viewer.wait(); });
 
   rclcpp::spin(glim);
   rclcpp::shutdown();

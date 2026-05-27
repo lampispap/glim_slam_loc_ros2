@@ -1,10 +1,10 @@
 #pragma once
 
 #include <atomic>
-#include <mutex>
-#include <thread>
 #include <glim/mapping/global_mapping.hpp>
 #include <glim/util/concurrent_vector.hpp>
+#include <mutex>
+#include <thread>
 
 namespace spdlog {
 class logger;
@@ -13,18 +13,22 @@ class logger;
 namespace glim {
 
 /**
- * @brief Global mapping executor to wrap and asynchronously run a global mapping object
+ * @brief Global mapping executor to wrap and asynchronously run a global
+ * mapping object
  * @note  All the exposed public methods except for save() are thread-safe
  *
  */
 class AsyncGlobalMapping {
-public:
+  public:
   /**
    * @brief Construct a new Async Global Mapping object
    * @param global_mapping         Global mapping object
-   * @param optimization_interval  Optimizer is updated every this interval even if no additional values and factors are given
+   * @param optimization_interval  Optimizer is updated every this interval even
+   * if no additional values and factors are given
    */
-  AsyncGlobalMapping(const std::shared_ptr<glim::GlobalMappingBase>& global_mapping, const int optimization_interval_sec = 5);
+  AsyncGlobalMapping(
+          const std::shared_ptr<glim::GlobalMappingBase>& global_mapping,
+          const int optimization_interval_sec = 5);
 
   /**
    * @brief Destroy the Async Global Mapping object
@@ -44,7 +48,9 @@ public:
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
+  void insert_imu(const double stamp,
+                  const Eigen::Vector3d& linear_acc,
+                  const Eigen::Vector3d& angular_vel);
 
   /**
    * @brief Insert a SubMap
@@ -58,9 +64,11 @@ public:
    * @param left_angular_vel    Left wheel angular velocity rad/s
    * @param right_angular_vel   Right wheel angular velocity rad/s
    */
-  void insert_gps(const double stamp, const double lat, const double lon, const double alt,
-    const double hdop);
-
+  void insert_gps(const double stamp,
+                  const double lat,
+                  const double lon,
+                  const double alt,
+                  const double hdop);
 
   /**
    * @brief Wait for the global mapping thread
@@ -75,30 +83,33 @@ public:
 
   /**
    * @brief Save the mapping result
-   * @note  This method may not be thread-safe and is expected to be called after join()
+   * @note  This method may not be thread-safe and is expected to be called
+   * after join()
    * @param path    Save path
    */
   void save(const std::string& path);
 
   std::vector<Eigen::Vector4d> export_points();
 
-  void relocalize(EstimationFrame::ConstPtr latest_frame, const Eigen::Isometry3d & initial_pose);
+  void relocalize(EstimationFrame::ConstPtr latest_frame,
+                  const Eigen::Isometry3d& initial_pose);
 
   bool load(const std::string& path);
 
-private:
+  private:
   void run();
 
-private:
-  std::atomic_bool kill_switch;      ///< Flag to stop the thread immediately (Hard kill switch)
-  std::atomic_bool end_of_sequence;  ///< Flag to stop the thread when the input queues become empty (Soft kill switch)
+  private:
+  std::atomic_bool kill_switch;  ///< Flag to stop the thread immediately (Hard
+                                 ///< kill switch)
+  std::atomic_bool end_of_sequence;  ///< Flag to stop the thread when the input
+                                     ///< queues become empty (Soft kill switch)
   std::thread thread;
 
   ConcurrentVector<std::pair<double, cv::Mat>> input_image_queue;
   ConcurrentVector<Eigen::Matrix<double, 7, 1>> input_imu_queue;
   ConcurrentVector<SubMap::Ptr> input_submap_queue;
   ConcurrentVector<Eigen::Matrix<double, 5, 1>> input_gps_queue;
-
 
   int optimization_interval;
   std::atomic_bool request_to_optimize;

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
-#include <gtsam_points/optimizers/levenberg_marquardt_optimization_status.hpp>
-
-#include <sstream>
 #include <boost/format.hpp>
+#include <gtsam_points/optimizers/levenberg_marquardt_optimization_status.hpp>
+#include <sstream>
 
 namespace gtsam_points {
 

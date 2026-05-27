@@ -1,11 +1,11 @@
 #pragma once
 
-#include <deque>
-#include <vector>
-#include <mutex>
 #include <atomic>
-#include <optional>
 #include <condition_variable>
+#include <deque>
+#include <mutex>
+#include <optional>
+#include <vector>
 
 namespace glim {
 
@@ -13,7 +13,7 @@ namespace glim {
  * @brief Queue data policy
  */
 struct DataStorePolicy {
-public:
+  public:
   template <typename T, typename Alloc>
   void regulate(std::deque<T, Alloc>& queue) const {
     if (queue.size() < max_size) {
@@ -29,25 +29,32 @@ public:
   }
 
   static DataStorePolicy UNLIMITED() { return DataStorePolicy(); }
-  static DataStorePolicy UPTO(const size_t max_size, const bool pop_front = true) { return DataStorePolicy{max_size, pop_front}; }
+  static DataStorePolicy UPTO(const size_t max_size,
+                              const bool pop_front = true) {
+    return DataStorePolicy{max_size, pop_front};
+  }
 
-public:
+  public:
   const size_t max_size = std::numeric_limits<size_t>::max();
   const bool pop_front = true;
 };
 
 /**
  * @brief Simple thread-safe vector with mutex-lock.
- * @note  This class is performant in the single-thread-input single-thread-output situation.
- *        In the multi-thread-input multi-thread-output situation, consider using concurrent containers in TBB.
+ * @note  This class is performant in the single-thread-input
+ * single-thread-output situation. In the multi-thread-input multi-thread-output
+ * situation, consider using concurrent containers in TBB.
  *
  * @tparam T      Data type
  * @tparam Alloc  Allocator
  */
 template <typename T, typename Alloc = std::allocator<T>>
 class ConcurrentVector {
-public:
-  ConcurrentVector(const DataStorePolicy& policy = DataStorePolicy::UNLIMITED()) : policy(policy) { end_of_data = false; }
+  public:
+  ConcurrentVector(const DataStorePolicy& policy = DataStorePolicy::UNLIMITED())
+      : policy(policy) {
+    end_of_data = false;
+  }
 
   void submit_end_of_data() {
     end_of_data = true;
@@ -124,7 +131,8 @@ public:
 
   /**
    * @brief Get the first element in the queue.
-   *        If the queue is empty, this method waits until a new data arrives or EOD is submitted.
+   *        If the queue is empty, this method waits until a new data arrives or
+   * EOD is submitted.
    * @return  nullopt if the queue is empty and EOD is submitted.
    */
   std::optional<T> pop_wait() {
@@ -146,7 +154,8 @@ public:
 
   /**
    * @brief Get all the data and clear the container.
-   *        If the queue is empty, this method waits until a new data arrives or EOD is submitted.
+   *        If the queue is empty, this method waits until a new data arrives or
+   * EOD is submitted.
    * @return std::vector<T, Alloc>   All data or empty if EOD is submitted.
    */
   std::vector<T, Alloc> get_all_and_clear_wait() {
@@ -198,7 +207,7 @@ public:
     return buffer;
   }
 
-private:
+  private:
   const DataStorePolicy policy;
 
   std::atomic_bool end_of_data;

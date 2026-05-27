@@ -1,21 +1,26 @@
-#include <glim/mapping/async_global_mapping.hpp>
-
 #include <spdlog/spdlog.h>
 
-#include <glim/util/logging.hpp>
+#include <glim/mapping/async_global_mapping.hpp>
 #include <glim/mapping/callbacks.hpp>
+#include <glim/util/logging.hpp>
 
 namespace glim {
 
-AsyncGlobalMapping::AsyncGlobalMapping(const std::shared_ptr<glim::GlobalMappingBase>& global_mapping, const int optimization_interval)
-: global_mapping(global_mapping),
-  optimization_interval(optimization_interval),
-  logger(create_module_logger("global")) {
+AsyncGlobalMapping::AsyncGlobalMapping(
+        const std::shared_ptr<glim::GlobalMappingBase>& global_mapping,
+        const int optimization_interval)
+    : global_mapping(global_mapping),
+      optimization_interval(optimization_interval),
+      logger(create_module_logger("global")) {
   request_to_optimize = false;
   request_to_find_overlapping_submaps.store(-1.0);
 
-  GlobalMappingCallbacks::request_to_optimize.add([this] { request_to_optimize = true; });
-  GlobalMappingCallbacks::request_to_find_overlapping_submaps.add([this](double min_overlap) { request_to_find_overlapping_submaps.store(min_overlap); });
+  GlobalMappingCallbacks::request_to_optimize.add(
+          [this] { request_to_optimize = true; });
+  GlobalMappingCallbacks::request_to_find_overlapping_submaps.add(
+          [this](double min_overlap) {
+            request_to_find_overlapping_submaps.store(min_overlap);
+          });
 
   kill_switch = false;
   end_of_sequence = false;
@@ -27,11 +32,14 @@ AsyncGlobalMapping::~AsyncGlobalMapping() {
   join();
 }
 
-void AsyncGlobalMapping::insert_image(const double stamp, const cv::Mat& image) {
+void AsyncGlobalMapping::insert_image(const double stamp,
+                                      const cv::Mat& image) {
   input_image_queue.push_back(std::make_pair(stamp, image));
 }
 
-void AsyncGlobalMapping::insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel) {
+void AsyncGlobalMapping::insert_imu(const double stamp,
+                                    const Eigen::Vector3d& linear_acc,
+                                    const Eigen::Vector3d& angular_vel) {
   Eigen::Matrix<double, 7, 1> imu_data;
   imu_data << stamp, linear_acc, angular_vel;
   input_imu_queue.push_back(imu_data);
@@ -52,11 +60,10 @@ void AsyncGlobalMapping::join() {
   // }
 }
 
-int AsyncGlobalMapping::workload() const {
-  return input_submap_queue.size();
-}
+int AsyncGlobalMapping::workload() const { return input_submap_queue.size(); }
 
-void AsyncGlobalMapping::relocalize(EstimationFrame::ConstPtr latest_frame, const Eigen::Isometry3d & initial_pose) {
+void AsyncGlobalMapping::relocalize(EstimationFrame::ConstPtr latest_frame,
+                                    const Eigen::Isometry3d& initial_pose) {
   global_mapping->relocalize(latest_frame, initial_pose);
 }
 
@@ -64,12 +71,15 @@ bool AsyncGlobalMapping::load(const std::string& path) {
   return global_mapping->load(path);
 }
 
-void AsyncGlobalMapping::insert_gps(const double stamp, const double lat, const double lon, const double alt, const double hdop){
+void AsyncGlobalMapping::insert_gps(const double stamp,
+                                    const double lat,
+                                    const double lon,
+                                    const double alt,
+                                    const double hdop) {
   Eigen::Matrix<double, 5, 1> gps_data;
   gps_data << stamp, lat, lon, alt, hdop;
   input_gps_queue.push_back(gps_data);
 }
-
 
 void AsyncGlobalMapping::save(const std::string& path) {
   logger->info("saving to {}...", path);
@@ -99,13 +109,16 @@ void AsyncGlobalMapping::run() {
         break;
       }
 
-      const double min_overlap = request_to_find_overlapping_submaps.exchange(-1.0);
+      const double min_overlap =
+              request_to_find_overlapping_submaps.exchange(-1.0);
       if (min_overlap > 0.0) {
         std::lock_guard<std::mutex> lock(global_mapping_mutex);
         global_mapping->find_overlapping_submaps(min_overlap);
       }
 
-      if (request_to_optimize || std::chrono::high_resolution_clock::now() - last_optimization_time > std::chrono::seconds(optimization_interval)) {
+      if (request_to_optimize ||
+          std::chrono::high_resolution_clock::now() - last_optimization_time >
+                  std::chrono::seconds(optimization_interval)) {
         std::lock_guard<std::mutex> lock(global_mapping_mutex);
         logger->debug("Calling global optimize()");
         request_to_optimize = false;
@@ -125,10 +138,11 @@ void AsyncGlobalMapping::run() {
       global_mapping->insert_imu(stamp, linear_acc, angular_vel);
     }
 
-    for (const auto& gps: gps_msgs) {
+    for (const auto& gps : gps_msgs) {
       const double stamp = gps[0];
 
-      global_mapping->insert_gps(stamp, Eigen::Vector4d(gps[1], gps[2], gps[3], gps[4]));
+      global_mapping->insert_gps(
+              stamp, Eigen::Vector4d(gps[1], gps[2], gps[3], gps[4]));
     }
 
     for (const auto& image : images) {

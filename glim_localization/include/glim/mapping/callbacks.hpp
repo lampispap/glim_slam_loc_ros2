@@ -1,8 +1,8 @@
 #pragma once
 
-#include <glim/util/callback_slot.hpp>
-#include <glim/odometry/estimation_frame.hpp>
 #include <glim/mapping/sub_map.hpp>
+#include <glim/odometry/estimation_frame.hpp>
+#include <glim/util/callback_slot.hpp>
 #include <map>
 namespace cv {
 class Mat;
@@ -31,7 +31,8 @@ struct SubMappingCallbacks {
    * @param stamp  Timestamp
    * @param image  Image
    */
-  static CallbackSlot<void(const double stamp, const cv::Mat& image)> on_insert_image;
+  static CallbackSlot<void(const double stamp, const cv::Mat& image)>
+          on_insert_image;
 
   /**
    * @brief IMU input callback
@@ -39,34 +40,44 @@ struct SubMappingCallbacks {
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  static CallbackSlot<void(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel)> on_insert_imu;
+  static CallbackSlot<void(const double stamp,
+                           const Eigen::Vector3d& linear_acc,
+                           const Eigen::Vector3d& angular_vel)>
+          on_insert_imu;
 
   /**
    * @brief Odometry estimation result input callback
    * @param frame  Marginalized odometry estimation frame
    */
-  static CallbackSlot<void(const EstimationFrame::ConstPtr& frame)> on_insert_frame;
+  static CallbackSlot<void(const EstimationFrame::ConstPtr& frame)>
+          on_insert_frame;
 
   /**
    * @brief SubMap keyframe creation callback
    * @param id        SubMap ID
    * @param keyframe  New keyframe
    */
-  static CallbackSlot<void(int id, const EstimationFrame::ConstPtr& keyframe)> on_new_keyframe;
+  static CallbackSlot<void(int id, const EstimationFrame::ConstPtr& keyframe)>
+          on_new_keyframe;
 
   /**
    * @brief SubMap optimization callback (just before optimization)
    * @param graph   Factor graph
    * @param values  Values to be optimized
    */
-  static CallbackSlot<void(gtsam::NonlinearFactorGraph& graph, gtsam::Values& values)> on_optimize_submap;
+  static CallbackSlot<void(gtsam::NonlinearFactorGraph& graph,
+                           gtsam::Values& values)>
+          on_optimize_submap;
 
   /**
    * @brief Optimization status callback
    * @param status  Optimization status
    * @param values  Current estimate
    */
-  static CallbackSlot<void(const gtsam_points::LevenbergMarquardtOptimizationStatus& status, const gtsam::Values& values)> on_optimization_status;
+  static CallbackSlot<void(
+          const gtsam_points::LevenbergMarquardtOptimizationStatus& status,
+          const gtsam::Values& values)>
+          on_optimization_status;
 
   /**
    * @brief SubMap creation callback
@@ -88,7 +99,8 @@ struct GlobalMappingCallbacks {
    * @param stamp  Timestamp
    * @param image  Image
    */
-  static CallbackSlot<void(const double stamp, const cv::Mat& image)> on_insert_image;
+  static CallbackSlot<void(const double stamp, const cv::Mat& image)>
+          on_insert_image;
 
   /**
    * @brief IMU input callback
@@ -96,7 +108,10 @@ struct GlobalMappingCallbacks {
    * @param linear_acc   Linear acceleration
    * @param angular_vel  Angular velocity
    */
-  static CallbackSlot<void(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel)> on_insert_imu;
+  static CallbackSlot<void(const double stamp,
+                           const Eigen::Vector3d& linear_acc,
+                           const Eigen::Vector3d& angular_vel)>
+          on_insert_imu;
 
   /**
    * @brief SubMap input callback
@@ -112,7 +127,8 @@ struct GlobalMappingCallbacks {
    * @note  submap->T_world_origin are updated in the global mapping thread
    *        Accessing them from another thread is not thread-safe
    */
-  static CallbackSlot<void(const std::vector<SubMap::Ptr>& submaps)> on_update_submaps;
+  static CallbackSlot<void(const std::vector<SubMap::Ptr>& submaps)>
+          on_update_submaps;
 
   /**
    * @brief Global optimization callback (just before optimization)
@@ -120,14 +136,19 @@ struct GlobalMappingCallbacks {
    * @param new_factors  New factors to be inserted into the factor graph
    * @param new_values   New values to be inserted into the factor graph
    */
-  static CallbackSlot<void(gtsam_points::ISAM2Ext& isam2, gtsam::NonlinearFactorGraph& new_factors, gtsam::Values& new_values)> on_smoother_update;
+  static CallbackSlot<void(gtsam_points::ISAM2Ext& isam2,
+                           gtsam::NonlinearFactorGraph& new_factors,
+                           gtsam::Values& new_values)>
+          on_smoother_update;
 
   /**
    * @brief Global optimization result callback (just after optimization)
    * @param isam2   iSAM2 optimizer
    * @param result  iSAM2 result
    */
-  static CallbackSlot<void(gtsam_points::ISAM2Ext& isam2, const gtsam_points::ISAM2ResultExt& result)> on_smoother_update_result;
+  static CallbackSlot<void(gtsam_points::ISAM2Ext& isam2,
+                           const gtsam_points::ISAM2ResultExt& result)>
+          on_smoother_update_result;
 
   /**
    * @brief Request the global mapping module to perform optimization
@@ -148,15 +169,15 @@ struct GlobalMappingCallbacks {
  * @brief Global mapping-related callbacks
  *
  */
-struct LocalizationCallbacks: public GlobalMappingCallbacks {
-
-    /**
+struct LocalizationCallbacks : public GlobalMappingCallbacks {
+  /**
    * @brief SubMap input callback
    * @param submap  SubMap
    * @note  submap->T_world_origin is updated in the global mapping thread
    *        Accessing it from another thread is not thread-safe
    */
-  static CallbackSlot<void(const SubMap::ConstPtr& submap)> on_insert_localization_submap;
+  static CallbackSlot<void(const SubMap::ConstPtr& submap)>
+          on_insert_localization_submap;
 
   /**
    * @brief SubMap states update callback
@@ -164,12 +185,15 @@ struct LocalizationCallbacks: public GlobalMappingCallbacks {
    * @note  submap->T_world_origin are updated in the global mapping thread
    *        Accessing them from another thread is not thread-safe
    */
-  static CallbackSlot<void(const std::vector<SubMap::Ptr>& submaps)> on_update_localization_submaps;
+  static CallbackSlot<void(const std::vector<SubMap::Ptr>& submaps)>
+          on_update_localization_submaps;
 
   static CallbackSlot<void()> on_relocalization_success;
   static CallbackSlot<void()> on_relocalization_failed;
 
-  static CallbackSlot<void(gtsam_points::PointCloud::ConstPtr query_submap, const Eigen::Isometry3d &pose)> on_update_submap_initial_pose;
+  static CallbackSlot<void(gtsam_points::PointCloud::ConstPtr query_submap,
+                           const Eigen::Isometry3d& pose)>
+          on_update_submap_initial_pose;
 
   /**
    * @brief SubMap states update callback
@@ -177,7 +201,7 @@ struct LocalizationCallbacks: public GlobalMappingCallbacks {
    * @note  submap->T_world_origin are updated in the global mapping thread
    *        Accessing them from another thread is not thread-safe
    */
-  static CallbackSlot<void(const std::map<int, SubMap::Ptr>& submaps)> on_update_active_submaps;
-
+  static CallbackSlot<void(const std::map<int, SubMap::Ptr>& submaps)>
+          on_update_active_submaps;
 };
-}
+}  // namespace glim

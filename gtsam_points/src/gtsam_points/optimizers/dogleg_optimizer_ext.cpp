@@ -16,17 +16,16 @@
  * @date   Feb 26, 2012
  */
 
-#include <gtsam_points/optimizers/dogleg_optimizer_ext.hpp>
-#include <gtsam_points/optimizers/dogleg_optimizer_ext_impl.hpp>
-
-#include <gtsam/nonlinear/DoglegOptimizer.h>
-#include <gtsam/nonlinear/internal/NonlinearOptimizerState.h>
-#include <gtsam/linear/GaussianBayesTree.h>
 #include <gtsam/linear/GaussianBayesNet.h>
+#include <gtsam/linear/GaussianBayesTree.h>
 #include <gtsam/linear/GaussianFactorGraph.h>
 #include <gtsam/linear/VectorValues.h>
+#include <gtsam/nonlinear/DoglegOptimizer.h>
+#include <gtsam/nonlinear/internal/NonlinearOptimizerState.h>
 
 #include <boost/algorithm/string.hpp>
+#include <gtsam_points/optimizers/dogleg_optimizer_ext.hpp>
+#include <gtsam_points/optimizers/dogleg_optimizer_ext_impl.hpp>
 
 namespace gtsam_points {
 
@@ -37,19 +36,34 @@ namespace internal {
 struct DoglegState : public gtsam::internal::NonlinearOptimizerState {
   const double delta;
 
-  DoglegState(const Values& values, double error, double delta, unsigned int iterations = 0) : NonlinearOptimizerState(values, error, iterations), delta(delta) {}
+  DoglegState(const Values& values,
+              double error,
+              double delta,
+              unsigned int iterations = 0)
+      : NonlinearOptimizerState(values, error, iterations), delta(delta) {}
 };
 }  // namespace internal
 
 typedef internal::DoglegState State;
 
 /* ************************************************************************* */
-DoglegOptimizerExt::DoglegOptimizerExt(const NonlinearFactorGraph& graph, const Values& initialValues, const DoglegParams& params)
-: NonlinearOptimizer(graph, std::unique_ptr<State>(new State(initialValues, graph.error(initialValues), params.deltaInitial))),
-  params_(ensureHasOrdering(params, graph)) {}
+DoglegOptimizerExt::DoglegOptimizerExt(const NonlinearFactorGraph& graph,
+                                       const Values& initialValues,
+                                       const DoglegParams& params)
+    : NonlinearOptimizer(
+              graph,
+              std::unique_ptr<State>(new State(initialValues,
+                                               graph.error(initialValues),
+                                               params.deltaInitial))),
+      params_(ensureHasOrdering(params, graph)) {}
 
-DoglegOptimizerExt::DoglegOptimizerExt(const NonlinearFactorGraph& graph, const Values& initialValues, const Ordering& ordering)
-: NonlinearOptimizer(graph, std::unique_ptr<State>(new State(initialValues, graph.error(initialValues), 1.0))) {
+DoglegOptimizerExt::DoglegOptimizerExt(const NonlinearFactorGraph& graph,
+                                       const Values& initialValues,
+                                       const Ordering& ordering)
+    : NonlinearOptimizer(
+              graph,
+              std::unique_ptr<State>(new State(
+                      initialValues, graph.error(initialValues), 1.0))) {
   params_.ordering = ordering;
 }
 
@@ -69,32 +83,45 @@ GaussianFactorGraph::shared_ptr DoglegOptimizerExt::iterate(void) {
   DoglegOptimizerImplExt::IterationResult result;
 
   if (params_.isMultifrontal()) {
-    GaussianBayesTree bt = *linear->eliminateMultifrontal(*params_.ordering, params_.getEliminationFunction());
+    GaussianBayesTree bt = *linear->eliminateMultifrontal(
+            *params_.ordering, params_.getEliminationFunction());
     VectorValues dx_u = bt.optimizeGradientSearch();
     VectorValues dx_n = bt.optimize();
-    result = DoglegOptimizerImplExt::Iterate(getDelta(), DoglegOptimizerImplExt::ONE_STEP_PER_ITERATION, dx_u, dx_n, bt, graph_, state_->values, state_->error, dlVerbose);
+    result = DoglegOptimizerImplExt::Iterate(
+            getDelta(), DoglegOptimizerImplExt::ONE_STEP_PER_ITERATION, dx_u,
+            dx_n, bt, graph_, state_->values, state_->error, dlVerbose);
   } else if (params_.isSequential()) {
-    GaussianBayesNet bn = *linear->eliminateSequential(*params_.ordering, params_.getEliminationFunction());
+    GaussianBayesNet bn = *linear->eliminateSequential(
+            *params_.ordering, params_.getEliminationFunction());
     VectorValues dx_u = bn.optimizeGradientSearch();
     VectorValues dx_n = bn.optimize();
-    result = DoglegOptimizerImplExt::Iterate(getDelta(), DoglegOptimizerImplExt::ONE_STEP_PER_ITERATION, dx_u, dx_n, bn, graph_, state_->values, state_->error, dlVerbose);
+    result = DoglegOptimizerImplExt::Iterate(
+            getDelta(), DoglegOptimizerImplExt::ONE_STEP_PER_ITERATION, dx_u,
+            dx_n, bn, graph_, state_->values, state_->error, dlVerbose);
   } else if (params_.isIterative()) {
-    throw std::runtime_error("Dogleg is not currently compatible with the linear conjugate gradient solver");
+    throw std::runtime_error(
+            "Dogleg is not currently compatible with the linear conjugate "
+            "gradient solver");
   } else {
-    throw std::runtime_error("Optimization parameter is invalid: DoglegParams::elimination");
+    throw std::runtime_error(
+            "Optimization parameter is invalid: DoglegParams::elimination");
   }
 
   // Maybe show output
-  if (params_.verbosity >= NonlinearOptimizerParams::DELTA) result.dx_d.print("delta");
+  if (params_.verbosity >= NonlinearOptimizerParams::DELTA)
+    result.dx_d.print("delta");
 
   // Create new state with new values and new error
-  state_.reset(new State(state_->values.retract(result.dx_d), result.f_error, result.delta, state_->iterations + 1));
+  state_.reset(new State(state_->values.retract(result.dx_d), result.f_error,
+                         result.delta, state_->iterations + 1));
   return linear;
 }
 
 /* ************************************************************************* */
-DoglegParams DoglegOptimizerExt::ensureHasOrdering(DoglegParams params, const NonlinearFactorGraph& graph) const {
-  if (!params.ordering) params.ordering = Ordering::Create(params.orderingType, graph);
+DoglegParams DoglegOptimizerExt::ensureHasOrdering(
+        DoglegParams params, const NonlinearFactorGraph& graph) const {
+  if (!params.ordering)
+    params.ordering = Ordering::Create(params.orderingType, graph);
   return params;
 }
 

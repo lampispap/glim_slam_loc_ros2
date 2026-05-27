@@ -11,31 +11,32 @@
 
 /**
  * @file    LevenbergMarquardtOptimizer.cpp
- * @brief   A nonlinear optimizer that uses the Levenberg-Marquardt trust-region scheme
+ * @brief   A nonlinear optimizer that uses the Levenberg-Marquardt trust-region
+ * scheme
  * @author  Richard Roberts
  * @author  Frank Dellaert
  * @author  Luca Carlone
  * @date    Feb 26, 2012
  */
 
-#include <gtsam_points/optimizers/levenberg_marquardt_ext.hpp>
-
-#include <gtsam_points/optimizers/linearization_hook.hpp>
-
 #include <gtsam/base/Vector.h>
+#include <gtsam/inference/Ordering.h>
 #include <gtsam/linear/GaussianFactorGraph.h>
+#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/internal/LevenbergMarquardtState.h>
-#include <gtsam/inference/Ordering.h>
 
 #include <boost/format.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <gtsam_points/optimizers/levenberg_marquardt_ext.hpp>
+#include <gtsam_points/optimizers/linearization_hook.hpp>
 
 namespace gtsam_points {
 
 using State = gtsam::internal::LevenbergMarquardtState;
 
-LevenbergMarquardtExtParams LevenbergMarquardtExtParams::ensureHasOrdering(const gtsam::NonlinearFactorGraph& graph) const {
+LevenbergMarquardtExtParams LevenbergMarquardtExtParams::ensureHasOrdering(
+        const gtsam::NonlinearFactorGraph& graph) const {
   if (ordering) {
     return *this;
   }
@@ -46,13 +47,16 @@ LevenbergMarquardtExtParams LevenbergMarquardtExtParams::ensureHasOrdering(const
 }
 
 LevenbergMarquardtOptimizerExt::LevenbergMarquardtOptimizerExt(
-  const gtsam::NonlinearFactorGraph& graph,
-  const gtsam::Values& initialValues,
-  const LevenbergMarquardtExtParams& params)
-: gtsam::NonlinearOptimizer(
-    graph,
-    std::unique_ptr<State>(new State(initialValues, std::numeric_limits<double>::max(), params.lambdaInitial, params.lambdaFactor))),
-  params_(params.ensureHasOrdering(graph)) {
+        const gtsam::NonlinearFactorGraph& graph,
+        const gtsam::Values& initialValues,
+        const LevenbergMarquardtExtParams& params)
+    : gtsam::NonlinearOptimizer(graph,
+                                std::unique_ptr<State>(new State(
+                                        initialValues,
+                                        std::numeric_limits<double>::max(),
+                                        params.lambdaInitial,
+                                        params.lambdaFactor))),
+      params_(params.ensureHasOrdering(graph)) {
   // find gpu factors
   linearization_hook.reset(new LinearizationHook());
   linearization_hook->add(graph);
@@ -61,8 +65,8 @@ LevenbergMarquardtOptimizerExt::LevenbergMarquardtOptimizerExt(
 LevenbergMarquardtOptimizerExt::~LevenbergMarquardtOptimizerExt() {}
 
 gtsam::GaussianFactorGraph LevenbergMarquardtOptimizerExt::buildDampedSystem(
-  const gtsam::GaussianFactorGraph& linear,
-  const gtsam::VectorValues& sqrtHessianDiagonal) const {
+        const gtsam::GaussianFactorGraph& linear,
+        const gtsam::VectorValues& sqrtHessianDiagonal) const {
   auto currentState = static_cast<const State*>(state_.get());
   if (params_.diagonalDamping) {
     return currentState->buildDampedSystem(linear, sqrtHessianDiagonal);
@@ -72,9 +76,9 @@ gtsam::GaussianFactorGraph LevenbergMarquardtOptimizerExt::buildDampedSystem(
 }
 
 bool LevenbergMarquardtOptimizerExt::tryLambda(
-  const gtsam::GaussianFactorGraph& linear,
-  const gtsam::VectorValues& sqrtHessianDiagonal,
-  double oldError) {
+        const gtsam::GaussianFactorGraph& linear,
+        const gtsam::VectorValues& sqrtHessianDiagonal,
+        double oldError) {
   auto lambda_iteration_start_time = std::chrono::high_resolution_clock::now();
 
   auto currentState = static_cast<const State*>(state_.get());
@@ -122,14 +126,16 @@ bool LevenbergMarquardtOptimizerExt::tryLambda(
       newError = graph_.error(newValues);
       costChange = oldError - newError;
 
-      if (linearizedCostChange > std::numeric_limits<double>::epsilon() * oldLinearizedError) {
+      if (linearizedCostChange >
+          std::numeric_limits<double>::epsilon() * oldLinearizedError) {
         // the (linear) error has to decrease to satisfy this condition
         // fidelity of linearized model VS original system between
         modelFidelity = costChange / linearizedCostChange;
-        // if we decrease the error in the nonlinear system and modelFidelity is above threshold
+        // if we decrease the error in the nonlinear system and modelFidelity is
+        // above threshold
         step_is_successful = modelFidelity > params_.minModelFidelity;
-      }  // else we consider the step non successful and we either increase lambda or stop if error
-         // change is small
+      }  // else we consider the step non successful and we either increase
+         // lambda or stop if error change is small
 
       double minAbsoluteTolerance = params_.relativeErrorTol * oldError;
       // if the change is small we terminate
@@ -149,11 +155,19 @@ bool LevenbergMarquardtOptimizerExt::tryLambda(
     status.solve_success = systemSolvedSuccessfully;
 
     auto t = std::chrono::high_resolution_clock::now();
-    status.elapsed_time = 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(t - optimization_start_time).count();
+    status.elapsed_time =
+            1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(
+                           t - optimization_start_time)
+                           .count();
     status.linearization_time = 1e-9 * linearization_time.count();
-    status.lambda_iteration_time = 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(t - lambda_iteration_start_time).count();
+    status.lambda_iteration_time =
+            1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(
+                           t - lambda_iteration_start_time)
+                           .count();
     status.linear_solver_time =
-      1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(linear_solver_end_time - linear_solver_start_time).count();
+            1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(
+                           linear_solver_end_time - linear_solver_start_time)
+                           .count();
     linearization_time = std::chrono::nanoseconds(0);
 
     if (params_.status_msg_callback) {
@@ -176,26 +190,34 @@ bool LevenbergMarquardtOptimizerExt::tryLambda(
   if (step_is_successful) {
     // we have successfully decreased the cost and we have good modelFidelity
     // NOTE(frank): As we return immediately after this, we move the newValues
-    // TODO(frank): make Values actually support move. Does not seem to happen now.
-    state_ = currentState->decreaseLambda(params_, modelFidelity, std::move(newValues), newError);
+    // TODO(frank): make Values actually support move. Does not seem to happen
+    // now.
+    state_ = currentState->decreaseLambda(params_, modelFidelity,
+                                          std::move(newValues), newError);
     return true;
-  } else if (!stopSearchingLambda) {         // we failed to solved the system or had no decrease in cost
+  } else if (!stopSearchingLambda) {  // we failed to solved the system or had
+                                      // no decrease in cost
     State* modifiedState = static_cast<State*>(state_.get());
-    modifiedState->increaseLambda(params_);  // TODO(frank): make this functional with Values move
+    modifiedState->increaseLambda(
+            params_);  // TODO(frank): make this functional with Values move
 
     // check if lambda is too big
     if (modifiedState->lambda >= params_.lambdaUpperBound) {
-      std::cout << "Warning:  Levenberg-Marquardt giving up because cannot decrease error with maximum lambda" << std::endl;
+      std::cout << "Warning:  Levenberg-Marquardt giving up because cannot "
+                   "decrease error with maximum lambda"
+                << std::endl;
       return true;
     } else {
       return false;  // only case where we will keep trying
     }
-  } else {           // the change in the cost is very small and it is not worth trying bigger lambdas
+  } else {  // the change in the cost is very small and it is not worth trying
+            // bigger lambdas
     return true;
   }
 }
 
-gtsam::GaussianFactorGraph::shared_ptr LevenbergMarquardtOptimizerExt::iterate() {
+gtsam::GaussianFactorGraph::shared_ptr
+LevenbergMarquardtOptimizerExt::iterate() {
   auto currentState = static_cast<const State*>(state_.get());
 
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -203,7 +225,8 @@ gtsam::GaussianFactorGraph::shared_ptr LevenbergMarquardtOptimizerExt::iterate()
   linearization_hook->linearize(currentState->values);
   linear = graph_.linearize(currentState->values);
   auto t2 = std::chrono::high_resolution_clock::now();
-  linearization_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
+  linearization_time =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
 
   linearization_hook->error(currentState->values);
   double oldError = graph_.error(currentState->values);
@@ -213,7 +236,9 @@ gtsam::GaussianFactorGraph::shared_ptr LevenbergMarquardtOptimizerExt::iterate()
   if (params_.diagonalDamping) {
     sqrtHessianDiagonal = linear->hessianDiagonal();
     for (gtsam::Vector& v : sqrtHessianDiagonal | boost::adaptors::map_values) {
-      v = v.cwiseMax(params_.minDiagonal).cwiseMin(params_.maxDiagonal).cwiseSqrt();
+      v = v.cwiseMax(params_.minDiagonal)
+                  .cwiseMin(params_.maxDiagonal)
+                  .cwiseSqrt();
     }
   }
 
@@ -242,7 +267,8 @@ const gtsam::Values& LevenbergMarquardtOptimizerExt::optimize() {
     terminate |= !std::isfinite(newError);
 
     // error can increase due to data association changes
-    // terminate |= gtsam::checkConvergence(params.relativeErrorTol, params.absoluteErrorTol, params.errorTol, currentError, newError,
+    // terminate |= gtsam::checkConvergence(params.relativeErrorTol,
+    // params.absoluteErrorTol, params.errorTol, currentError, newError,
     // params.verbosity);
 
     double delta_error = std::abs(currentError - newError);

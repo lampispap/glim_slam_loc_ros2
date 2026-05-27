@@ -1,9 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <vector>
 #include <Eigen/Core>
 #include <glim/util/raw_points.hpp>
+#include <memory>
+#include <vector>
 
 namespace glim {
 
@@ -12,7 +12,7 @@ namespace glim {
  *
  */
 struct PreprocessedFrame {
-public:
+  public:
   using Ptr = std::shared_ptr<PreprocessedFrame>;
   using ConstPtr = std::shared_ptr<const PreprocessedFrame>;
 
@@ -22,7 +22,7 @@ public:
    */
   int size() const { return points.size(); }
 
-public:
+  public:
   double stamp;          // Timestamp at the beginning of the scan
   double scan_end_time;  // Timestamp at the end of the scan
 

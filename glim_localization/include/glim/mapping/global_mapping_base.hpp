@@ -2,10 +2,9 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <opencv2/core.hpp>
-
 #include <glim/mapping/sub_map.hpp>
 #include <glim/odometry/estimation_frame.hpp>
+#include <opencv2/core.hpp>
 
 namespace spdlog {
 class logger;
@@ -18,7 +17,7 @@ namespace glim {
  *
  */
 class GlobalMappingBase {
-public:
+  public:
   GlobalMappingBase();
   virtual ~GlobalMappingBase() {}
 
@@ -27,9 +26,9 @@ public:
    * @param stamp         Timestamp
    * @param lat_lon_alt    Latitude, Longitude, Altitude, Hdop
    */
-  // virtual void insert_gps(double stamp, const Eigen::Vector3d& lat_lon_alt, const Eigen::Vector3d& position_covariance) {}
+  // virtual void insert_gps(double stamp, const Eigen::Vector3d& lat_lon_alt,
+  // const Eigen::Vector3d& position_covariance) {}
   virtual void insert_gps(double stamp, const Eigen::Vector4d& lat_lon_alt) {}
-
 
   /**
    * @brief Insert an image
@@ -44,7 +43,9 @@ public:
    * @param linear_acc    Linear acceleration
    * @param angular_vel   Angular velocity
    */
-  virtual void insert_imu(const double stamp, const Eigen::Vector3d& linear_acc, const Eigen::Vector3d& angular_vel);
+  virtual void insert_imu(const double stamp,
+                          const Eigen::Vector3d& linear_acc,
+                          const Eigen::Vector3d& angular_vel);
 
   /**
    * @brief Insert a SubMap
@@ -71,20 +72,24 @@ public:
   /**
    * @brief Export all the submap points
    */
-  virtual std::vector<Eigen::Vector4d> export_points() { return std::vector<Eigen::Vector4d>(); }
+  virtual std::vector<Eigen::Vector4d> export_points() {
+    return std::vector<Eigen::Vector4d>();
+  }
 
   /**
    * @brief Load a global mapping module from a shared library
    * @param so_name  Shared library name
    * @return         Loaded global mapping module
    */
-  static std::shared_ptr<GlobalMappingBase> load_module(const std::string& so_name);
+  static std::shared_ptr<GlobalMappingBase> load_module(
+          const std::string& so_name);
 
-  virtual void relocalize(EstimationFrame::ConstPtr latest_frame, const Eigen::Isometry3d & initial_pose) {}
+  virtual void relocalize(EstimationFrame::ConstPtr latest_frame,
+                          const Eigen::Isometry3d& initial_pose) {}
 
-  virtual bool load(const std::string& path) {return false;};
+  virtual bool load(const std::string& path) { return false; };
 
-protected:
+  protected:
   std::shared_ptr<spdlog::logger> logger;
 };
 }  // namespace glim

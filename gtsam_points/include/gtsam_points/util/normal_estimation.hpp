@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <vector>
 #include <Eigen/Core>
+#include <vector>
 
 namespace gtsam_points {
 
@@ -16,7 +16,10 @@ namespace gtsam_points {
  * @param num_threads Number of threads
  * @return            Estimated normals
  */
-std::vector<Eigen::Vector4d> estimate_normals(const Eigen::Vector4d* points, const Eigen::Matrix4d* covs, int num_points, int num_threads = 1);
+std::vector<Eigen::Vector4d> estimate_normals(const Eigen::Vector4d* points,
+                                              const Eigen::Matrix4d* covs,
+                                              int num_points,
+                                              int num_threads = 1);
 
 /**
  * @brief Estimate point normals from neighboring points
@@ -26,20 +29,28 @@ std::vector<Eigen::Vector4d> estimate_normals(const Eigen::Vector4d* points, con
  * @param num_threads Number of threads
  * @return            Estimated normals
  */
-std::vector<Eigen::Vector4d> estimate_normals(const Eigen::Vector4d* points, int num_points, int k_neighbors = 10, int num_threads = 1);
+std::vector<Eigen::Vector4d> estimate_normals(const Eigen::Vector4d* points,
+                                              int num_points,
+                                              int k_neighbors = 10,
+                                              int num_threads = 1);
 
 template <template <typename> typename Alloc>
 std::vector<Eigen::Vector4d> estimate_normals(
-  const std::vector<Eigen::Vector4d, Alloc<Eigen::Vector4d>>& points,
-  const std::vector<Eigen::Matrix4d, Alloc<Eigen::Matrix4d>>& covs,
-  int k_neighbors = 10,
-  int num_threads = 1) {
-  return estimate_normals(points.data(), covs.data(), points.size(), k_neighbors, num_threads);
+        const std::vector<Eigen::Vector4d, Alloc<Eigen::Vector4d>>& points,
+        const std::vector<Eigen::Matrix4d, Alloc<Eigen::Matrix4d>>& covs,
+        int k_neighbors = 10,
+        int num_threads = 1) {
+  return estimate_normals(points.data(), covs.data(), points.size(),
+                          k_neighbors, num_threads);
 }
 
 template <typename Alloc>
-std::vector<Eigen::Vector4d> estimate_normals(const std::vector<Eigen::Vector4d, Alloc>& points, int k_neighbors = 10, int num_threads = 1) {
-  return estimate_normals(points.data(), points.size(), k_neighbors, num_threads);
+std::vector<Eigen::Vector4d> estimate_normals(
+        const std::vector<Eigen::Vector4d, Alloc>& points,
+        int k_neighbors = 10,
+        int num_threads = 1) {
+  return estimate_normals(points.data(), points.size(), k_neighbors,
+                          num_threads);
 }
 
 }  // namespace gtsam_points

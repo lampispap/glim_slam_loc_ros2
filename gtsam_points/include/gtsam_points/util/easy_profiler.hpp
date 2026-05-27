@@ -4,21 +4,22 @@
 #pragma once
 
 #include <chrono>
-#include <vector>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 namespace gtsam_points {
 
 class EasyProfiler {
-public:
-  EasyProfiler(const std::string& prof_label, std::ostream& ost) : EasyProfiler(prof_label, true, false, ost) {}
+  public:
+  EasyProfiler(const std::string& prof_label, std::ostream& ost)
+      : EasyProfiler(prof_label, true, false, ost) {}
 
-  EasyProfiler(const std::string& prof_label, bool enabled = true, bool debug = false, std::ostream& ost = std::cout)
-  : enabled(enabled),
-    debug(debug),
-    prof_label(prof_label),
-    ost(ost) {
+  EasyProfiler(const std::string& prof_label,
+               bool enabled = true,
+               bool debug = false,
+               std::ostream& ost = std::cout)
+      : enabled(enabled), debug(debug), prof_label(prof_label), ost(ost) {
     if (!enabled) {
       return;
     }
@@ -50,10 +51,20 @@ public:
       std::vector<char> pad(longest - labels[i - 1].size(), ' ');
       std::string label = labels[i - 1] + std::string(pad.begin(), pad.end());
 
-      ost << label << ":" << std::chrono::duration_cast<std::chrono::nanoseconds>(times[i] - times[i - 1]).count() / 1e6 << "[msec]" << '\n';
+      ost << label << ":"
+          << std::chrono::duration_cast<std::chrono::nanoseconds>(times[i] -
+                                                                  times[i - 1])
+                              .count() /
+                      1e6
+          << "[msec]" << '\n';
     }
 
-    ost << "total:" << std::chrono::duration_cast<std::chrono::nanoseconds>(times.back() - times.front()).count() / 1e6 << "[msec]" << '\n';
+    ost << "total:"
+        << std::chrono::duration_cast<std::chrono::nanoseconds>(times.back() -
+                                                                times.front())
+                            .count() /
+                    1e6
+        << "[msec]" << '\n';
     ost << std::flush;
   }
 
@@ -66,12 +77,16 @@ public:
     times.push_back(std::chrono::high_resolution_clock::now());
 
     if (debug) {
-      ost << ">> " << label << " (" << std::chrono::duration_cast<std::chrono::nanoseconds>(times.back() - times.front()).count() / 1e6 << "[msec])"
-          << std::endl;
+      ost << ">> " << label << " ("
+          << std::chrono::duration_cast<std::chrono::nanoseconds>(times.back() -
+                                                                  times.front())
+                              .count() /
+                      1e6
+          << "[msec])" << std::endl;
     }
   }
 
-private:
+  private:
   const bool enabled;
   const bool debug;
   const std::string prof_label;

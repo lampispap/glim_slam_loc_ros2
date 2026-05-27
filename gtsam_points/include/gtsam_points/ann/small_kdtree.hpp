@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 // KdTree code derived from small_gicp.
-// While the following KdTree code is written from scratch, it is heavily inspired by the nanoflann library.
-// Thus, the following original license of nanoflann is included to be sure.
+// While the following KdTree code is written from scratch, it is heavily
+// inspired by the nanoflann library. Thus, the following original license of
+// nanoflann is included to be sure.
 
 // https://github.com/jlblancoc/nanoflann/blob/master/include/nanoflann.hpp
 /***********************************************************************
@@ -39,24 +40,25 @@
  *************************************************************************/
 #pragma once
 
-#include <atomic>
-#include <memory>
-#include <numeric>
 #include <Eigen/Core>
-
+#include <atomic>
 #include <gtsam_points/ann/knn_result.hpp>
 #include <gtsam_points/types/frame_traits.hpp>
+#include <memory>
+#include <numeric>
 
 namespace gtsam_points {
 
 /// @brief Parameters to control the projection axis search.
 struct ProjectionSetting {
-  int max_scan_count = 128;  ///< Maximum number of points to use for the axis search.
+  int max_scan_count =
+          128;  ///< Maximum number of points to use for the axis search.
 };
 
-/// @brief Conventional axis-aligned projection (i.e., selecting any of XYZ axes with the largest variance).
+/// @brief Conventional axis-aligned projection (i.e., selecting any of XYZ axes
+/// with the largest variance).
 struct AxisAlignedProjection {
-public:
+  public:
   /// @brief Project the point to the selected axis.
   /// @param pt  Point to project
   /// @return    Projected value
@@ -69,13 +71,16 @@ public:
   /// @param setting    Search setting
   /// @return           Projection with the largest variance axis
   template <typename PointCloud, typename IndexConstIterator>
-  static AxisAlignedProjection
-  find_axis(const PointCloud& points, IndexConstIterator first, IndexConstIterator last, const ProjectionSetting& setting) {
+  static AxisAlignedProjection find_axis(const PointCloud& points,
+                                         IndexConstIterator first,
+                                         IndexConstIterator last,
+                                         const ProjectionSetting& setting) {
     const size_t N = std::distance(first, last);
     Eigen::Vector4d sum_pt = Eigen::Vector4d::Zero();
     Eigen::Vector4d sum_sq = Eigen::Vector4d::Zero();
 
-    const size_t step = N < setting.max_scan_count ? 1 : N / setting.max_scan_count;
+    const size_t step =
+            N < setting.max_scan_count ? 1 : N / setting.max_scan_count;
     const size_t num_steps = N / step;
     for (int i = 0; i < num_steps; i++) {
       const auto itr = first + step * i;
@@ -87,15 +92,17 @@ public:
     const Eigen::Vector4d mean = sum_pt / sum_pt.w();
     const Eigen::Vector4d var = (sum_sq - mean.cwiseProduct(sum_pt));
 
-    return AxisAlignedProjection{var[0] > var[1] ? (var[0] > var[2] ? 0 : 2) : (var[1] > var[2] ? 1 : 2)};
+    return AxisAlignedProjection{var[0] > var[1] ? (var[0] > var[2] ? 0 : 2)
+                                                 : (var[1] > var[2] ? 1 : 2)};
   }
 
-public:
+  public:
   int axis;  ///< Axis index (0: X, 1: Y, 2: Z)
 };
 
 using NodeIndexType = std::uint32_t;
-static constexpr NodeIndexType INVALID_NODE = std::numeric_limits<NodeIndexType>::max();
+static constexpr NodeIndexType INVALID_NODE =
+        std::numeric_limits<NodeIndexType>::max();
 
 /// @brief KdTree node.
 template <typename Projection>
@@ -117,7 +124,7 @@ struct KdTreeNode {
 
 /// @brief Single thread Kd-tree builder.
 struct KdTreeBuilder {
-public:
+  public:
   /// @brief Build KdTree
   /// @param kdtree         Kd-tree to build
   /// @param points         Point cloud
@@ -128,23 +135,25 @@ public:
 
     size_t node_count = 0;
     kdtree.nodes.resize(frame::size(points));
-    kdtree.root = create_node(kdtree, node_count, points, kdtree.indices.begin(), kdtree.indices.begin(), kdtree.indices.end());
+    kdtree.root =
+            create_node(kdtree, node_count, points, kdtree.indices.begin(),
+                        kdtree.indices.begin(), kdtree.indices.end());
     kdtree.nodes.resize(node_count);
   }
 
   /// @brief Create a Kd-tree node from the given point indices.
-  /// @param global_first     Global first point index iterator (i.e., this->indices.begin()).
+  /// @param global_first     Global first point index iterator (i.e.,
+  /// this->indices.begin()).
   /// @param first            First point index iterator to be scanned.
   /// @param last             Last point index iterator to be scanned.
   /// @return                 Index of the created node.
   template <typename PointCloud, typename KdTree, typename IndexConstIterator>
-  NodeIndexType create_node(
-    KdTree& kdtree,
-    size_t& node_count,
-    const PointCloud& points,
-    IndexConstIterator global_first,
-    IndexConstIterator first,
-    IndexConstIterator last) const {
+  NodeIndexType create_node(KdTree& kdtree,
+                            size_t& node_count,
+                            const PointCloud& points,
+                            IndexConstIterator global_first,
+                            IndexConstIterator first,
+                            IndexConstIterator last) const {
     const size_t N = std::distance(first, last);
     const NodeIndexType node_index = node_count++;
     auto& node = kdtree.nodes[node_index];
@@ -160,32 +169,38 @@ public:
 
     // Find the best axis to split the input points.
     using Projection = typename KdTree::Projection;
-    const auto proj = Projection::find_axis(points, first, last, projection_setting);
+    const auto proj =
+            Projection::find_axis(points, first, last, projection_setting);
     const auto median_itr = first + N / 2;
-    std::nth_element(first, median_itr, last, [&](size_t i, size_t j) { return proj(frame::point(points, i)) < proj(frame::point(points, j)); });
+    std::nth_element(first, median_itr, last, [&](size_t i, size_t j) {
+      return proj(frame::point(points, i)) < proj(frame::point(points, j));
+    });
 
     // Create a non-leaf node.
     node.node_type.sub.proj = proj;
     node.node_type.sub.thresh = proj(frame::point(points, *median_itr));
 
     // Create left and right child nodes.
-    node.left = create_node(kdtree, node_count, points, global_first, first, median_itr);
-    node.right = create_node(kdtree, node_count, points, global_first, median_itr, last);
+    node.left = create_node(kdtree, node_count, points, global_first, first,
+                            median_itr);
+    node.right = create_node(kdtree, node_count, points, global_first,
+                             median_itr, last);
 
     return node_index;
   }
 
-public:
-  int max_leaf_size = 20;                ///< Maximum number of points in a leaf node.
+  public:
+  int max_leaf_size = 20;  ///< Maximum number of points in a leaf node.
   ProjectionSetting projection_setting;  ///< Projection setting.
 };
 
 /// @brief Kd-tree builder with OpenMP.
 struct KdTreeBuilderOMP {
-public:
+  public:
   /// @brief Constructor
   /// @param num_threads  Number of threads
-  KdTreeBuilderOMP(int num_threads = 4) : num_threads(num_threads), max_leaf_size(20) {}
+  KdTreeBuilderOMP(int num_threads = 4)
+      : num_threads(num_threads), max_leaf_size(20) {}
 
   /// @brief Build KdTree
   template <typename KdTree, typename PointCloud>
@@ -200,28 +215,34 @@ public:
 #pragma omp parallel num_threads(num_threads)
     {
 #pragma omp single nowait
-      { kdtree.root = create_node(kdtree, node_count, points, kdtree.indices.begin(), kdtree.indices.begin(), kdtree.indices.end()); }
+      {
+        kdtree.root =
+                create_node(kdtree, node_count, points, kdtree.indices.begin(),
+                            kdtree.indices.begin(), kdtree.indices.end());
+      }
     }
 #else
-    kdtree.root = create_node(kdtree, node_count, points, kdtree.indices.begin(), kdtree.indices.begin(), kdtree.indices.end());
+    kdtree.root =
+            create_node(kdtree, node_count, points, kdtree.indices.begin(),
+                        kdtree.indices.begin(), kdtree.indices.end());
 #endif
 
     kdtree.nodes.resize(node_count);
   }
 
   /// @brief Create a Kd-tree node from the given point indices.
-  /// @param global_first     Global first point index iterator (i.e., this->indices.begin()).
+  /// @param global_first     Global first point index iterator (i.e.,
+  /// this->indices.begin()).
   /// @param first            First point index iterator to be scanned.
   /// @param last             Last point index iterator to be scanned.
   /// @return                 Index of the created node.
   template <typename PointCloud, typename KdTree, typename IndexConstIterator>
-  NodeIndexType create_node(
-    KdTree& kdtree,
-    std::atomic_uint64_t& node_count,
-    const PointCloud& points,
-    IndexConstIterator global_first,
-    IndexConstIterator first,
-    IndexConstIterator last) const {
+  NodeIndexType create_node(KdTree& kdtree,
+                            std::atomic_uint64_t& node_count,
+                            const PointCloud& points,
+                            IndexConstIterator global_first,
+                            IndexConstIterator first,
+                            IndexConstIterator last) const {
     const size_t N = std::distance(first, last);
     const NodeIndexType node_index = node_count++;
     auto& node = kdtree.nodes[node_index];
@@ -237,9 +258,12 @@ public:
 
     // Find the best axis to split the input points.
     using Projection = typename KdTree::Projection;
-    const auto proj = Projection::find_axis(points, first, last, projection_setting);
+    const auto proj =
+            Projection::find_axis(points, first, last, projection_setting);
     const auto median_itr = first + N / 2;
-    std::nth_element(first, median_itr, last, [&](size_t i, size_t j) { return proj(frame::point(points, i)) < proj(frame::point(points, j)); });
+    std::nth_element(first, median_itr, last, [&](size_t i, size_t j) {
+      return proj(frame::point(points, i)) < proj(frame::point(points, j));
+    });
 
     // Create a non-leaf node.
     node.node_type.sub.proj = proj;
@@ -248,21 +272,25 @@ public:
     // Create left and right child nodes.
 #ifndef _MSC_VER
 #pragma omp task default(shared) if (N > 512)
-    node.left = create_node(kdtree, node_count, points, global_first, first, median_itr);
+    node.left = create_node(kdtree, node_count, points, global_first, first,
+                            median_itr);
 #pragma omp task default(shared) if (N > 512)
-    node.right = create_node(kdtree, node_count, points, global_first, median_itr, last);
+    node.right = create_node(kdtree, node_count, points, global_first,
+                             median_itr, last);
 #pragma omp taskwait
 #else
-    node.left = create_node(kdtree, node_count, points, global_first, first, median_itr);
-    node.right = create_node(kdtree, node_count, points, global_first, median_itr, last);
+    node.left = create_node(kdtree, node_count, points, global_first, first,
+                            median_itr);
+    node.right = create_node(kdtree, node_count, points, global_first,
+                             median_itr, last);
 #endif
 
     return node_index;
   }
 
-public:
-  int num_threads;                       ///< Number of threads
-  int max_leaf_size;                     ///< Maximum number of points in a leaf node.
+  public:
+  int num_threads;    ///< Number of threads
+  int max_leaf_size;  ///< Maximum number of points in a leaf node.
   ProjectionSetting projection_setting;  ///< Projection setting.
 };
 
@@ -271,7 +299,7 @@ public:
 ///        You must keep the input points along with this class.
 template <typename PointCloud, typename Projection_ = AxisAlignedProjection>
 struct UnsafeKdTree {
-public:
+  public:
   using Projection = Projection_;
   using Node = KdTreeNode<Projection>;
 
@@ -279,7 +307,9 @@ public:
   /// @param points   Point cloud
   /// @param builder  Kd-tree builder
   template <typename Builder = KdTreeBuilder>
-  explicit UnsafeKdTree(const PointCloud& points, const Builder& builder = KdTreeBuilder()) : points(points) {
+  explicit UnsafeKdTree(const PointCloud& points,
+                        const Builder& builder = KdTreeBuilder())
+      : points(points) {
     if (frame::size(points) == 0) {
       std::cerr << "warning: Empty point cloud" << std::endl;
       return;
@@ -294,51 +324,70 @@ public:
   /// @param k_sq_dists   Squared distance to the nearest neighbor
   /// @param setting      KNN search setting
   /// @return             Number of found neighbors (0 or 1)
-  size_t nearest_neighbor_search(const Eigen::Vector3d& query_, size_t* k_indices, double* k_sq_dists, const KnnSetting& setting = KnnSetting())
-    const {
+  size_t nearest_neighbor_search(
+          const Eigen::Vector3d& query_,
+          size_t* k_indices,
+          double* k_sq_dists,
+          const KnnSetting& setting = KnnSetting()) const {
     const Eigen::Vector4d query = (Eigen::Vector4d() << query_, 1.0).finished();
     return knn_search<1>(query, k_indices, k_sq_dists, setting);
   }
 
-  /// @brief  Find k-nearest neighbors. This method uses dynamic memory allocation.
+  /// @brief  Find k-nearest neighbors. This method uses dynamic memory
+  /// allocation.
   /// @param  query       Query point
   /// @param  k           Number of neighbors
   /// @param  k_indices   Indices of neighbors
   /// @param  k_sq_dists  Squared distances to neighbors
   /// @param  setting     KNN search setting
   /// @return             Number of found neighbors
-  size_t knn_search(const Eigen::Vector3d& query_, int k, size_t* k_indices, double* k_sq_dists, const KnnSetting& setting = KnnSetting()) const {
+  size_t knn_search(const Eigen::Vector3d& query_,
+                    int k,
+                    size_t* k_indices,
+                    double* k_sq_dists,
+                    const KnnSetting& setting = KnnSetting()) const {
     const Eigen::Vector4d query = (Eigen::Vector4d() << query_, 1.0).finished();
-    KnnResult<-1> result(k_indices, k_sq_dists, k, identity_transform(), setting.max_sq_dist);
+    KnnResult<-1> result(k_indices, k_sq_dists, k, identity_transform(),
+                         setting.max_sq_dist);
     knn_search(query, root, result, setting);
     return result.num_found();
   }
 
-  /// @brief Find k-nearest neighbors. This method uses fixed and static memory allocation. Might be faster for small k.
+  /// @brief Find k-nearest neighbors. This method uses fixed and static memory
+  /// allocation. Might be faster for small k.
   /// @param query       Query point
   /// @param k_indices   Indices of neighbors
   /// @param k_sq_dists  Squared distances to neighbors
   /// @param setting     KNN search setting
   /// @return            Number of found neighbors
   template <int N>
-  size_t knn_search(const Eigen::Vector3d& query_, size_t* k_indices, double* k_sq_dists, const KnnSetting& setting = KnnSetting()) const {
+  size_t knn_search(const Eigen::Vector3d& query_,
+                    size_t* k_indices,
+                    double* k_sq_dists,
+                    const KnnSetting& setting = KnnSetting()) const {
     const Eigen::Vector4d query = (Eigen::Vector4d() << query_, 1.0).finished();
-    KnnResult<N> result(k_indices, k_sq_dists, -1, identity_transform(), setting.max_sq_dist);
+    KnnResult<N> result(k_indices, k_sq_dists, -1, identity_transform(),
+                        setting.max_sq_dist);
     knn_search(query, root, result, setting);
     return result.num_found();
   }
 
-private:
+  private:
   /// @brief Find k-nearest neighbors.
   template <typename Result>
-  bool knn_search(const Eigen::Vector4d& query, NodeIndexType node_index, Result& result, const KnnSetting& setting) const {
+  bool knn_search(const Eigen::Vector4d& query,
+                  NodeIndexType node_index,
+                  Result& result,
+                  const KnnSetting& setting) const {
     const auto& node = nodes[node_index];
 
     // Check if it's a leaf node.
     if (node.left == INVALID_NODE) {
       // Compare the query point with all points in the leaf node.
-      for (size_t i = node.node_type.lr.first; i < node.node_type.lr.last; i++) {
-        const double sq_dist = (frame::point(points, indices[i]) - query).squaredNorm();
+      for (size_t i = node.node_type.lr.first; i < node.node_type.lr.last;
+           i++) {
+        const double sq_dist =
+                (frame::point(points, indices[i]) - query).squaredNorm();
         result.push(indices[i], sq_dist);
       }
       return !setting.fulfilled(result);
@@ -372,7 +421,7 @@ private:
     return true;
   }
 
-public:
+  public:
   const PointCloud& points;     ///< Input points
   std::vector<size_t> indices;  ///< Point indices refered by nodes
 

@@ -1,13 +1,12 @@
 #pragma once
 
-#include <memory>
-#include <unordered_map>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-
-#include <gtsam_points/types/point_cloud.hpp>
-#include <gtsam_points/types/gaussian_voxelmap.hpp>
 #include <glim/preprocess/preprocessed_frame.hpp>
+#include <gtsam_points/types/gaussian_voxelmap.hpp>
+#include <gtsam_points/types/point_cloud.hpp>
+#include <memory>
+#include <unordered_map>
 
 namespace glim {
 
@@ -24,13 +23,15 @@ struct EstimationFrame {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /**
-   * @brief Make a clone of the estimation frame. (Points data are shallow copied)
+   * @brief Make a clone of the estimation frame. (Points data are shallow
+   * copied)
    * @return EstimationFrame::Ptr   Cloned frame
    */
   EstimationFrame::Ptr clone() const;
 
   /**
-   * @brief Make a clone of the estimation frame instance but without points data.
+   * @brief Make a clone of the estimation frame instance but without points
+   * data.
    * @return EstimationFrame::Ptr   Cloned frame without points
    */
   EstimationFrame::Ptr clone_wo_points() const;
@@ -78,7 +79,7 @@ struct EstimationFrame {
     return reinterpret_cast<const T*>(found->second.get());
   }
 
-public:
+  public:
   long id;       ///< Frame ID
   double stamp;  ///< Timestamp
 
@@ -89,13 +90,19 @@ public:
   Eigen::Vector3d v_world_imu;           ///< IMU velocity in the world frame
   Eigen::Matrix<double, 6, 1> imu_bias;  ///< IMU bias
 
-  PreprocessedFrame::ConstPtr raw_frame;             ///< Raw input point cloud (LiDAR frame)
-  Eigen::Matrix<double, 8, -1> imu_rate_trajectory;  ///< IMU-rate trajectory 8 x N  [t, x, y, z, qx, qy, qz, qw]
+  PreprocessedFrame::ConstPtr
+          raw_frame;  ///< Raw input point cloud (LiDAR frame)
+  Eigen::Matrix<double, 8, -1>
+          imu_rate_trajectory;  ///< IMU-rate trajectory 8 x N  [t, x, y, z, qx,
+                                ///< qy, qz, qw]
 
-  FrameID frame_id;                                            ///< Coordinate frame of $frame
-  gtsam_points::PointCloud::ConstPtr frame;                    ///< Deskewed points for state estimation
-  std::vector<gtsam_points::GaussianVoxelMap::Ptr> voxelmaps;  ///< Multi-resolution voxelmaps
+  FrameID frame_id;  ///< Coordinate frame of $frame
+  gtsam_points::PointCloud::ConstPtr
+          frame;  ///< Deskewed points for state estimation
+  std::vector<gtsam_points::GaussianVoxelMap::Ptr>
+          voxelmaps;  ///< Multi-resolution voxelmaps
 
-  std::unordered_map<std::string, std::shared_ptr<void>> custom_data;  ///< User-defined custom data
+  std::unordered_map<std::string, std::shared_ptr<void>>
+          custom_data;  ///< User-defined custom data
 };
 }  // namespace glim

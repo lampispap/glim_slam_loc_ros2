@@ -1,13 +1,12 @@
-#include <fstream>
-#include <iostream>
-
-#include <gtsam/inference/Symbol.h>
 #include <gtsam/geometry/Pose3.h>
+#include <gtsam/inference/Symbol.h>
+
+#include <fstream>
+#include <glk/primitives/primitives.hpp>
 #include <gtsam_points/util/bspline.hpp>
 #include <gtsam_points/util/continuous_trajectory.hpp>
-
-#include <glk/primitives/primitives.hpp>
 #include <guik/viewer/light_viewer.hpp>
+#include <iostream>
 
 int main(int argc, char** argv) {
   const std::string traj_path = "/home/koide/traj.txt";
@@ -30,7 +29,8 @@ int main(int argc, char** argv) {
     Eigen::Vector3d trans;
     Eigen::Quaterniond quat;
 
-    sst >> t >> trans.x() >> trans.y() >> trans.z() >> quat.x() >> quat.y() >> quat.z() >> quat.w();
+    sst >> t >> trans.x() >> trans.y() >> trans.z() >> quat.x() >> quat.y() >>
+            quat.z() >> quat.w();
 
     stamps.push_back(t);
     poses.push_back(gtsam::Pose3(gtsam::Rot3(quat), trans));
@@ -56,7 +56,8 @@ int main(int argc, char** argv) {
     imu_data.push_back(imu);
   }
 
-  gtsam_points::ContinuousTrajectory ct('x', stamps.front(), stamps.back(), 0.1);
+  gtsam_points::ContinuousTrajectory ct('x', stamps.front(), stamps.back(),
+                                        0.1);
   gtsam::Values values = ct.fit_knots(stamps, poses);
 
   for (int i = 0; i < imu_data.size(); i++) {
@@ -73,7 +74,8 @@ int main(int argc, char** argv) {
     const double p = (t - knot_t) / ct.knot_interval;
 
     const Eigen::Vector3d g(0.0, 0.0, 9.80665);
-    const gtsam::Vector6_ imu_ = gtsam_points::bspline_imu(X(knot_i), p, ct.knot_interval, g);
+    const gtsam::Vector6_ imu_ =
+            gtsam_points::bspline_imu(X(knot_i), p, ct.knot_interval, g);
     const gtsam::Vector6 imu = imu_.value(values);
 
     std::cout << "sim:" << a.transpose() << " " << w.transpose() << std::endl;
@@ -83,14 +85,20 @@ int main(int argc, char** argv) {
   auto viewer = guik::LightViewer::instance();
 
   for (int i = 0; i < stamps.size(); i += 25) {
-    const Eigen::Affine3d model_matrix = Eigen::Isometry3d(poses[i].matrix()) * Eigen::UniformScaling<double>(0.3);
-    viewer->update_drawable("keyframe_" + std::to_string(i), glk::Primitives::coordinate_system(), guik::VertexColor(model_matrix.cast<float>()));
+    const Eigen::Affine3d model_matrix = Eigen::Isometry3d(poses[i].matrix()) *
+                                         Eigen::UniformScaling<double>(0.3);
+    viewer->update_drawable("keyframe_" + std::to_string(i),
+                            glk::Primitives::coordinate_system(),
+                            guik::VertexColor(model_matrix.cast<float>()));
   }
 
   for (double t = stamps.front(); t < stamps.back(); t += 0.1) {
     const gtsam::Pose3 pose = ct.pose(values, t);
-    const Eigen::Affine3d model_matrix = Eigen::Isometry3d(pose.matrix()) * Eigen::UniformScaling<double>(0.1);
-    viewer->update_drawable("pose_" + std::to_string(t), glk::Primitives::coordinate_system(), guik::VertexColor(model_matrix.cast<float>()));
+    const Eigen::Affine3d model_matrix = Eigen::Isometry3d(pose.matrix()) *
+                                         Eigen::UniformScaling<double>(0.1);
+    viewer->update_drawable("pose_" + std::to_string(t),
+                            glk::Primitives::coordinate_system(),
+                            guik::VertexColor(model_matrix.cast<float>()));
   }
 
   viewer->spin();
