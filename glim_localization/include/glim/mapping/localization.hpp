@@ -74,11 +74,11 @@ private:
   void insert_submap(int current, const SubMap::Ptr& submap);
   void update_submaps();
 
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) ;
-  // boost::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) ;
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> create_map_matching_cost_factors(
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) ;
+  // std::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) ;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_map_matching_cost_factors(
     int current, const Eigen::Isometry3d& current_T_world_submap);
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> create_relocalization_factors(
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_relocalization_factors(
     int submap_id,
     gtsam_points::PointCloud::ConstPtr cloud, const Eigen::Isometry3d& submap_pose,
     const Eigen::Isometry3d& initial_pose);
@@ -118,7 +118,7 @@ private:
   bool relocalized = false;
   Eigen::Isometry3d initial_pose_;
   EstimationFrame::ConstPtr latest_frame_;
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> relocalization_factors_;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> relocalization_factors_;
   std::shared_ptr<std::thread> relocalize_thread_;
   int target_submap_id_{-1};
   int query_submap_id_{-1};

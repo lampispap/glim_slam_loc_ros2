@@ -47,16 +47,16 @@ namespace gtsam_points {
 
 /* ************************************************************************* */
 ISAM2Ext::ISAM2Ext(const ISAM2Params& params) : params_(params), update_count_(0) {
-  if (params_.optimizationParams.type() == typeid(ISAM2DoglegParams))
-    doglegDelta_ = boost::get<ISAM2DoglegParams>(params_.optimizationParams).initialDelta;
+  if (std::holds_alternative<ISAM2DoglegParams>(params_.optimizationParams))
+    doglegDelta_ = std::get<ISAM2DoglegParams>(params_.optimizationParams).initialDelta;
 
   linearization_hook.reset(new LinearizationHook());
 }
 
 /* ************************************************************************* */
 ISAM2Ext::ISAM2Ext() : update_count_(0) {
-  if (params_.optimizationParams.type() == typeid(ISAM2DoglegParams))
-    doglegDelta_ = boost::get<ISAM2DoglegParams>(params_.optimizationParams).initialDelta;
+  if (std::holds_alternative<ISAM2DoglegParams>(params_.optimizationParams))
+    doglegDelta_ = std::get<ISAM2DoglegParams>(params_.optimizationParams).initialDelta;
 
   linearization_hook.reset(new LinearizationHook());
 }
@@ -299,7 +299,7 @@ void ISAM2Ext::recalculateIncremental(
 
   gttic(orphans);
   // Add the orphaned subtrees
-  for (const auto& orphan : *orphans) factors += boost::make_shared<BayesTreeOrphanWrapper<ISAM2Ext::Clique> >(orphan);
+  for (const auto& orphan : *orphans) factors += std::make_shared<BayesTreeOrphanWrapper<ISAM2Ext::Clique> >(orphan);
   gttoc(orphans);
 
   // 3. Re-order and eliminate the factor graph into a Bayes net (Algorithm
@@ -397,9 +397,9 @@ ISAM2ResultExt ISAM2Ext::update(
   const NonlinearFactorGraph& newFactors,
   const Values& newTheta,
   const FactorIndices& removeFactorIndices,
-  const boost::optional<FastMap<Key, int> >& constrainedKeys,
-  const boost::optional<FastList<Key> >& noRelinKeys,
-  const boost::optional<FastList<Key> >& extraReelimKeys,
+  const std::optional<FastMap<Key, int> >& constrainedKeys,
+  const std::optional<FastList<Key> >& noRelinKeys,
+  const std::optional<FastList<Key> >& extraReelimKeys,
   bool force_relinearize) {
   ISAM2UpdateParams params;
   params.constrainedKeys = constrainedKeys;
@@ -503,8 +503,8 @@ ISAM2ResultExt ISAM2Ext::update(const NonlinearFactorGraph& newFactors, const Va
 /* ************************************************************************* */
 void ISAM2Ext::marginalizeLeaves(
   const FastList<Key>& leafKeysList,
-  boost::optional<FactorIndices&> marginalFactorsIndices,
-  boost::optional<FactorIndices&> deletedFactorsIndices) {
+  FactorIndices* marginalFactorsIndices,
+  FactorIndices* deletedFactorsIndices) {
   // Convert to ordered set
   KeySet leafKeys(leafKeysList.begin(), leafKeysList.end());
 
@@ -550,7 +550,7 @@ void ISAM2Ext::marginalizeLeaves(
 
       // Traverse up the tree to find the root of the marginalized subtree
       sharedClique clique = nodes_[j];
-      while (!clique->parent_._empty()) {
+      while (!clique->isRoot()) {
         // Check if parent contains a marginalized leaf variable.  Only need to
         // check the first variable because it is the closest to the leaves.
         sharedClique parent = clique->parent();
@@ -696,7 +696,7 @@ void ISAM2Ext::marginalizeLeaves(
       if (factor) {
         factorsToAdd.push_back(factor);
         if (marginalFactorsIndices) marginalFactorsIndices->push_back(nonlinearFactors_.size());
-        nonlinearFactors_.push_back(boost::make_shared<LinearContainerFactor>(factor));
+        nonlinearFactors_.push_back(std::make_shared<LinearContainerFactor>(factor));
         if (params_.cacheLinearizedFactors) linearFactors_.push_back(factor);
         for (Key factorKey : *factor) {
           fixedVariables_.insert(factorKey);
@@ -726,18 +726,18 @@ void ISAM2Ext::marginalizeLeaves(
 // Marked const but actually changes mutable delta
 void ISAM2Ext::updateDelta(bool forceFullSolve) const {
   gttic(updateDelta);
-  if (params_.optimizationParams.type() == typeid(ISAM2GaussNewtonParams)) {
+  if (std::holds_alternative<ISAM2GaussNewtonParams>(params_.optimizationParams)) {
     // If using Gauss-Newton, update with wildfireThreshold
-    const ISAM2GaussNewtonParams& gaussNewtonParams = boost::get<ISAM2GaussNewtonParams>(params_.optimizationParams);
+    const ISAM2GaussNewtonParams& gaussNewtonParams = std::get<ISAM2GaussNewtonParams>(params_.optimizationParams);
     const double effectiveWildfireThreshold = forceFullSolve ? 0.0 : gaussNewtonParams.wildfireThreshold;
     gttic(Wildfire_update);
     DeltaImpl::UpdateGaussNewtonDelta(roots_, deltaReplacedMask_, effectiveWildfireThreshold, &delta_);
     deltaReplacedMask_.clear();
     gttoc(Wildfire_update);
 
-  } else if (params_.optimizationParams.type() == typeid(ISAM2DoglegParams)) {
+  } else if (std::holds_alternative<ISAM2DoglegParams>(params_.optimizationParams)) {
     // If using Dogleg, do a Dogleg step
-    const ISAM2DoglegParams& doglegParams = boost::get<ISAM2DoglegParams>(params_.optimizationParams);
+    const ISAM2DoglegParams& doglegParams = std::get<ISAM2DoglegParams>(params_.optimizationParams);
     const double effectiveWildfireThreshold = forceFullSolve ? 0.0 : doglegParams.wildfireThreshold;
 
     // Do one Dogleg iteration

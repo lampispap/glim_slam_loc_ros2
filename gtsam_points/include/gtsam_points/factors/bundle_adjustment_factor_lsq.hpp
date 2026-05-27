@@ -27,7 +27,7 @@ public:
 
   virtual size_t dim() const override { return 6; }
   virtual double error(const gtsam::Values& c) const override;
-  virtual boost::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
 
   virtual void add(const gtsam::Point3& pt, const gtsam::Key& key) override;
   virtual int num_points() const override { return global_num_points; }

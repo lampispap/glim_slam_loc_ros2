@@ -44,9 +44,9 @@ public:
    * @return                      log error
    */
   virtual gtsam::Vector evaluateError(
-    const gtsam::Vector6& ssmr_odom_coefficient_vector, 
-    const gtsam::Pose3& previous_pose, const gtsam::Pose3& current_pose, 
-    boost::optional<gtsam::Matrix&> H1, boost::optional<gtsam::Matrix&> H2, boost::optional<gtsam::Matrix&> H3) const override {
+    const gtsam::Vector6& ssmr_odom_coefficient_vector,
+    const gtsam::Pose3& previous_pose, const gtsam::Pose3& current_pose,
+    gtsam::OptionalMatrixType H1, gtsam::OptionalMatrixType H2, gtsam::OptionalMatrixType H3) const override {
 
     // 1. Calculate a measurement function of the full linear wheel odometry with respect to the robot frame (measuremetn function)
     // 1.1 The robot displacement ∆o_ij ∈ se2 is extended into ∆O_ij ∈ se3.
@@ -65,7 +65,7 @@ public:
     gtsam::Pose3 T_Robot_DeltaRobot_T_Robot_IMU = T_Robot_DeltaRobot.compose(T_Robot_IMU_, H_A_DeltaRobot);
     
     gtsam::Matrix H_DeltaIMU_A;
-    gtsam::Pose3 T_IMU_DeltaIMU = T_Robot_IMU_.between(T_Robot_DeltaRobot_T_Robot_IMU, boost::none, H_DeltaIMU_A);
+    gtsam::Pose3 T_IMU_DeltaIMU = T_Robot_IMU_.between(T_Robot_DeltaRobot_T_Robot_IMU, {}, H_DeltaIMU_A);
     gtsam::Matrix H_DeltaIMU_DeltaRobot = H_DeltaIMU_A * H_A_DeltaRobot;
 
 

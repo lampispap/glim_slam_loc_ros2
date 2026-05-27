@@ -66,7 +66,7 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   }
 
   FastVector<size_t> removedFactors;
-  boost::optional<FastMap<Key, int> > constrainedKeys = boost::none;
+  std::optional<FastMap<Key, int> > constrainedKeys = std::nullopt;
 
   // Update the Timestamps associated with the factor keys
   updateKeyTimestampMap(timestamps);
@@ -111,7 +111,7 @@ IncrementalFixedLagSmootherExt::update(const NonlinearFactorGraph& newFactors, c
   KeyList additionalMarkedKeys(additionalKeys.begin(), additionalKeys.end());
 
   // Update iSAM2
-  auto result_ = isam_.update(newFactors, newTheta, factorsToRemove, constrainedKeys, boost::none, additionalMarkedKeys);
+  auto result_ = isam_.update(newFactors, newTheta, factorsToRemove, constrainedKeys, std::nullopt, additionalMarkedKeys);
   // std::cout << result_.to_string() << std::endl;
   isamResult_ = result_;
 
@@ -157,7 +157,7 @@ void IncrementalFixedLagSmootherExt::eraseKeysBefore(double timestamp) {
 }
 
 /* ************************************************************************* */
-void IncrementalFixedLagSmootherExt::createOrderingConstraints(const KeyVector& marginalizableKeys, boost::optional<FastMap<Key, int> >& constrainedKeys) const {
+void IncrementalFixedLagSmootherExt::createOrderingConstraints(const KeyVector& marginalizableKeys, std::optional<FastMap<Key, int> >& constrainedKeys) const {
   if (marginalizableKeys.size() > 0) {
     constrainedKeys = FastMap<Key, int>();
     // Generate ordering constraints so that the marginalizable variables will be eliminated first

@@ -49,7 +49,7 @@ public:
   virtual ~IntegratedCT_GICPFactor_() override;
 
   virtual double error(const gtsam::Values& values) const override;
-  virtual boost::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& values) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& values) const override;
 
 protected:
   virtual void update_correspondences() const override;

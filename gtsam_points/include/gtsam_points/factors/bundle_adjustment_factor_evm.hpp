@@ -75,7 +75,7 @@ public:
   virtual ~PlaneEVMFactor() override;
 
   virtual double error(const gtsam::Values& c) const override;
-  virtual boost::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
 
   // TODO: Add feature parameter extraction method
 };
@@ -91,6 +91,6 @@ public:
   virtual ~EdgeEVMFactor() override;
 
   virtual double error(const gtsam::Values& c) const override;
-  virtual boost::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
+  virtual std::shared_ptr<gtsam::GaussianFactor> linearize(const gtsam::Values& c) const override;
 };
 }  // namespace gtsam_points

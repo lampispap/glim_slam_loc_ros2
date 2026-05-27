@@ -152,7 +152,7 @@ Localization::Localization(const LocalizationParams& params): params(params) {
 
 Localization::~Localization() {}
 
-  // boost::shared_ptr<gtsam::NonlinearFactorGraph> create_relocalization_factors(const SubMap::Ptr& submap, const Eigen::Isometry3d& initial_pose,
+  // std::shared_ptr<gtsam::NonlinearFactorGraph> create_relocalization_factors(const SubMap::Ptr& submap, const Eigen::Isometry3d& initial_pose,
 void Localization::relocalize(EstimationFrame::ConstPtr latest_frame, const Eigen::Isometry3d & initial_pose) {
   // initial_pose will correspond to last_frame of submap
   // so correct intial pose will be : correct_initial_pose = () submap->T_world_origin
@@ -165,7 +165,7 @@ void Localization::relocalize(EstimationFrame::ConstPtr latest_frame, const Eige
 }
 
 
-boost::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_relocalization_factors(
+std::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_relocalization_factors(
   int submap_id,
   gtsam_points::PointCloud::ConstPtr subsampled_frame, const Eigen::Isometry3d& submap_pose,
   const Eigen::Isometry3d& T_map_frame) {
@@ -598,7 +598,7 @@ void Localization::optimize() {
   Callbacks::on_update_active_submaps(active_submaps);
 }
 
-boost::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_between_factors(int current) {
+std::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_between_factors(int current) {
   auto factors = gtsam::make_shared<gtsam::NonlinearFactorGraph>();
   if (current == 0 || !params.enable_between_factors) {
     return factors;
@@ -747,7 +747,7 @@ bool Localization::load(const std::string& path) {
 }
 
 
-boost::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_map_matching_cost_factors(
+std::shared_ptr<gtsam::NonlinearFactorGraph> Localization::create_map_matching_cost_factors(
   int current, const Eigen::Isometry3d& current_T_world_submap) {
   auto factors = gtsam::make_shared<gtsam::NonlinearFactorGraph>();
 

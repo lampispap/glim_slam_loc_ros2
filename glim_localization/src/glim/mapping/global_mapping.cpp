@@ -490,7 +490,7 @@ void GlobalMapping::optimize() {
   Callbacks::on_update_submaps(submaps);
 }
 
-boost::shared_ptr<gtsam::NonlinearFactorGraph> GlobalMapping::create_between_factors(int current) const {
+std::shared_ptr<gtsam::NonlinearFactorGraph> GlobalMapping::create_between_factors(int current) const {
   auto factors = gtsam::make_shared<gtsam::NonlinearFactorGraph>();
   if (current == 0 || !params.enable_between_factors) {
     return factors;
@@ -541,7 +541,7 @@ boost::shared_ptr<gtsam::NonlinearFactorGraph> GlobalMapping::create_between_fac
   return factors;
 }
 
-boost::shared_ptr<gtsam::NonlinearFactorGraph> GlobalMapping::create_matching_cost_factors(int current) const {
+std::shared_ptr<gtsam::NonlinearFactorGraph> GlobalMapping::create_matching_cost_factors(int current) const {
   auto factors = gtsam::make_shared<gtsam::NonlinearFactorGraph>();
   if (current == 0) {
     return factors;
@@ -616,12 +616,12 @@ void GlobalMapping::save(const std::string& path) {
   std::unordered_map<uint64_t, gtsam::GPSFactor::shared_ptr> gps_factors;
 
   for (const auto& factor : isam2->getFactorsUnsafe()) {
-    bool not_matching_factor = !boost::dynamic_pointer_cast<gtsam_points::IntegratedMatchingCostFactor>(factor)
+    bool not_matching_factor = !std::dynamic_pointer_cast<gtsam_points::IntegratedMatchingCostFactor>(factor)
 #ifdef BUILD_GTSAM_POINTS_GPU
-                        && !boost::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor)
+                        && !std::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor)
 #endif
       ;
-    bool not_gps_factor = !boost::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
+    bool not_gps_factor = !std::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
     
 
     if (not_matching_factor) {
@@ -630,7 +630,7 @@ void GlobalMapping::save(const std::string& path) {
       }
       else {
         const gtsam::Symbol symbol0(factor->keys()[0]);
-        gps_factors[symbol0.index()] = boost::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
+        gps_factors[symbol0.index()] = std::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
       }
     } else {
       const gtsam::Symbol symbol0(factor->keys()[0]);
@@ -655,13 +655,13 @@ void GlobalMapping::save(const std::string& path) {
   for (const auto& factor : matching_cost_factors) {
     std::string type;
 
-    if (boost::dynamic_pointer_cast<gtsam_points::IntegratedGICPFactor>(factor.second)) {
+    if (std::dynamic_pointer_cast<gtsam_points::IntegratedGICPFactor>(factor.second)) {
       type = "gicp";
-    } else if (boost::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactor>(factor.second)) {
+    } else if (std::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactor>(factor.second)) {
       type = "vgicp";
     }
 #ifdef BUILD_GTSAM_POINTS_GPU
-    else if (boost::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor.second)) {
+    else if (std::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor.second)) {
       type = "vgicp_gpu";
     }
 #endif
@@ -673,7 +673,7 @@ void GlobalMapping::save(const std::string& path) {
 
   for (const auto& factor : gps_factors) {
     auto measurement = factor.second->measurementIn();
-    auto noise_model = boost::dynamic_pointer_cast<gtsam::noiseModel::Diagonal>(factor.second->noiseModel());
+    auto noise_model = std::dynamic_pointer_cast<gtsam::noiseModel::Diagonal>(factor.second->noiseModel());
     ofs << "gps " << factor.first 
       << " " << measurement.x() 
       << " " << measurement.y() 

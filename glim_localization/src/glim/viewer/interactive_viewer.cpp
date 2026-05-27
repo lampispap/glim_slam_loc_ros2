@@ -443,23 +443,23 @@ void InteractiveViewer::globalmap_on_smoother_update(gtsam_points::ISAM2Ext& isa
   std::vector<std::tuple<uint64_t, gtsam::Point3>> inserted_gps_factors;
 
   for (const auto& factor : new_factors) {
-    if (boost::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor)) {
+    if (std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor)) {
       inserted_factors.push_back(std::make_tuple(FactorType::BETWEEN, factor->keys()[0], factor->keys()[1]));
     }
-    if (boost::dynamic_pointer_cast<gtsam_points::IntegratedMatchingCostFactor>(factor)) {
+    if (std::dynamic_pointer_cast<gtsam_points::IntegratedMatchingCostFactor>(factor)) {
       inserted_factors.push_back(std::make_tuple(FactorType::MATCHING_COST, factor->keys()[0], factor->keys()[1]));
     }
 #ifdef BUILD_GTSAM_POINTS_GPU
-    if (boost::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor)) {
+    if (std::dynamic_pointer_cast<gtsam_points::IntegratedVGICPFactorGPU>(factor)) {
       inserted_factors.push_back(std::make_tuple(FactorType::MATCHING_COST, factor->keys()[0], factor->keys()[1]));
     }
 #endif
-    if (boost::dynamic_pointer_cast<gtsam::ImuFactor>(factor)) {
+    if (std::dynamic_pointer_cast<gtsam::ImuFactor>(factor)) {
       inserted_factors.push_back(std::make_tuple(FactorType::IMU, factor->keys()[0], factor->keys()[2]));
     }
 
-    if (boost::dynamic_pointer_cast<gtsam::GPSFactor>(factor)) {
-      auto gps_factor = boost::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
+    if (std::dynamic_pointer_cast<gtsam::GPSFactor>(factor)) {
+      auto gps_factor = std::dynamic_pointer_cast<gtsam::GPSFactor>(factor);
       gtsam::Symbol symbol(gps_factor->keys()[0]);
       inserted_gps_factors.push_back(std::make_tuple(symbol.index(), gps_factor->measurementIn()));
     }

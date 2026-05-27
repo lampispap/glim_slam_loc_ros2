@@ -121,7 +121,7 @@ gtsam::NonlinearFactorGraph OdometryEstimationCPU::create_wheel_odometry_factor(
     return factors;
 }
 
-gtsam::NonlinearFactorGraph OdometryEstimationCPU::create_factors(const int current, const boost::shared_ptr<gtsam::ImuFactor>& imu_factor, gtsam::Values& new_values) {
+gtsam::NonlinearFactorGraph OdometryEstimationCPU::create_factors(const int current, const std::shared_ptr<gtsam::ImuFactor>& imu_factor, gtsam::Values& new_values) {
   const auto params = static_cast<const OdometryEstimationCPUParams*>(this->params.get());
   const int last = current - 1;
 

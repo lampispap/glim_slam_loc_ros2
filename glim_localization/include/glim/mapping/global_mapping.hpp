@@ -91,8 +91,8 @@ private:
   void insert_submap(int current, const SubMap::Ptr& submap);
   gtsam::NonlinearFactorGraph create_gps_factor(const int current, gtsam::Values& new_values);
 
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) const;
-  boost::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) const;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_between_factors(int current) const;
+  std::shared_ptr<gtsam::NonlinearFactorGraph> create_matching_cost_factors(int current) const;
 
   void update_submaps();
   gtsam_points::ISAM2ResultExt update_isam2(const gtsam::NonlinearFactorGraph& new_factors, const gtsam::Values& new_values);

@@ -94,7 +94,7 @@ protected:
   ISAM2Params params_;
 
   /** The current Dogleg Delta (trust region radius) */
-  mutable boost::optional<double> doglegDelta_;
+  mutable std::optional<double> doglegDelta_;
 
   /** Set of variables that are involved with linear factors from marginalized
    * variables and thus cannot have their linearization points changed. */
@@ -159,9 +159,9 @@ public:
     const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
     const Values& newTheta = Values(),
     const FactorIndices& removeFactorIndices = FactorIndices(),
-    const boost::optional<FastMap<Key, int> >& constrainedKeys = boost::none,
-    const boost::optional<FastList<Key> >& noRelinKeys = boost::none,
-    const boost::optional<FastList<Key> >& extraReelimKeys = boost::none,
+    const std::optional<FastMap<Key, int> >& constrainedKeys = std::nullopt,
+    const std::optional<FastList<Key> >& noRelinKeys = std::nullopt,
+    const std::optional<FastList<Key> >& extraReelimKeys = std::nullopt,
     bool force_relinearize = false);
 
   /**
@@ -203,8 +203,8 @@ public:
    */
   void marginalizeLeaves(
     const FastList<Key>& leafKeys,
-    boost::optional<FactorIndices&> marginalFactorsIndices = boost::none,
-    boost::optional<FactorIndices&> deletedFactorsIndices = boost::none);
+    FactorIndices* marginalFactorsIndices = nullptr,
+    FactorIndices* deletedFactorsIndices = nullptr);
 
   /// Access the current linearization point
   const Values& getLinearizationPoint() const { return theta_; }
