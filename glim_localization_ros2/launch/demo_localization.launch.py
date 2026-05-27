@@ -18,8 +18,10 @@ def generate_launch_description():
         "localization", default_value="false"
     )
 
+    # TODO: Add it with relative path
     map_path_launch_arg = DeclareLaunchArgument(
-        "map_path", default_value="/home/manh/Documents/park_gps"
+        "map_load_path",
+        default_value="/home/lampis/study_ws/glim_loc_ws/test_maps/gz_playground_dense",
     )
 
     # TODO: Add it with relative path
@@ -36,7 +38,7 @@ def generate_launch_description():
             {
                 "config_path": LaunchConfiguration("config"),
                 "localization": LaunchConfiguration("localization"),
-                "map_path": LaunchConfiguration("map_path"),
+                "map_load_path": LaunchConfiguration("map_load_path"),
                 "map_save_path": LaunchConfiguration("map_save_path"),
                 "use_sim_time": use_sim_time,
             }

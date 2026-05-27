@@ -68,6 +68,7 @@ void AsyncGlobalMapping::relocalize(EstimationFrame::ConstPtr latest_frame,
 }
 
 bool AsyncGlobalMapping::load(const std::string& path) {
+  std::lock_guard<std::mutex> lock(global_mapping_mutex);
   return global_mapping->load(path);
 }
 

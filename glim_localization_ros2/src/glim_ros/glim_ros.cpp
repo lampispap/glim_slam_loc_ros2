@@ -236,10 +236,13 @@ GlimROS::GlimROS(const rclcpp::NodeOptions& options)
   if (localization_mode) {
     setup_localization();
   }
-  spdlog::debug("initialized");
+  spdlog::info("GLIM Localization is initialized");
 }
 
 void GlimROS::setup_localization() {
+  this->declare_parameter<std::string>("map_load_path", "");
+  this->get_parameter<std::string>("map_load_path", load_map_path_);
+
   initial_pose_sub = this->create_subscription<
           geometry_msgs::msg::PoseWithCovarianceStamped>(
           "/initialpose", 10,
@@ -254,35 +257,6 @@ void GlimROS::setup_localization() {
           "~/load_map",
           std::bind(&GlimROS::handle_load_map_sevice, this,
                     std::placeholders::_1, std::placeholders::_2));
-
-  this->declare_parameter<std::string>("map_path", "");
-  this->get_parameter<std::string>("map_path", map_path);
-}
-
-void GlimROS::handle_reloc(
-        const geometry_msgs::msg::Point::ConstSharedPtr point) {
-  initial_pose_.translation() = Eigen::Vector3d(point->x, point->y, point->z);
-  // initial_pose_.linear() = quat.toRotationMatrix();
-
-  auto latest_frame = odometry_estimation->get_latest_frame();
-  if (latest_frame == nullptr) {
-    spdlog::info("Handle reloc: latest frame is null. Abort relocalize");
-    return;
-  }
-  global_mapping->relocalize(latest_frame, initial_pose_);
-  force_create_submap_flag = true;
-}
-
-void GlimROS::handle_load_map_sevice(
-        const std_srvs::srv::Trigger::Request::SharedPtr request,
-        std_srvs::srv::Trigger::Response::SharedPtr response) {
-  auto ret = global_mapping->load(map_path);
-  response->success = ret;
-  if (ret) {
-    response->message = "Successuflly load map, map path: " + map_path;
-  } else {
-    response->message = "Failed to load map, map path: " + map_path;
-  }
 }
 
 void GlimROS::handle_initial_pose(
@@ -319,6 +293,7 @@ GlimROS::extension_subscriptions() {
   return extension_subs;
 }
 
+// *==== ROS2 Service Handlers ====*
 void GlimROS::handle_save_map_sevice(
         const std_srvs::srv::Trigger::Request::SharedPtr request,
         std_srvs::srv::Trigger::Response::SharedPtr response) {
@@ -326,6 +301,33 @@ void GlimROS::handle_save_map_sevice(
   this->save(save_map_path_);
 }
 
+void GlimROS::handle_reloc(
+        const geometry_msgs::msg::Point::ConstSharedPtr point) {
+  initial_pose_.translation() = Eigen::Vector3d(point->x, point->y, point->z);
+  // initial_pose_.linear() = quat.toRotationMatrix();
+
+  auto latest_frame = odometry_estimation->get_latest_frame();
+  if (latest_frame == nullptr) {
+    spdlog::info("Handle reloc: latest frame is null. Abort relocalize");
+    return;
+  }
+  global_mapping->relocalize(latest_frame, initial_pose_);
+  force_create_submap_flag = true;
+}
+
+void GlimROS::handle_load_map_sevice(
+        const std_srvs::srv::Trigger::Request::SharedPtr request,
+        std_srvs::srv::Trigger::Response::SharedPtr response) {
+  auto ret = global_mapping->load(load_map_path_);
+  response->success = ret;
+  if (ret) {
+    response->message = "Successuflly load map, map path: " + load_map_path_;
+  } else {
+    response->message = "Failed to load map, map path: " + load_map_path_;
+  }
+}
+
+// *==== ROS2 Callbacks ====*
 void GlimROS::raw_odom_callback(
         const sensor_msgs::msg::JointState::SharedPtr msg) {
   const double odom_stamp =

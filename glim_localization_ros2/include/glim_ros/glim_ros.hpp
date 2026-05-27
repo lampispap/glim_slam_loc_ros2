@@ -97,6 +97,7 @@ class GlimROS : public rclcpp::Node {
   // ROS Launch parameters
   bool localization_mode = false;
   std::string save_map_path_;
+  std::string load_map_path_;
   std::string map_path;
 };
 
