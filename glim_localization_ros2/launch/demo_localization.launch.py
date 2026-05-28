@@ -1,15 +1,18 @@
+import os
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import Node
 
+LAUNCH_DIR = os.path.dirname(os.path.realpath(__file__))
+GLIM_MAPS = os.path.normpath(os.path.join(LAUNCH_DIR, "..", "..", "generated_maps"))
+
 
 def generate_launch_description():
     # args that can be set from the command line or a default will be used
     use_sim_time_arg = DeclareLaunchArgument("use_sim_time", default_value="false")
-
-    use_sim_time = LaunchConfiguration("use_sim_time")
 
     config_launch_arg = DeclareLaunchArgument(
         "config", default_value=TextSubstitution(text="config/b2_simulation")
@@ -19,16 +22,14 @@ def generate_launch_description():
         "localization", default_value="false"
     )
 
-    # TODO: Add it with relative path
     map_path_launch_arg = DeclareLaunchArgument(
         "map_load_path",
-        default_value="/home/lampis/study_ws/glim_loc_ws/test_maps/gz_playground_dense",
+        default_value=os.path.join(GLIM_MAPS, "gz_playground_dense"),
     )
 
-    # TODO: Add it with relative path
     saved_map_path_launch_arg = DeclareLaunchArgument(
         "map_save_path",
-        default_value="/home/lampis/study_ws/glim_loc_ws/test_maps/only_test",
+        default_value=os.path.join(GLIM_MAPS, "only_test"),
     )
 
     glim_ros_node = Node(
@@ -41,7 +42,7 @@ def generate_launch_description():
                 "localization": LaunchConfiguration("localization"),
                 "map_load_path": LaunchConfiguration("map_load_path"),
                 "map_save_path": LaunchConfiguration("map_save_path"),
-                "use_sim_time": use_sim_time,
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
             }
         ],
         output="screen",
