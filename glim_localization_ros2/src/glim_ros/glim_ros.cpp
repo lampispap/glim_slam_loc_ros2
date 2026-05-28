@@ -513,7 +513,7 @@ void GlimROS::handle_global_localize_service(
   }
 
   const auto best_idx = std::max_element(result->inlier_fractions.begin(),
-                                          result->inlier_fractions.end()) -
+                                         result->inlier_fractions.end()) -
                         result->inlier_fractions.begin();
   const auto& estimated = result->poses[best_idx];
   spdlog::info(

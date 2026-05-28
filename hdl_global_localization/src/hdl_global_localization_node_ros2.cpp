@@ -32,7 +32,7 @@ class GlobalLocalizationNode : public rclcpp::Node {
     query_downsample_resolution =
             config.param<double>("base", "query_downsample_resolution", 0.5);
 
-    set_engine("BBS");
+    set_engine("FPFH_RANSAC");
 
     using std::placeholders::_1;
     using std::placeholders::_2;

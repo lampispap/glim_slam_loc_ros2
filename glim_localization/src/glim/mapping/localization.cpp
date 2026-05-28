@@ -697,6 +697,7 @@ void Localization::optimize() {
                                    .matrix())),
                    convert_to_string(
                            active_submaps[query_submap_id_]->T_world_origin));
+      logger->info("===== Initial Pose Estimation has been completed ======");
       target_submap_id_ = -1;
       query_submap_id_ = -1;
     }
