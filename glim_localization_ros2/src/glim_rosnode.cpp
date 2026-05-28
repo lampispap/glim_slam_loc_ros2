@@ -8,13 +8,16 @@
 
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
-  rclcpp::executors::SingleThreadedExecutor exec;
   rclcpp::NodeOptions options;
-
   auto glim = std::make_shared<glim::GlimROS>(options);
 
+  // MultiThreadedExecutor is required so the ~/global_localize service handler
+  // can block on the HDL future while other callbacks (e.g. point cloud) keep running.
+  rclcpp::executors::MultiThreadedExecutor exec;
+  exec.add_node(std::static_pointer_cast<rclcpp::Node>(glim)->get_node_base_interface());
+
   try {
-    rclcpp::spin(glim);
+    exec.spin();
   }
 
   catch (std::exception& ex) {

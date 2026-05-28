@@ -265,6 +265,18 @@ void GlimROS::setup_localization() {
   set_global_map_client_ =
           this->create_client<hdl_global_localization::srv::SetGlobalMap>(
                   "/hdl_global_localization/set_global_map");
+
+  query_global_localization_client_ = this->create_client<
+          hdl_global_localization::srv::QueryGlobalLocalization>(
+          "/hdl_global_localization/query");
+
+  global_localize_cb_group_ = this->create_callback_group(
+          rclcpp::CallbackGroupType::MutuallyExclusive);
+  global_localize_srv_ = this->create_service<std_srvs::srv::Trigger>(
+          "~/global_localize",
+          std::bind(&GlimROS::handle_global_localize_service, this,
+                    std::placeholders::_1, std::placeholders::_2),
+          rmw_qos_profile_services_default, global_localize_cb_group_);
 }
 
 void GlimROS::handle_initial_pose(
@@ -332,20 +344,22 @@ void GlimROS::handle_load_map_sevice(
     response->message = "Successuflly load map, map path: " + load_map_path_;
 
     auto points = global_mapping->export_points();
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+            new pcl::PointCloud<pcl::PointXYZ>);
     cloud->reserve(points.size());
     for (const auto& p : points) {
       cloud->push_back(pcl::PointXYZ(p.x(), p.y(), p.z()));
     }
 
-    auto map_request =
-            std::make_shared<hdl_global_localization::srv::SetGlobalMap::Request>();
+    auto map_request = std::make_shared<
+            hdl_global_localization::srv::SetGlobalMap::Request>();
     pcl::toROSMsg(*cloud, map_request->global_map);
     map_request->global_map.header.frame_id = "map";
     map_request->global_map.header.stamp = this->now();
 
     set_global_map_client_->async_send_request(map_request);
-    spdlog::info("Sent loaded map to hdl_global_localization ({} points)", points.size());
+    spdlog::info("Sent loaded map to hdl_global_localization ({} points)",
+                 points.size());
   } else {
     response->message = "Failed to load map, map path: " + load_map_path_;
   }
@@ -427,6 +441,11 @@ size_t GlimROS::points_callback(
   spdlog::trace("points: {}.{}", msg->header.stamp.sec,
                 msg->header.stamp.nanosec);
 
+  {
+    std::lock_guard<std::mutex> lock(latest_cloud_mutex_);
+    latest_cloud_ = msg;
+  }
+
   auto raw_points = glim::extract_raw_points(msg);
   if (raw_points == nullptr) {
     spdlog::warn("failed to extract points from message");
@@ -451,6 +470,84 @@ size_t GlimROS::points_callback(
   spdlog::debug("workload={}", workload);
 
   return workload;
+}
+
+void GlimROS::handle_global_localize_service(
+        const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
+        std_srvs::srv::Trigger::Response::SharedPtr response) {
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud_snapshot;
+  {
+    std::lock_guard<std::mutex> lock(latest_cloud_mutex_);
+    cloud_snapshot = latest_cloud_;
+  }
+
+  if (!cloud_snapshot) {
+    response->success = false;
+    response->message = "No point cloud received yet";
+    return;
+  }
+
+  if (!query_global_localization_client_->service_is_ready()) {
+    response->success = false;
+    response->message = "hdl_global_localization query service not available";
+    return;
+  }
+
+  auto req = std::make_shared<
+          hdl_global_localization::srv::QueryGlobalLocalization::Request>();
+  req->cloud = *cloud_snapshot;
+  req->max_num_candidates = 3;  // TODO: take it frim config
+
+  auto future = query_global_localization_client_->async_send_request(req);
+  if (future.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+    response->success = false;
+    response->message = "Timeout waiting for global localization response";
+    return;
+  }
+
+  auto result = future.get();
+  if (result->poses.empty()) {
+    response->success = false;
+    response->message = "Global localization found no solution";
+    return;
+  }
+
+  const auto best_idx = std::max_element(result->inlier_fractions.begin(),
+                                          result->inlier_fractions.end()) -
+                        result->inlier_fractions.begin();
+  const auto& estimated = result->poses[best_idx];
+  spdlog::info(
+          "Global localization result: pos=({:.3f}, {:.3f}, {:.3f}) "
+          "quat=({:.3f}, {:.3f}, {:.3f}, {:.3f}) inlier_fraction={:.3f}",
+          estimated.position.x, estimated.position.y, estimated.position.z,
+          estimated.orientation.x, estimated.orientation.y,
+          estimated.orientation.z, estimated.orientation.w,
+          result->inlier_fractions[best_idx]);
+
+  Eigen::Quaterniond quat(estimated.orientation.w, estimated.orientation.x,
+                          estimated.orientation.y, estimated.orientation.z);
+  Eigen::Vector3d trans(estimated.position.x, estimated.position.y,
+                        estimated.position.z);
+  initial_pose_ = Eigen::Isometry3d::Identity();
+  initial_pose_.linear() = quat.toRotationMatrix();
+  initial_pose_.translation() = trans;
+
+  auto latest_frame = odometry_estimation->get_latest_frame();
+  if (latest_frame == nullptr) {
+    response->success = false;
+    response->message = "No odometry frame available for relocalization";
+    return;
+  }
+
+  global_mapping->relocalize(latest_frame, initial_pose_);
+  force_create_submap_flag = true;
+
+  response->success = true;
+  response->message =
+          "pos=(" + std::to_string(estimated.position.x) + ", " +
+          std::to_string(estimated.position.y) + ", " +
+          std::to_string(estimated.position.z) +
+          ") inlier_fraction=" + std::to_string(result->inlier_fractions[0]);
 }
 
 bool GlimROS::needs_wait() {

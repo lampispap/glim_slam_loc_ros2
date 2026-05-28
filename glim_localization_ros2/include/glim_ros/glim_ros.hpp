@@ -12,7 +12,9 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <hdl_global_localization/srv/query_global_localization.hpp>
 #include <hdl_global_localization/srv/set_global_map.hpp>
+#include <mutex>
 #include <std_srvs/srv/trigger.hpp>
 
 namespace glim {
@@ -58,6 +60,9 @@ class GlimROS : public rclcpp::Node {
   void handle_load_map_sevice(
           const std_srvs::srv::Trigger::Request::SharedPtr request,
           std_srvs::srv::Trigger::Response::SharedPtr response);
+  void handle_global_localize_service(
+          const std_srvs::srv::Trigger::Request::SharedPtr request,
+          std_srvs::srv::Trigger::Response::SharedPtr response);
 
   protected:
   std::unique_ptr<glim::TimeKeeper> time_keeper;
@@ -94,6 +99,11 @@ class GlimROS : public rclcpp::Node {
   rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr reloc_point_sub;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr load_srv;
   rclcpp::Client<hdl_global_localization::srv::SetGlobalMap>::SharedPtr set_global_map_client_;
+  rclcpp::CallbackGroup::SharedPtr global_localize_cb_group_;
+  rclcpp::Client<hdl_global_localization::srv::QueryGlobalLocalization>::SharedPtr query_global_localization_client_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr global_localize_srv_;
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr latest_cloud_;
+  std::mutex latest_cloud_mutex_;
   Eigen::Isometry3d initial_pose_;
 
   // ROS Launch parameters
