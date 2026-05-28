@@ -16,10 +16,10 @@ class ISAM2ExtDummy : public gtsam_points::ISAM2Ext {
           const NonlinearFactorGraph& newFactors = NonlinearFactorGraph(),
           const Values& newTheta = Values(),
           const FactorIndices& removeFactorIndices = FactorIndices(),
-          const boost::optional<FastMap<Key, int>>& constrainedKeys =
-                  boost::none,
-          const boost::optional<FastList<Key>>& noRelinKeys = boost::none,
-          const boost::optional<FastList<Key>>& extraReelimKeys = boost::none,
+          const std::optional<FastMap<Key, int>>& constrainedKeys =
+                  std::nullopt,
+          const std::optional<FastList<Key>>& noRelinKeys = std::nullopt,
+          const std::optional<FastList<Key>>& extraReelimKeys = std::nullopt,
           bool force_relinearize = false) override {
     //
     nonlinearFactors_.add(newFactors);

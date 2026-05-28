@@ -26,7 +26,7 @@ struct BALMFeature;
  */
 class EVMBundleAdjustmentFactorBase : public BundleAdjustmentFactorBase {
   public:
-  using shared_ptr = boost::shared_ptr<EVMBundleAdjustmentFactorBase>;
+  using shared_ptr = std::shared_ptr<EVMBundleAdjustmentFactorBase>;
 
   EVMBundleAdjustmentFactorBase();
   virtual ~EVMBundleAdjustmentFactorBase() override;
@@ -77,7 +77,7 @@ class EVMBundleAdjustmentFactorBase : public BundleAdjustmentFactorBase {
  */
 class PlaneEVMFactor : public EVMBundleAdjustmentFactorBase {
   public:
-  using shared_ptr = boost::shared_ptr<PlaneEVMFactor>;
+  using shared_ptr = std::shared_ptr<PlaneEVMFactor>;
 
   PlaneEVMFactor();
   virtual ~PlaneEVMFactor() override;
@@ -94,7 +94,7 @@ class PlaneEVMFactor : public EVMBundleAdjustmentFactorBase {
  */
 class EdgeEVMFactor : public EVMBundleAdjustmentFactorBase {
   public:
-  using shared_ptr = boost::shared_ptr<EdgeEVMFactor>;
+  using shared_ptr = std::shared_ptr<EdgeEVMFactor>;
 
   EdgeEVMFactor();
   virtual ~EdgeEVMFactor() override;

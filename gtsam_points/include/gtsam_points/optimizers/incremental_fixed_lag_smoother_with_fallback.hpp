@@ -30,9 +30,8 @@ class IncrementalFixedLagSmootherExtWithFallback
   VALUE calculateEstimate(Key key) const {
     try {
       const auto& value = smoother->calculateEstimate(key);
-      auto found = values.find(key);
-      if (found != values.end()) {
-        found->value = value;
+      if (values.exists(key)) {
+        values.update(key, value);
       }
 
       return value.cast<VALUE>();
@@ -45,9 +44,8 @@ class IncrementalFixedLagSmootherExtWithFallback
       fallback_smoother();
 
       const auto& value = smoother->calculateEstimate(key);
-      auto found = values.find(key);
-      if (found != values.end()) {
-        found->value = value;
+      if (values.exists(key)) {
+        values.update(key, value);
       }
 
       return value.cast<VALUE>();
