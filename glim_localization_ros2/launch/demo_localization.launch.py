@@ -1,5 +1,6 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import Node
 
@@ -44,9 +45,22 @@ def generate_launch_description():
             }
         ],
         output="screen",
-        # prefix=["gnome-terminal -- gdb -ex run --args"]
+        # prefix=["gnome-terminal -- gdb -ex run --args"],
     )
 
+    hdl_global_loc_node = GroupAction(
+        condition=IfCondition(LaunchConfiguration("localization")),
+        actions=[
+            Node(
+                package="hdl_global_localization",
+                executable="hdl_global_localization_node",
+                name="global_localization_ros",
+                output="screen",
+            )
+        ],
+    )
+
+    # Add the commands to the launch description
     ld = LaunchDescription()
     ld.add_action(SetEnvironmentVariable("ROS_DOMAIN_ID", "42"))
     ld.add_action(SetEnvironmentVariable("ROS_LOCALHOST_ONLY", "1"))
@@ -56,7 +70,6 @@ def generate_launch_description():
     ld.add_action(map_path_launch_arg)
     ld.add_action(saved_map_path_launch_arg)
     ld.add_action(glim_ros_node)
-
-    # Add the commands to the launch description
+    ld.add_action(hdl_global_loc_node)
 
     return ld

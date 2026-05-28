@@ -893,6 +893,27 @@ bool Localization::load(const std::string& path) {
   return true;
 }
 
+std::vector<Eigen::Vector4d> Localization::export_points() {
+  int num_all_points = 0;
+  for (const auto& submap : prebuilt_submaps) {
+    num_all_points += submap->frame->size();
+  }
+
+  std::vector<Eigen::Vector4d> all_points;
+  all_points.reserve(num_all_points);
+
+  for (const auto& submap : prebuilt_submaps) {
+    std::transform(submap->frame->points,
+                   submap->frame->points + submap->frame->size(),
+                   std::back_inserter(all_points),
+                   [&](const Eigen::Vector4d& p) {
+                     return submap->T_world_origin * p;
+                   });
+  }
+
+  return all_points;
+}
+
 std::shared_ptr<gtsam::NonlinearFactorGraph>
 Localization::create_map_matching_cost_factors(
         int current, const Eigen::Isometry3d& current_T_world_submap) {

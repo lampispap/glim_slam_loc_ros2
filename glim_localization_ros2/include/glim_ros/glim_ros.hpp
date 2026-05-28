@@ -12,6 +12,7 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <hdl_global_localization/srv/set_global_map.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
 namespace glim {
@@ -92,6 +93,7 @@ class GlimROS : public rclcpp::Node {
           initial_pose_sub;
   rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr reloc_point_sub;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr load_srv;
+  rclcpp::Client<hdl_global_localization::srv::SetGlobalMap>::SharedPtr set_global_map_client_;
   Eigen::Isometry3d initial_pose_;
 
   // ROS Launch parameters

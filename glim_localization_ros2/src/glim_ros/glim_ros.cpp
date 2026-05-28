@@ -1,3 +1,7 @@
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <glim_ros/glim_ros.hpp>
 
 #define GLIM_ROS2
@@ -257,6 +261,10 @@ void GlimROS::setup_localization() {
           "~/load_map",
           std::bind(&GlimROS::handle_load_map_sevice, this,
                     std::placeholders::_1, std::placeholders::_2));
+
+  set_global_map_client_ =
+          this->create_client<hdl_global_localization::srv::SetGlobalMap>(
+                  "/hdl_global_localization/set_global_map");
 }
 
 void GlimROS::handle_initial_pose(
@@ -322,6 +330,22 @@ void GlimROS::handle_load_map_sevice(
   response->success = ret;
   if (ret) {
     response->message = "Successuflly load map, map path: " + load_map_path_;
+
+    auto points = global_mapping->export_points();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    cloud->reserve(points.size());
+    for (const auto& p : points) {
+      cloud->push_back(pcl::PointXYZ(p.x(), p.y(), p.z()));
+    }
+
+    auto map_request =
+            std::make_shared<hdl_global_localization::srv::SetGlobalMap::Request>();
+    pcl::toROSMsg(*cloud, map_request->global_map);
+    map_request->global_map.header.frame_id = "map";
+    map_request->global_map.header.stamp = this->now();
+
+    set_global_map_client_->async_send_request(map_request);
+    spdlog::info("Sent loaded map to hdl_global_localization ({} points)", points.size());
   } else {
     response->message = "Failed to load map, map path: " + load_map_path_;
   }

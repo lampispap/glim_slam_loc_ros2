@@ -9,8 +9,8 @@
     "min_theta": -3.15,
     "max_theta": 3.15,
     // Engine settings
-    "map_min_z": 2.0,
-    "map_max_z": 2.4,
+    "map_min_z": -1.0,
+    "map_max_z": 3.0,
     "map_width": 512,
     "map_height": 1024,
     "map_resolution": 0.5,
