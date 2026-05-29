@@ -27,8 +27,15 @@ class GlobalLocalizationEngineFPFH_RANSAC : public GlobalLocalizationEngine {
           int max_num_candidates) override;
 
   protected:
+  // Extracts FPFH features and returns them aligned with a filtered copy of the
+  // input cloud. Points whose normals/descriptors come out non-finite (e.g. too
+  // few neighbors within normal_estimation_radius) are dropped from both the
+  // returned features and *filtered_cloud so their indices stay in sync, which
+  // RANSAC relies on. This prevents NaN descriptors from reaching the FLANN
+  // kd-tree's nearestKSearch (which asserts the query point is finite).
   pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr extract_fpfh(
-          pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud);
+          pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud,
+          pcl::PointCloud<pcl::PointXYZ>::Ptr& filtered_cloud);
 
   protected:
   const GlobalLocalizationEngineFPFH_RANSACParams params;
