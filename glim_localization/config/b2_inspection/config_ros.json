@@ -36,12 +36,12 @@
     // Points config
     "keep_raw_points": false,
     // IMU config
-    "imu_time_offset": 0.0,
+    "imu_time_offset": -0.096682,
     "points_time_offset": 0.0,
     "acc_scale": 1.0,
     // TF config
-    "imu_frame_id": "imu_link",
-    "lidar_frame_id": "velodyne",
+    "imu_frame_id": "base_link",
+    "lidar_frame_id": "rslidar",
     "base_frame_id": "base_link",
     "odom_frame_id": "odom",
     "map_frame_id": "map",
@@ -51,14 +51,14 @@
     // Extension modules
     "extension_modules": [
       "libmemory_monitor.so",
-      "libstandard_viewer.so",
+      // "libstandard_viewer.so",
       "librviz_viewer.so"
       // "libglim_octomap.so"
       // "libimu_validator.so"
     ],
     // Topics
-    "imu_topic": "/imu/data",
-    "points_topic": "/velodyne_points",
+    "imu_topic": "/dog_imu_raw",
+    "points_topic": "/rslidar_points",
     "image_topic": "/image",
     "wheel_topic": "/yz_wheel_state", // NOTE: Not used
     "gps_topic": "/gps_front/data", // NOTE: Not Used 
@@ -70,7 +70,7 @@
     // Extension modules
     "extension_modules": [
       "libmemory_monitor.so",
-      "liblocalization_viewer.so",
+      // "liblocalization_viewer.so",
       "librviz_viewer.so"
       // "libscan_context_initializer.so"
       // "libglim_octomap.so"

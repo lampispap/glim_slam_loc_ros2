@@ -42,29 +42,25 @@
   */
   "sensors": {
     // IMU config
-    "imu_acc_noise": 0.00615542885,
-    "imu_gyro_noise": 0.00634177393,
+    "imu_acc_noise": 3.9939570888238808e-03,
+    "imu_gyro_noise": 1.5636343949698187e-03,
     "imu_int_noise": 0.001,
-    "imu_bias_noise": 5.470215473115752e-04,
-    // "imu_acc_noise": 0.001,
-    // "imu_gyro_noise": 0.1,
-    // "imu_int_noise": 0.1,
-    // "imu_bias_noise": 0.1,
+    "imu_bias_noise": 6.4356659353532566e-05,
     // LiDAR config
     "global_shutter_lidar": false,
     "T_lidar_imu": [
-      -0.075,
-      -0.1,
-      -0.05,
+      -0.34218,
+      0.02341,
+      -0.12924,
       0.0,
       0.0,
       0.0,
       1.0
     ],
     "T_robot_imu": [
-      -0.075,
-      -0.1,
-      0.35,
+      0.0,
+      0.0,
+      0.0,
       0.0,
       0.0,
       0.0,

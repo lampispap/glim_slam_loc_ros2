@@ -23,6 +23,6 @@
     "outlier_removal_k": 10,
     "outlier_std_mul_factor": 1.0,
     "k_correspondences": 30,
-    "num_threads": 2
+    "num_threads": 2 // TODO: Check that 
   }
 }
