@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021  Kenji Koide (k.koide@aist.go.jp)
 
+#include <atomic>
 #include <boost/filesystem.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include <cstdint>
 #include <fstream>
 #include <gtsam_points/ann/kdtree.hpp>
 #include <gtsam_points/types/point_cloud_cpu.hpp>
